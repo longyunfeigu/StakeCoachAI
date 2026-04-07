@@ -20,6 +20,10 @@
 
 [快速开始](#快速开始) · [功能特性](#功能特性) · [配置说明](#配置说明) · [开发指南](#开发指南)
 
+<br/>
+
+<img src="docs/assets/hero-animation.svg" alt="StakeCoachAI 工作流程动画" width="720"/>
+
 </div>
 
 <br/>

@@ -1,0 +1,301 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 580" font-family="'Segoe UI', system-ui, -apple-system, sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f172a"/>
+      <stop offset="100%" style="stop-color:#1e293b"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#6366f1"/>
+      <stop offset="100%" style="stop-color:#8b5cf6"/>
+    </linearGradient>
+    <linearGradient id="green" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#10b981"/>
+      <stop offset="100%" style="stop-color:#34d399"/>
+    </linearGradient>
+    <linearGradient id="coachGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#f59e0b"/>
+      <stop offset="100%" style="stop-color:#fbbf24"/>
+    </linearGradient>
+    <clipPath id="chatClip"><rect x="30" y="100" width="220" height="210" rx="8"/></clipPath>
+    <clipPath id="convClip"><rect x="530" y="100" width="240" height="210" rx="8"/></clipPath>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="580" fill="url(#bg)" rx="12"/>
+
+  <!-- ==================== HEADER ==================== -->
+  <text x="400" y="42" text-anchor="middle" fill="#f8fafc" font-size="22" font-weight="700" opacity="0">
+    StakeCoachAI — 工作流程
+    <animate attributeName="opacity" from="0" to="1" begin="0.3s" dur="0.8s" fill="freeze"/>
+  </text>
+  <text x="400" y="66" text-anchor="middle" fill="#94a3b8" font-size="12" opacity="0">
+    聊天记录 → AI 分析 → 人物画像 → 模拟对话 → AI 教练复盘
+    <animate attributeName="opacity" from="0" to="1" begin="0.8s" dur="0.8s" fill="freeze"/>
+  </text>
+
+  <!-- ==================== ROW 1: 3 panels ==================== -->
+
+  <!-- ===== PHASE 1: Chat Records ===== -->
+  <g opacity="0">
+    <animate attributeName="opacity" from="0" to="1" begin="1.2s" dur="0.6s" fill="freeze"/>
+    <rect x="30" y="100" width="220" height="210" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+    <rect x="30" y="100" width="220" height="30" rx="8" fill="#334155"/>
+    <circle cx="46" cy="115" r="4" fill="#ef4444"/>
+    <circle cx="58" cy="115" r="4" fill="#f59e0b"/>
+    <circle cx="70" cy="115" r="4" fill="#22c55e"/>
+    <text x="140" y="119" text-anchor="middle" fill="#94a3b8" font-size="10">聊天记录 / 会议纪要</text>
+
+    <g clip-path="url(#chatClip)">
+      <rect x="44" y="140" width="130" height="26" rx="6" fill="#334155" opacity="0">
+        <animate attributeName="opacity" from="0" to="1" begin="1.6s" dur="0.4s" fill="freeze"/>
+      </rect>
+      <text x="52" y="157" fill="#e2e8f0" font-size="9.5" opacity="0">
+        这个方案风险太大了
+        <animate attributeName="opacity" from="0" to="1" begin="1.7s" dur="0.4s" fill="freeze"/>
+      </text>
+
+      <rect x="90" y="174" width="146" height="26" rx="6" fill="#4338ca" opacity="0">
+        <animate attributeName="opacity" from="0" to="1" begin="2.2s" dur="0.4s" fill="freeze"/>
+      </rect>
+      <text x="98" y="191" fill="#e2e8f0" font-size="9.5" opacity="0">
+        我们已经做了压力测试...
+        <animate attributeName="opacity" from="0" to="1" begin="2.3s" dur="0.4s" fill="freeze"/>
+      </text>
+
+      <rect x="44" y="208" width="140" height="26" rx="6" fill="#334155" opacity="0">
+        <animate attributeName="opacity" from="0" to="1" begin="2.8s" dur="0.4s" fill="freeze"/>
+      </rect>
+      <text x="52" y="225" fill="#e2e8f0" font-size="9.5" opacity="0">
+        数据呢？拿数据说话。
+        <animate attributeName="opacity" from="0" to="1" begin="2.9s" dur="0.4s" fill="freeze"/>
+      </text>
+
+      <rect x="44" y="242" width="160" height="26" rx="6" fill="#334155" opacity="0">
+        <animate attributeName="opacity" from="0" to="1" begin="3.3s" dur="0.4s" fill="freeze"/>
+      </rect>
+      <text x="52" y="259" fill="#e2e8f0" font-size="9.5" opacity="0">
+        上次就是这么说的，结果呢？
+        <animate attributeName="opacity" from="0" to="1" begin="3.4s" dur="0.4s" fill="freeze"/>
+      </text>
+
+      <rect x="44" y="276" width="120" height="26" rx="6" fill="#334155" opacity="0">
+        <animate attributeName="opacity" from="0" to="1" begin="3.7s" dur="0.4s" fill="freeze"/>
+      </rect>
+      <text x="52" y="293" fill="#e2e8f0" font-size="9.5" opacity="0">
+        客户不会买单的
+        <animate attributeName="opacity" from="0" to="1" begin="3.8s" dur="0.4s" fill="freeze"/>
+      </text>
+    </g>
+  </g>
+
+  <!-- Arrow 1 -->
+  <g opacity="0">
+    <animate attributeName="opacity" from="0" to="1" begin="4.1s" dur="0.5s" fill="freeze"/>
+    <line x1="258" y1="205" x2="288" y2="205" stroke="url(#accent)" stroke-width="2" stroke-dasharray="4,3"/>
+    <polygon points="288,200 298,205 288,210" fill="#8b5cf6"/>
+    <text x="278" y="195" text-anchor="middle" fill="#8b5cf6" font-size="9">AI 分析</text>
+  </g>
+
+  <!-- ===== PHASE 2: Persona Card ===== -->
+  <g opacity="0">
+    <animate attributeName="opacity" from="0" to="1" begin="4.5s" dur="0.6s" fill="freeze"/>
+    <rect x="300" y="100" width="220" height="210" rx="8" fill="#1e293b" stroke="#6366f1" stroke-width="1.5"/>
+
+    <!-- Avatar -->
+    <circle cx="400" cy="140" r="22" fill="url(#accent)" opacity="0">
+      <animate attributeName="opacity" from="0" to="1" begin="4.9s" dur="0.4s" fill="freeze"/>
+      <animate attributeName="r" from="0" to="22" begin="4.9s" dur="0.4s" fill="freeze"/>
+    </circle>
+    <text x="400" y="146" text-anchor="middle" fill="white" font-size="16" font-weight="700" opacity="0">
+      M
+      <animate attributeName="opacity" from="0" to="1" begin="5.1s" dur="0.3s" fill="freeze"/>
+    </text>
+
+    <text x="400" y="180" text-anchor="middle" fill="#f8fafc" font-size="14" font-weight="600" opacity="0">
+      Martin · 直属上级
+      <animate attributeName="opacity" from="0" to="1" begin="5.3s" dur="0.4s" fill="freeze"/>
+    </text>
+
+    <!-- Tags -->
+    <g opacity="0">
+      <animate attributeName="opacity" from="0" to="1" begin="5.7s" dur="0.4s" fill="freeze"/>
+      <rect x="312" y="192" width="56" height="18" rx="9" fill="#ef44441a" stroke="#ef4444" stroke-width="0.5"/>
+      <text x="340" y="204" text-anchor="middle" fill="#f87171" font-size="8">强势决策</text>
+      <rect x="374" y="192" width="50" height="18" rx="9" fill="#f59e0b1a" stroke="#f59e0b" stroke-width="0.5"/>
+      <text x="399" y="204" text-anchor="middle" fill="#fbbf24" font-size="8">追因型</text>
+      <rect x="430" y="192" width="56" height="18" rx="9" fill="#6366f11a" stroke="#6366f1" stroke-width="0.5"/>
+      <text x="458" y="204" text-anchor="middle" fill="#a5b4fc" font-size="8">结果导向</text>
+    </g>
+
+    <!-- Traits -->
+    <g opacity="0">
+      <animate attributeName="opacity" from="0" to="1" begin="6.1s" dur="0.4s" fill="freeze"/>
+      <text x="318" y="232" fill="#94a3b8" font-size="9.5">⚡ 风险容忍度：低</text>
+      <text x="318" y="248" fill="#94a3b8" font-size="9.5">🎯 关注：商业结果 &gt; 技术细节</text>
+      <text x="318" y="264" fill="#94a3b8" font-size="9.5">🚫 雷区：模糊承诺、发散讨论</text>
+    </g>
+
+    <!-- Confidence bar -->
+    <g opacity="0">
+      <animate attributeName="opacity" from="0" to="1" begin="6.5s" dur="0.4s" fill="freeze"/>
+      <text x="318" y="286" fill="#64748b" font-size="8">画像置信度</text>
+      <rect x="318" y="291" width="150" height="4" rx="2" fill="#334155"/>
+      <rect x="318" y="291" width="0" height="4" rx="2" fill="url(#green)">
+        <animate attributeName="width" from="0" to="132" begin="6.5s" dur="0.8s" fill="freeze"/>
+      </rect>
+      <text x="476" y="296" fill="#34d399" font-size="8" opacity="0">
+        88%
+        <animate attributeName="opacity" from="0" to="1" begin="7.1s" dur="0.3s" fill="freeze"/>
+      </text>
+    </g>
+  </g>
+
+  <!-- Arrow 2 -->
+  <g opacity="0">
+    <animate attributeName="opacity" from="0" to="1" begin="7.3s" dur="0.5s" fill="freeze"/>
+    <line x1="528" y1="205" x2="558" y2="205" stroke="url(#accent)" stroke-width="2" stroke-dasharray="4,3"/>
+    <polygon points="558,200 568,205 558,210" fill="#8b5cf6"/>
+    <text x="548" y="195" text-anchor="middle" fill="#8b5cf6" font-size="9">模拟</text>
+  </g>
+
+  <!-- ===== PHASE 3: Simulated Conversation ===== -->
+  <g opacity="0">
+    <animate attributeName="opacity" from="0" to="1" begin="7.7s" dur="0.6s" fill="freeze"/>
+    <rect x="530" y="100" width="240" height="210" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+    <rect x="530" y="100" width="240" height="30" rx="8" fill="#334155"/>
+    <text x="650" y="119" text-anchor="middle" fill="#94a3b8" font-size="10">模拟对话</text>
+
+    <g clip-path="url(#convClip)">
+      <!-- Martin -->
+      <g opacity="0">
+        <animate attributeName="opacity" from="0" to="1" begin="8.2s" dur="0.4s" fill="freeze"/>
+        <circle cx="548" cy="148" r="9" fill="url(#accent)"/>
+        <text x="548" y="152" text-anchor="middle" fill="white" font-size="7" font-weight="700">M</text>
+        <rect x="562" y="139" width="148" height="22" rx="6" fill="#334155"/>
+        <text x="569" y="154" fill="#e2e8f0" font-size="9">上次签的单交付怎么样了？</text>
+        <rect x="716" y="140" width="32" height="14" rx="7" fill="#f59e0b22" stroke="#f59e0b" stroke-width="0.5"/>
+        <text x="732" y="150" text-anchor="middle" fill="#fbbf24" font-size="7">质疑</text>
+      </g>
+
+      <!-- User -->
+      <g opacity="0">
+        <animate attributeName="opacity" from="0" to="1" begin="8.8s" dur="0.4s" fill="freeze"/>
+        <rect x="576" y="168" width="164" height="22" rx="6" fill="#4338ca"/>
+        <text x="583" y="183" fill="#e2e8f0" font-size="9">已完成 85%，剩余模块下周...</text>
+        <circle cx="748" cy="179" r="9" fill="#22c55e"/>
+        <text x="748" y="183" text-anchor="middle" fill="white" font-size="7" font-weight="700">你</text>
+      </g>
+
+      <!-- Martin pushback -->
+      <g opacity="0">
+        <animate attributeName="opacity" from="0" to="1" begin="9.4s" dur="0.4s" fill="freeze"/>
+        <circle cx="548" cy="208" r="9" fill="url(#accent)"/>
+        <text x="548" y="212" text-anchor="middle" fill="white" font-size="7" font-weight="700">M</text>
+        <rect x="562" y="199" width="152" height="22" rx="6" fill="#334155"/>
+        <text x="569" y="214" fill="#e2e8f0" font-size="9">"下周"太模糊了，哪天？</text>
+        <rect x="720" y="200" width="28" height="14" rx="7" fill="#ef444422" stroke="#ef4444" stroke-width="0.5"/>
+        <text x="734" y="210" text-anchor="middle" fill="#f87171" font-size="7">施压</text>
+      </g>
+
+      <!-- Typing -->
+      <g opacity="0">
+        <animate attributeName="opacity" from="0" to="1" begin="10.0s" dur="0.3s" fill="freeze"/>
+        <rect x="576" y="228" width="50" height="22" rx="6" fill="#4338ca"/>
+        <circle cx="592" cy="239" r="2.5" fill="#a5b4fc">
+          <animate attributeName="opacity" from="0.3" to="1" begin="10s" dur="0.6s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="604" cy="239" r="2.5" fill="#a5b4fc">
+          <animate attributeName="opacity" from="0.3" to="1" begin="10.2s" dur="0.6s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="616" cy="239" r="2.5" fill="#a5b4fc">
+          <animate attributeName="opacity" from="0.3" to="1" begin="10.4s" dur="0.6s" repeatCount="indefinite"/>
+        </circle>
+      </g>
+    </g>
+
+    <!-- Mini emotion curve -->
+    <g opacity="0" transform="translate(540, 258)">
+      <animate attributeName="opacity" from="0" to="1" begin="10.2s" dur="0.5s" fill="freeze"/>
+      <text x="0" y="0" fill="#64748b" font-size="8">情绪曲线</text>
+      <line x1="0" y1="8" x2="216" y2="8" stroke="#334155" stroke-width="0.5"/>
+      <polyline points="0,22 36,18 72,24 108,30 144,20 180,26 216,16" fill="none" stroke="#6366f1" stroke-width="1.5" stroke-dasharray="300" stroke-dashoffset="300">
+        <animate attributeName="stroke-dashoffset" from="300" to="0" begin="10.4s" dur="1.2s" fill="freeze"/>
+      </polyline>
+      <polyline points="0,18 36,16 72,13 108,10 144,18 180,22 216,24" fill="none" stroke="#22c55e" stroke-width="1.5" stroke-dasharray="300" stroke-dashoffset="300">
+        <animate attributeName="stroke-dashoffset" from="300" to="0" begin="10.4s" dur="1.2s" fill="freeze"/>
+      </polyline>
+      <circle cx="8" cy="38" r="3" fill="#6366f1"/>
+      <text x="16" y="41" fill="#94a3b8" font-size="7">Martin</text>
+      <circle cx="66" cy="38" r="3" fill="#22c55e"/>
+      <text x="74" y="41" fill="#94a3b8" font-size="7">你</text>
+    </g>
+  </g>
+
+  <!-- ==================== Arrow down to Coach ==================== -->
+  <g opacity="0">
+    <animate attributeName="opacity" from="0" to="1" begin="11.5s" dur="0.5s" fill="freeze"/>
+    <line x1="400" y1="318" x2="400" y2="348" stroke="url(#coachGrad)" stroke-width="2" stroke-dasharray="4,3"/>
+    <polygon points="395,348 400,358 405,348" fill="#fbbf24"/>
+    <text x="418" y="340" fill="#fbbf24" font-size="9">AI Coach</text>
+  </g>
+
+  <!-- ==================== PHASE 4: AI Coach Review ==================== -->
+  <g opacity="0">
+    <animate attributeName="opacity" from="0" to="1" begin="12.0s" dur="0.6s" fill="freeze"/>
+
+    <!-- Coach panel background -->
+    <rect x="80" y="362" width="640" height="160" rx="8" fill="#1e293b" stroke="#f59e0b" stroke-width="1.5"/>
+
+    <!-- Title bar -->
+    <rect x="80" y="362" width="640" height="30" rx="8" fill="#f59e0b18"/>
+    <text x="110" y="381" fill="#fbbf24" font-size="12" font-weight="600">🏅 AI 教练复盘</text>
+    <text x="680" y="381" text-anchor="end" fill="#64748b" font-size="9">本次得分</text>
+
+    <!-- Score circle -->
+    <circle cx="700" cy="375" r="0" fill="none" stroke="#f59e0b" stroke-width="2" opacity="0">
+      <animate attributeName="opacity" from="0" to="1" begin="12.4s" dur="0.3s" fill="freeze"/>
+      <animate attributeName="r" from="0" to="12" begin="12.4s" dur="0.4s" fill="freeze"/>
+    </circle>
+    <text x="700" y="380" text-anchor="middle" fill="#fbbf24" font-size="10" font-weight="700" opacity="0">
+      72
+      <animate attributeName="opacity" from="0" to="1" begin="12.6s" dur="0.3s" fill="freeze"/>
+    </text>
+
+    <!-- Left column: What went well -->
+    <g opacity="0">
+      <animate attributeName="opacity" from="0" to="1" begin="12.8s" dur="0.4s" fill="freeze"/>
+      <text x="100" y="412" fill="#34d399" font-size="10" font-weight="600">✓ 做得好</text>
+      <text x="100" y="430" fill="#94a3b8" font-size="9">• 开场直接给出完成进度，结论先行</text>
+      <text x="100" y="446" fill="#94a3b8" font-size="9">• 面对质疑保持冷静，没有情绪化回应</text>
+      <text x="100" y="462" fill="#94a3b8" font-size="9">• 用数据（85%）而非主观感受来回答</text>
+    </g>
+
+    <!-- Middle column: Needs improvement -->
+    <g opacity="0">
+      <animate attributeName="opacity" from="0" to="1" begin="13.3s" dur="0.4s" fill="freeze"/>
+      <text x="370" y="412" fill="#f87171" font-size="10" font-weight="600">✗ 待改进</text>
+      <text x="370" y="430" fill="#94a3b8" font-size="9">• "下周"过于模糊 → 应给精确日期</text>
+      <text x="370" y="446" fill="#94a3b8" font-size="9">• 未主动说明风险和 Plan B</text>
+      <text x="370" y="462" fill="#94a3b8" font-size="9">• Martin 追因时缺少根因分析</text>
+    </g>
+
+    <!-- Bottom: Strategy tip -->
+    <g opacity="0">
+      <animate attributeName="opacity" from="0" to="1" begin="13.8s" dur="0.5s" fill="freeze"/>
+      <rect x="100" y="478" width="600" height="30" rx="6" fill="#6366f10d" stroke="#6366f1" stroke-width="0.5"/>
+      <text x="116" y="497" fill="#a5b4fc" font-size="9.5">
+        💡 建议：面对 Martin 这类追因型领导，回答结构用「事实 → 原因 → 方案 → 时间节点」，避免被动救火。
+      </text>
+    </g>
+  </g>
+
+  <!-- ==================== Bottom tagline ==================== -->
+  <text x="400" y="548" text-anchor="middle" fill="#64748b" font-size="11" opacity="0">
+    下次走进会议室前，先在这里练一遍。
+    <animate attributeName="opacity" from="0" to="1" begin="14.5s" dur="0.8s" fill="freeze"/>
+  </text>
+  <text x="400" y="566" text-anchor="middle" fill="#6366f1" font-size="10" opacity="0">
+    github.com/StakeCoachAI
+    <animate attributeName="opacity" from="0" to="1" begin="15.0s" dur="0.8s" fill="freeze"/>
+  </text>
+</svg>
