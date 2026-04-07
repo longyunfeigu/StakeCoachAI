@@ -1,0 +1,40 @@
+stages:
+  - test
+
+variables:
+  GIT_DEPTH: "0"
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PYTHONUNBUFFERED: "1"
+
+lint-test:
+  stage: test
+  image: python:3.11
+  script:
+    - python -m pip install --upgrade pip
+    - python -m pip install uv
+    - uv --version
+    - cd backend
+    - uv lock --check
+    - uv sync --extra dev --locked
+    - |
+      if [ -n "${CI_MERGE_REQUEST_TARGET_BRANCH_SHA}" ]; then
+        BASE_SHA="${CI_MERGE_REQUEST_TARGET_BRANCH_SHA}"
+      else
+        BASE_SHA="${CI_COMMIT_BEFORE_SHA}"
+      fi
+      if [ -z "${BASE_SHA}" ] || [ "${BASE_SHA}" = "0000000000000000000000000000000000000000" ]; then
+        PY_FILES="$(git ls-files '*.py')"
+      else
+        PY_FILES="$(git -C "${CI_PROJECT_DIR}" diff --name-only "${BASE_SHA}" "${CI_COMMIT_SHA}" -- 'backend/*.py' | sed 's|^backend/||')"
+      fi
+      if [ -n "${PY_FILES}" ]; then
+        printf "%s\n" "${PY_FILES}" > /tmp/changed_py_files.txt
+        xargs -a /tmp/changed_py_files.txt uv run black --check
+        xargs -a /tmp/changed_py_files.txt uv run isort --check-only
+        xargs -a /tmp/changed_py_files.txt uv run flake8 --max-line-length=100 --extend-ignore=E203,E501,W503,B008
+        xargs -a /tmp/changed_py_files.txt uv run mypy --explicit-package-bases --follow-imports=skip
+        xargs -a /tmp/changed_py_files.txt uv run bandit -c pyproject.toml -s B104,B108
+      else
+        echo "No Python file changes detected; skipping lint/security."
+      fi
+    - SECRET_KEY=test-secret-key uv run pytest

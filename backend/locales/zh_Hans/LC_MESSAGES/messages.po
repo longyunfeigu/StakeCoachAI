@@ -1,0 +1,205 @@
+# Chinese (Simplified) translations for FastAPI Forge.
+# Copyright (C) 2025
+# This file is distributed under the same license as the project.
+msgid ""
+msgstr ""\n"Project-Id-Version: fastapi-forge 1.0\n"\n"POT-Creation-Date: 2025-10-08 00:00+0000\n"\n"PO-Revision-Date: 2025-10-08 00:00+0000\n"\n"Last-Translator: Developer <dev@example.com>\n"\n"Language-Team: Chinese (Simplified)\n"\n"Language: zh_Hans\n"\n"MIME-Version: 1.0\n"\n"Content-Type: text/plain; charset=UTF-8\n"\n"Content-Transfer-Encoding: 8bit\n"
+
+# 通用
+msgid "ok"
+msgstr "OK"
+
+msgid "validation.failed"
+msgstr "参数验证失败：{reason}"
+
+msgid "validation.domain"
+msgstr "领域校验错误"
+
+msgid "error.internal"
+msgstr "系统内部错误"
+
+msgid "welcome"
+msgstr "欢迎使用 FastAPI Forge"
+
+msgid "health.ok"
+msgstr "服务健康"
+
+# 用户
+msgid "user.register.success"
+msgstr "注册成功"
+
+msgid "user.get.success"
+msgstr "获取用户信息成功"
+
+msgid "user.update.success"
+msgstr "用户信息更新成功"
+
+msgid "user.password.change.success"
+msgstr "密码修改成功"
+
+msgid "user.list.success"
+msgstr "获取用户列表成功"
+
+msgid "user.activate.success"
+msgstr "用户已激活"
+
+msgid "user.deactivate.success"
+msgstr "用户已停用"
+
+msgid "user.delete.success"
+msgstr "用户删除成功"
+
+msgid "user.sessions.list.success"
+msgstr "找到 {count} 个活跃会话"
+
+msgid "user.logout_all.success"
+msgstr "已撤销 {count} 个刷新令牌"
+
+msgid "user.not_found"
+msgstr "用户不存在"
+
+msgid "user.email.exists"
+msgstr "邮箱已被注册"
+
+msgid "user.username.exists"
+msgstr "用户名已被使用"
+
+msgid "user.inactive"
+msgstr "用户账户已被停用"
+
+msgid "user.superuser.deactivation.forbidden"
+msgstr "不能停用超级管理员账户"
+
+msgid "user.already_active"
+msgstr "用户已经是激活状态"
+
+msgid "user.already_inactive"
+msgstr "用户已经是停用状态"
+
+# 认证
+msgid "auth.password.invalid"
+msgstr "用户名或密码错误"
+
+msgid "auth.password.same_as_old"
+msgstr "新密码不能与原密码相同"
+
+msgid "auth.credentials.missing"
+msgstr "未提供认证凭据"
+
+msgid "auth.credentials.invalid"
+msgstr "无效的认证凭据"
+
+msgid "auth.superuser.required"
+msgstr "需要超级管理员权限"
+
+msgid "auth.unauthorized"
+msgstr "未授权访问"
+
+msgid "auth.token.expired"
+msgstr "Token已过期"
+
+msgid "rate.limited"
+msgstr "请求过于频繁，请稍后重试"
+
+# 文件/存储
+msgid "storage.presign.success"
+msgstr "预签名生成成功"
+
+msgid "storage.method.invalid"
+msgstr "上传方法无效"
+
+msgid "storage.mime_type.unsupported"
+msgstr "不支持的 MIME 类型"
+
+msgid "file.size.too_large"
+msgstr "文件大小 {size} 超过上限 {max_size}"
+
+msgid "file.name.too_long"
+msgstr "文件名过长（最多 {max}）"
+
+msgid "file.activate.success"
+msgstr "文件已激活"
+
+msgid "file.upload.success"
+msgstr "文件上传成功"
+
+msgid "file.delete.soft.success"
+msgstr "文件已标记删除"
+
+msgid "file.not_found"
+msgstr "文件资源不存在"
+
+msgid "file.already_deleted"
+msgstr "文件已被删除"
+
+# 文件权限与标识错误
+msgid "file.permission.denied.view"
+msgstr "无权查看该文件"
+
+msgid "file.permission.denied.access"
+msgstr "无权访问该文件"
+
+msgid "file.permission.denied.delete"
+msgstr "无权删除该文件"
+
+msgid "file.permission.denied.operate"
+msgstr "无权操作该文件"
+
+msgid "file.identifier.missing"
+msgstr "缺少文件标识"
+
+# 支付领域
+msgid "payment.already_exists"
+msgstr "该订单已存在支付记录"
+
+msgid "payment.not_found"
+msgstr "支付记录不存在"
+
+msgid "payment.refund.exceeds"
+msgstr "退款金额超过可退金额"
+
+msgid "payment.not_refundable"
+msgstr "当前支付状态不可退款"
+
+# 支付 API 文案
+msgid "payments.webhook.content_type.unsupported_alipay"
+msgstr "不支持的 Alipay Webhook Content-Type"
+
+msgid "payments.webhook.content_type.unsupported_json"
+msgstr "不支持的 JSON Webhook Content-Type"
+
+msgid "payments.webhook.ip_not_allowed"
+msgstr "来源 IP 不在允许列表"
+
+msgid "payments.webhook.invalid_remote_ip"
+msgstr "非法远端 IP"
+
+msgid "payments.webhook.duplicate_ignored"
+msgstr "重复的 Webhook 已忽略"
+
+msgid "payments.webhook.received"
+msgstr "Webhook 已接收"
+
+msgid "payments.intent.created"
+msgstr "支付已创建"
+
+msgid "payments.intent.status"
+msgstr "支付状态"
+
+msgid "payments.refund.triggered"
+msgstr "退款已触发"
+
+msgid "payments.intent.closed"
+msgstr "支付已关闭"
+
+msgid "payments.webhook.dedupe_failed"
+msgstr "Webhook 去重失败"
+
+# WebSocket 错误消息
+msgid "ws.error.room_required"
+msgstr "房间参数必填"
+
+msgid "ws.error.forbidden"
+msgstr "无权操作"
+
+msgid "ws.error.unknown_type"
+msgstr "未知的消息类型"

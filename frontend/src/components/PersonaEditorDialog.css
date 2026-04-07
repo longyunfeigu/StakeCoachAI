@@ -1,0 +1,59 @@
+.persona-editor-dialog {
+  width: 500px;
+}
+
+.persona-editor-dialog .field-label textarea {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  padding: 8px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s;
+  box-sizing: border-box;
+  resize: vertical;
+  min-height: 200px;
+}
+
+.persona-editor-dialog .field-label textarea:focus {
+  border-color: #4f46e5;
+}
+
+.persona-editor-dialog .color-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.persona-editor-dialog .color-field input[type="color"] {
+  width: 40px;
+  height: 32px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 2px;
+  cursor: pointer;
+}
+
+.persona-editor-dialog .color-field .color-value {
+  font-size: 13px;
+  color: #666;
+}
+
+.btn-delete {
+  padding: 8px 16px;
+  border: 1px solid #fca5a5;
+  border-radius: 6px;
+  background: #fff;
+  color: #dc2626;
+  font-size: 14px;
+  cursor: pointer;
+  margin-right: auto;
+}
+
+.btn-delete:hover {
+  background: #fef2f2;
+}

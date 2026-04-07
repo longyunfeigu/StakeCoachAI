@@ -1,0 +1,65 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: stakecoach_db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-stakecoach}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-stakecoachdb}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-stakecoach}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  app:
+    build: ./backend
+    container_name: stakecoach_api
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE__URL: postgresql+asyncpg://${POSTGRES_USER:-stakecoach}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-stakecoachdb}
+      SECRET_KEY: ${SECRET_KEY:?Set SECRET_KEY in .env}
+      DEBUG: ${DEBUG:-false}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - app-network
+    volumes:
+      - ./backend:/app
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+  grpc:
+    build: ./backend
+    container_name: stakecoach_grpc
+    ports:
+      - "50051:50051"
+    environment:
+      DATABASE__URL: postgresql+asyncpg://${POSTGRES_USER:-stakecoach}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-stakecoachdb}
+      SECRET_KEY: ${SECRET_KEY:?Set SECRET_KEY in .env}
+      DEBUG: ${DEBUG:-false}
+      GRPC__ENABLED: "true"
+      GRPC__HOST: 0.0.0.0
+      GRPC__PORT: 50051
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - app-network
+    volumes:
+      - ./backend:/app
+    command: bash -c "bash scripts/gen_protos.sh && python grpc_main.py"
+
+volumes:
+  postgres_data:
+
+networks:
+  app-network:
+    driver: bridge

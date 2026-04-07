@@ -1,0 +1,40 @@
+# Development dependencies
+# Install: pip install -r requirements-dev.txt
+
+# Code formatting
+black==24.3.0
+isort==5.13.2
+
+# Linting
+flake8==7.0.0
+flake8-bugbear==24.2.6
+flake8-comprehensions==3.14.0
+flake8-simplify==0.21.0
+
+# Type checking
+mypy==1.9.0
+types-redis==4.6.0.20240409
+types-aiofiles==23.2.0.20240403
+
+# Security
+bandit[toml]==1.7.8
+
+# Pre-commit hooks
+pre-commit==3.7.0
+polib==1.2.0
+
+# Testing enhancements
+pytest-cov==5.0.0
+pytest-xdist==3.5.0  # Parallel test execution
+pytest-timeout==2.3.1
+aiosqlite==0.20.0
+faker==24.4.0  # Test data generation
+
+# Development tools
+ipython==8.23.0
+ipdb==0.13.13
+watchdog==4.0.0  # File watching for auto-reload
+
+# Documentation
+mkdocs==1.5.3
+mkdocs-material==9.5.15

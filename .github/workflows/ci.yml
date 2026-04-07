@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  lint-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install uv
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install uv
+          uv --version
+
+      - name: Verify uv.lock is up-to-date
+        run: uv lock --check
+
+      - name: Install dependencies (locked)
+        run: uv sync --extra dev --locked
+
+      - name: Detect changed Python files
+        id: changed-py
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          else
+            BASE_SHA="${{ github.event.before }}"
+          fi
+
+          if [[ -z "${BASE_SHA}" || "${BASE_SHA}" == "0000000000000000000000000000000000000000" ]]; then
+            PY_FILES="$(git ls-files '*.py')"
+          else
+            PY_FILES="$(git diff --name-only "${BASE_SHA}" HEAD -- '*.py')"
+          fi
+
+          {
+            echo "files<<EOF"
+            echo "${PY_FILES}"
+            echo "EOF"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Lint & Security (changed files)
+        if: steps.changed-py.outputs.files != ''
+        shell: bash
+        run: |
+          mapfile -t PY_FILES < <(printf '%s\n' "${{ steps.changed-py.outputs.files }}" | sed '/^$/d')
+          uv run black --check "${PY_FILES[@]}"
+          uv run isort --check-only "${PY_FILES[@]}"
+          uv run flake8 --max-line-length=100 --extend-ignore=E203,E501,W503,B008 "${PY_FILES[@]}"
+          uv run mypy --explicit-package-bases --follow-imports=skip "${PY_FILES[@]}"
+          uv run bandit -c pyproject.toml -s B104,B108 "${PY_FILES[@]}"
+
+      - name: Lint skipped
+        if: steps.changed-py.outputs.files == ''
+        run: echo "No Python file changes detected; skipping lint/security."
+
+      - name: Test
+        env:
+          SECRET_KEY: test-secret-key
+        run: uv run pytest

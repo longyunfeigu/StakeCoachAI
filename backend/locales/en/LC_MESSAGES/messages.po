@@ -1,0 +1,205 @@
+# English translations for FastAPI Forge.
+# Copyright (C) 2025
+# This file is distributed under the same license as the project.
+msgid ""
+msgstr ""\n"Project-Id-Version: fastapi-forge 1.0\n"\n"POT-Creation-Date: 2025-10-08 00:00+0000\n"\n"PO-Revision-Date: 2025-10-08 00:00+0000\n"\n"Last-Translator: Developer <dev@example.com>\n"\n"Language-Team: English\n"\n"Language: en\n"\n"MIME-Version: 1.0\n"\n"Content-Type: text/plain; charset=UTF-8\n"\n"Content-Transfer-Encoding: 8bit\n"
+
+# Generic
+msgid "ok"
+msgstr "OK"
+
+msgid "validation.failed"
+msgstr "Validation failed: {reason}"
+
+msgid "validation.domain"
+msgstr "Domain validation error"
+
+msgid "error.internal"
+msgstr "Internal server error"
+
+msgid "welcome"
+msgstr "Welcome to FastAPI Forge"
+
+msgid "health.ok"
+msgstr "Service is healthy"
+
+# User
+msgid "user.register.success"
+msgstr "Registered successfully"
+
+msgid "user.get.success"
+msgstr "User fetched successfully"
+
+msgid "user.update.success"
+msgstr "User updated successfully"
+
+msgid "user.password.change.success"
+msgstr "Password changed successfully"
+
+msgid "user.list.success"
+msgstr "Users listed successfully"
+
+msgid "user.activate.success"
+msgstr "User activated"
+
+msgid "user.deactivate.success"
+msgstr "User deactivated"
+
+msgid "user.delete.success"
+msgstr "User deleted"
+
+msgid "user.sessions.list.success"
+msgstr "Found {count} active sessions"
+
+msgid "user.logout_all.success"
+msgstr "Revoked {count} refresh tokens"
+
+msgid "user.not_found"
+msgstr "User not found"
+
+msgid "user.email.exists"
+msgstr "Email already registered"
+
+msgid "user.username.exists"
+msgstr "Username already exists"
+
+msgid "user.inactive"
+msgstr "User account is inactive"
+
+msgid "user.superuser.deactivation.forbidden"
+msgstr "Cannot deactivate a superuser"
+
+msgid "user.already_active"
+msgstr "User already active"
+
+msgid "user.already_inactive"
+msgstr "User already inactive"
+
+# Auth
+msgid "auth.password.invalid"
+msgstr "Invalid username or password"
+
+msgid "auth.password.same_as_old"
+msgstr "New password must differ from old password"
+
+msgid "auth.credentials.missing"
+msgstr "Credentials not provided"
+
+msgid "auth.credentials.invalid"
+msgstr "Invalid credentials"
+
+msgid "auth.superuser.required"
+msgstr "Superuser permission required"
+
+msgid "auth.unauthorized"
+msgstr "Unauthorized"
+
+msgid "auth.token.expired"
+msgstr "Token expired"
+
+msgid "rate.limited"
+msgstr "Too many requests, please try again later"
+
+# File/Storage
+msgid "storage.presign.success"
+msgstr "Presigned URL generated"
+
+msgid "storage.method.invalid"
+msgstr "Invalid upload method"
+
+msgid "storage.mime_type.unsupported"
+msgstr "Unsupported MIME type"
+
+msgid "file.size.too_large"
+msgstr "File size {size} exceeds max {max_size}"
+
+msgid "file.name.too_long"
+msgstr "Filename is too long (max {max})"
+
+msgid "file.activate.success"
+msgstr "File activated"
+
+msgid "file.upload.success"
+msgstr "File uploaded successfully"
+
+msgid "file.delete.soft.success"
+msgstr "File soft-deleted"
+
+msgid "file.not_found"
+msgstr "File asset not found"
+
+msgid "file.already_deleted"
+msgstr "File already deleted"
+
+# File permission and identifier errors
+msgid "file.permission.denied.view"
+msgstr "Permission denied to view file"
+
+msgid "file.permission.denied.access"
+msgstr "Permission denied to access file"
+
+msgid "file.permission.denied.delete"
+msgstr "Permission denied to delete file"
+
+msgid "file.permission.denied.operate"
+msgstr "Permission denied to operate file"
+
+msgid "file.identifier.missing"
+msgstr "File identifier missing"
+
+# Payments domain
+msgid "payment.already_exists"
+msgstr "Payment already exists"
+
+msgid "payment.not_found"
+msgstr "Payment not found"
+
+msgid "payment.refund.exceeds"
+msgstr "Refund amount exceeds available"
+
+msgid "payment.not_refundable"
+msgstr "Payment is not refundable"
+
+# Payments API messages
+msgid "payments.webhook.content_type.unsupported_alipay"
+msgstr "Unsupported Content-Type for Alipay webhook"
+
+msgid "payments.webhook.content_type.unsupported_json"
+msgstr "Unsupported Content-Type for JSON webhook"
+
+msgid "payments.webhook.ip_not_allowed"
+msgstr "IP not allowed for webhook"
+
+msgid "payments.webhook.invalid_remote_ip"
+msgstr "Invalid remote IP"
+
+msgid "payments.webhook.duplicate_ignored"
+msgstr "Duplicate webhook ignored"
+
+msgid "payments.webhook.received"
+msgstr "Webhook received"
+
+msgid "payments.intent.created"
+msgstr "Payment created"
+
+msgid "payments.intent.status"
+msgstr "Payment status"
+
+msgid "payments.refund.triggered"
+msgstr "Refund triggered"
+
+msgid "payments.intent.closed"
+msgstr "Payment closed"
+
+msgid "payments.webhook.dedupe_failed"
+msgstr "Webhook deduplication failed"
+
+# WebSocket error messages
+msgid "ws.error.room_required"
+msgstr "room is required"
+
+msgid "ws.error.forbidden"
+msgstr "forbidden"
+
+msgid "ws.error.unknown_type"
+msgstr "unknown message type"

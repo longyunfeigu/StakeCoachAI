@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package forge.v1;
+
+import "forge/v1/common.proto";
+import "google/protobuf/empty.proto";
+
+// 示例 Profile 模型（演示如何复用 common.PageMeta）
+message Profile {
+  int32 id = 1;
+  string full_name = 2;
+  string bio = 3;
+}
+
+message ListProfilesRequest {
+  PageRequest page = 1;
+}
+
+message ListProfilesReply {
+  repeated Profile items = 1;
+  PageMeta meta = 2;
+}
+
+service ProfileService {
+  rpc ListProfiles(ListProfilesRequest) returns (ListProfilesReply);
+  rpc GetProfile(IdRequest) returns (Profile);
+}

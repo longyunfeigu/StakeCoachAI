@@ -1,0 +1,56 @@
+"""Optional observability components (metrics, tracing, health)."""
+
+from .health import DependencyHealth, DependencyStatus, HealthReport, full_health_check
+from .metrics import (
+    BUSINESS_OPERATIONS_TOTAL,
+    DB_POOL_CHECKED_IN,
+    DB_POOL_CHECKED_OUT,
+    DB_POOL_OVERFLOW,
+    DB_POOL_SIZE,
+    HAS_PROMETHEUS,
+    HTTP_REQUEST_DURATION,
+    HTTP_REQUESTS_IN_FLIGHT,
+    HTTP_REQUESTS_TOTAL,
+    REDIS_POOL_ACTIVE,
+    REDIS_POOL_AVAILABLE,
+    collect_db_pool_metrics,
+    collect_redis_pool_metrics,
+    get_metrics_response,
+)
+from .tracing import (
+    HAS_OTEL,
+    get_current_span_id,
+    get_current_trace_id,
+    instrument_app,
+    set_request_span_attributes,
+    setup_tracing,
+    shutdown_tracing,
+)
+
+__all__ = [
+    "DependencyHealth",
+    "DependencyStatus",
+    "HealthReport",
+    "full_health_check",
+    "BUSINESS_OPERATIONS_TOTAL",
+    "DB_POOL_CHECKED_IN",
+    "DB_POOL_CHECKED_OUT",
+    "DB_POOL_OVERFLOW",
+    "DB_POOL_SIZE",
+    "HAS_PROMETHEUS",
+    "HTTP_REQUEST_DURATION",
+    "HTTP_REQUESTS_IN_FLIGHT",
+    "HTTP_REQUESTS_TOTAL",
+    "REDIS_POOL_ACTIVE",
+    "REDIS_POOL_AVAILABLE",
+    "collect_db_pool_metrics",
+    "collect_redis_pool_metrics",
+    "get_metrics_response",
+    "HAS_OTEL",
+    "get_current_span_id",
+    "get_current_trace_id",
+    "instrument_app",
+    "set_request_span_attributes",
+    "setup_tracing",
+    "shutdown_tracing",
+]

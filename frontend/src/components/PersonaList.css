@@ -1,0 +1,84 @@
+.persona-list {
+  margin-top: 8px;
+}
+
+.persona-list h3 {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.persona-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.persona-item:hover {
+  background: #e8e8e8;
+}
+
+.persona-item.active {
+  background: #dbeafe;
+}
+
+.persona-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.persona-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.persona-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+}
+
+.persona-role {
+  font-size: 12px;
+  color: #888;
+}
+
+.persona-detail {
+  margin-top: 16px;
+  padding: 12px;
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.persona-detail h4 {
+  margin: 0 0 4px 0;
+  font-size: 16px;
+  color: #333;
+}
+
+.persona-role-detail {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.persona-summary {
+  font-size: 13px;
+  color: #555;
+  line-height: 1.5;
+}
+
+.empty-state {
+  color: #999;
+  font-size: 14px;
+  text-align: center;
+  padding: 24px 0;
+}

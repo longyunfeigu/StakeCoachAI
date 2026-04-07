@@ -1,0 +1,117 @@
+.scenario-dialog {
+  width: 560px;
+}
+
+.scenario-list-panel {
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  margin-bottom: 12px;
+}
+
+.scenario-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.scenario-list-item:hover {
+  background: #f3f4f6;
+}
+
+.scenario-list-item.selected {
+  background: #eef2ff;
+}
+
+.scenario-list-item-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+}
+
+.scenario-list-item-desc {
+  font-size: 12px;
+  color: #888;
+  margin-left: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scenario-form {
+  border-top: 1px solid #e5e7eb;
+  padding-top: 12px;
+  margin-top: 4px;
+}
+
+.scenario-form h4 {
+  margin: 0 0 12px 0;
+  font-size: 15px;
+  color: #333;
+}
+
+.scenario-dialog .field-label textarea {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  padding: 8px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s;
+  box-sizing: border-box;
+  resize: vertical;
+  min-height: 120px;
+}
+
+.scenario-dialog .field-label textarea:focus {
+  border-color: #4f46e5;
+}
+
+.persona-checkbox-list {
+  max-height: 150px;
+  overflow-y: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  margin-top: 4px;
+}
+
+.persona-checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.persona-checkbox-item:hover {
+  background: #f3f4f6;
+}
+
+.persona-checkbox-item input[type="checkbox"] {
+  margin: 0;
+}
+
+.add-scenario-btn {
+  width: 100%;
+  padding: 6px;
+  margin-bottom: 8px;
+  border: 1px dashed #ccc;
+  border-radius: 6px;
+  background: none;
+  color: #888;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.add-scenario-btn:hover {
+  border-color: #999;
+  color: #555;
+}

@@ -1,0 +1,130 @@
+.room-list {
+  margin-top: 8px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.room-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.room-list-header h3 {
+  font-size: 14px;
+  color: #666;
+  margin: 0;
+}
+
+.create-room-btn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: #4f46e5;
+  color: #fff;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+
+.create-room-btn:hover {
+  background: #4338ca;
+}
+
+.room-item {
+  padding: 10px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.room-delete-btn {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: #aaa;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: all 0.15s;
+}
+
+.room-item:hover .room-delete-btn {
+  opacity: 1;
+}
+
+.room-delete-btn:hover {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.room-item:hover {
+  background: #e8e8e8;
+}
+
+.room-item.active {
+  background: #dbeafe;
+}
+
+.room-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.room-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.room-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.room-type-badge {
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.room-type-badge.private {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.room-type-badge.group {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.room-personas {
+  font-size: 12px;
+  color: #888;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

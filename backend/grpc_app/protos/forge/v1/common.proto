@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package forge.v1;
+
+import "google/protobuf/timestamp.proto";
+
+// 通用排序枚举
+enum SortOrder {
+  SORT_UNSPECIFIED = 0;
+  ASC = 1;
+  DESC = 2;
+}
+
+// 通用 ID 请求封装
+message IdRequest {
+  int32 id = 1;
+}
+
+// 通用分页请求
+message PageRequest {
+  int32 page = 1;       // 1-based
+  int32 page_size = 2;  // items per page
+}
+
+// 通用分页元信息
+message PageMeta {
+  int32 total = 1;      // total items
+  int32 page = 2;       // current page
+  int32 page_size = 3;  // items per page
+  int32 pages = 4;      // total pages
+}
+
+// 通用错误详情（如需在 streaming 或业务消息中携带错误信息，可复用）
+message ErrorDetail {
+  string type = 1;
+  map<string, string> details = 2;
+  string field = 3;
+  string request_id = 4;
+  google.protobuf.Timestamp timestamp = 5;
+}
