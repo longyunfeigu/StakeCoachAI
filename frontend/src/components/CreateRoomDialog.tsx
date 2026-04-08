@@ -96,71 +96,72 @@ export default function CreateRoomDialog({ open, onClose, onCreated }: CreateRoo
     <div className="dialog-overlay" onClick={onClose}>
       <div className="dialog" onClick={(e) => e.stopPropagation()}>
         <h3>创建聊天室</h3>
-
-        <label className="field-label">
-          名称
-          <input
-            name="name"
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="输入聊天室名称"
-            autoFocus
-          />
-        </label>
-
-        <label className="field-label">
-          类型
-          <select
-            name="type"
-            value={type}
-            onChange={(e) => setType(e.target.value as 'private' | 'group')}
-          >
-            <option value="private">私聊</option>
-            <option value="group">群聊</option>
-          </select>
-        </label>
-
-        {scenarios.length > 0 && (
+        <div className="dialog-body">
           <label className="field-label">
-            场景（可选）
+            名称
+            <input
+              name="name"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="输入聊天室名称"
+              autoFocus
+            />
+          </label>
+
+          <label className="field-label">
+            类型
             <select
-              value={selectedScenarioId ?? ''}
-              onChange={(e) =>
-                handleScenarioChange(e.target.value ? Number(e.target.value) : null)
-              }
+              name="type"
+              value={type}
+              onChange={(e) => setType(e.target.value as 'private' | 'group')}
             >
-              <option value="">不使用场景</option>
-              {scenarios.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
+              <option value="private">私聊</option>
+              <option value="group">群聊</option>
             </select>
           </label>
-        )}
 
-        <div className="field-label">
-          选择角色 {type === 'private' ? '(选择 1 个)' : '(至少 2 个)'}
-        </div>
-        <div className="persona-select-list">
-          {personas.map((p) => (
-            <div
-              key={p.id}
-              className={`persona-select-item ${selectedPersonas.includes(p.id) ? 'selected' : ''}`}
-              onClick={() => togglePersona(p.id)}
-            >
-              <span
-                className="persona-color"
-                style={{ backgroundColor: p.avatar_color || '#999' }}
-              />
-              <span className="persona-select-name">{p.name}</span>
-              <span className="persona-select-role">{p.role}</span>
-            </div>
-          ))}
-        </div>
+          {scenarios.length > 0 && (
+            <label className="field-label">
+              场景（可选）
+              <select
+                value={selectedScenarioId ?? ''}
+                onChange={(e) =>
+                  handleScenarioChange(e.target.value ? Number(e.target.value) : null)
+                }
+              >
+                <option value="">不使用场景</option>
+                {scenarios.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
 
-        {error && <div className="dialog-error">{error}</div>}
+          <div className="field-label">
+            选择角色 {type === 'private' ? '(选择 1 个)' : '(至少 2 个)'}
+          </div>
+          <div className="persona-select-list">
+            {personas.map((p) => (
+              <div
+                key={p.id}
+                className={`persona-select-item ${selectedPersonas.includes(p.id) ? 'selected' : ''}`}
+                onClick={() => togglePersona(p.id)}
+              >
+                <span
+                  className="persona-color"
+                  style={{ backgroundColor: p.avatar_color || '#999' }}
+                />
+                <span className="persona-select-name">{p.name}</span>
+                <span className="persona-select-role">{p.role}</span>
+              </div>
+            ))}
+          </div>
+
+          {error && <div className="dialog-error">{error}</div>}
+        </div>
 
         <div className="dialog-actions">
           <button className="btn-cancel" onClick={onClose}>取消</button>

@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react'
 import Markdown from 'react-markdown'
+import { MessageCircle, Layers, Plus, BarChart3, GraduationCap, Download, FileText, FileDown, Send, ClipboardList, X } from 'lucide-react'
 import './App.css'
+import Avatar from './components/Avatar'
 import RoomList from './components/RoomList'
 import CreateRoomDialog from './components/CreateRoomDialog'
 import PersonaEditorDialog from './components/PersonaEditorDialog'
@@ -438,19 +440,34 @@ function App() {
   return (
     <div className="app-layout">
       <aside className="sidebar">
-        <h2>Stakeholder Chat</h2>
+        <div className="sidebar-brand">
+          <div className="sidebar-brand-icon"><MessageCircle size={20} /></div>
+          <div>
+            <div className="sidebar-brand-name">StakeCoach AI</div>
+            <div className="sidebar-brand-sub">利益相关者沟通教练</div>
+          </div>
+        </div>
 
         {/* Persona panel */}
         <div className="persona-panel">
-          <div className="persona-panel-header">
-            <span className="persona-panel-title">角色</span>
-            <button
-              className="sidebar-icon-btn"
-              onClick={() => setShowScenarioDialog(true)}
-              title="场景管理"
-            >
-              场景
-            </button>
+          <div className="sidebar-section-header">
+            <span className="sidebar-section-title">角色</span>
+            <div className="sidebar-section-actions">
+              <button
+                className="sidebar-icon-btn"
+                onClick={() => setShowScenarioDialog(true)}
+                title="场景管理"
+              >
+                <Layers size={14} />
+              </button>
+              <button
+                className="sidebar-icon-btn"
+                onClick={() => setPersonaEditorState({ open: true, persona: null })}
+                title="新建角色"
+              >
+                <Plus size={14} />
+              </button>
+            </div>
           </div>
           {Object.values(personaMap).map((p) => (
             <div
@@ -460,21 +477,13 @@ function App() {
                 setPersonaEditorState({ open: true, persona: p })
               }
             >
-              <span
-                className="persona-dot"
-                style={{ background: p.avatar_color || '#999' }}
-              />
-              <span>{p.name}</span>
+              <Avatar name={p.name} color={p.avatar_color || '#6366f1'} size={28} />
+              <div className="persona-item-info">
+                <span className="persona-item-name">{p.name}</span>
+                <span className="persona-item-role">{p.role}</span>
+              </div>
             </div>
           ))}
-          <button
-            className="add-persona-btn"
-            onClick={() =>
-              setPersonaEditorState({ open: true, persona: null })
-            }
-          >
-            + 新建角色
-          </button>
         </div>
 
         <RoomList
@@ -494,61 +503,75 @@ function App() {
         {selectedRoom ? (
           <div className="chat-view">
             <div className="chat-header">
-              <h3>{selectedRoom.room.name}</h3>
-              <span className={`room-type-badge ${selectedRoom.room.type}`}>
-                {selectedRoom.room.type === 'private' ? '私聊' : '群聊'}
-              </span>
-              <button
-                className="export-btn"
-                onClick={() => setShowEmotionCurve(true)}
-                title="查看角色情绪曲线"
-              >
-                情绪
-              </button>
-              <button
-                className="coaching-btn"
-                onClick={() => handleStartCoaching()}
-                title="基于分析报告的交互式复盘"
-                disabled={coachingSending}
-              >
-                复盘
-              </button>
-              <div className="export-dropdown-wrapper">
+              <div className="chat-header-left">
+                <h3>{selectedRoom.room.name}</h3>
+                <span className={`room-type-badge ${selectedRoom.room.type}`}>
+                  {selectedRoom.room.type === 'private' ? '私聊' : '群聊'}
+                </span>
+              </div>
+              <div className="chat-header-actions">
                 <button
-                  className="export-btn"
-                  onClick={() => setShowExportMenu((v) => !v)}
+                  className="header-action-btn"
+                  onClick={() => setShowEmotionCurve(true)}
+                  title="情绪曲线"
                 >
-                  导出 ▾
+                  <BarChart3 size={16} />
                 </button>
-                {showExportMenu && (
-                  <div className="export-menu">
-                    <div
-                      className="export-menu-item"
-                      onClick={() => {
-                        setShowExportMenu(false)
-                        exportRoomHtml(selectedRoom.room.id).catch(console.error)
-                      }}
-                    >
-                      HTML 格式
-                      <span className="export-menu-desc">保留聊天样式</span>
+                <button
+                  className="header-action-btn coaching"
+                  onClick={() => handleStartCoaching()}
+                  title="AI 复盘"
+                  disabled={coachingSending}
+                >
+                  <GraduationCap size={16} />
+                </button>
+                <div className="export-dropdown-wrapper">
+                  <button
+                    className="header-action-btn"
+                    onClick={() => setShowExportMenu((v) => !v)}
+                    title="导出"
+                  >
+                    <Download size={16} />
+                  </button>
+                  {showExportMenu && (
+                    <div className="export-menu">
+                      <div
+                        className="export-menu-item"
+                        onClick={() => {
+                          setShowExportMenu(false)
+                          exportRoomHtml(selectedRoom.room.id).catch(console.error)
+                        }}
+                      >
+                        <FileText size={15} />
+                        <div>
+                          <div>HTML 格式</div>
+                          <span className="export-menu-desc">保留聊天样式</span>
+                        </div>
+                      </div>
+                      <div
+                        className="export-menu-item"
+                        onClick={() => {
+                          setShowExportMenu(false)
+                          exportRoom(selectedRoom.room.id).catch(console.error)
+                        }}
+                      >
+                        <FileDown size={15} />
+                        <div>
+                          <div>Markdown 格式</div>
+                          <span className="export-menu-desc">纯文本，便于编辑</span>
+                        </div>
+                      </div>
                     </div>
-                    <div
-                      className="export-menu-item"
-                      onClick={() => {
-                        setShowExportMenu(false)
-                        exportRoom(selectedRoom.room.id).catch(console.error)
-                      }}
-                    >
-                      Markdown 格式
-                      <span className="export-menu-desc">纯文本，便于编辑</span>
-                    </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             </div>
             <div className="message-list" ref={messageListRef} onClick={() => showExportMenu && setShowExportMenu(false)}>
               {selectedRoom.messages.length === 0 && streamingEntries.length === 0 ? (
-                <div className="empty-messages">暂无消息，发送第一条消息开始对话</div>
+                <div className="empty-messages">
+                  <MessageCircle size={36} strokeWidth={1.2} />
+                  <p>发送第一条消息，开始模拟对话</p>
+                </div>
               ) : (
                 <>
                   {selectedRoom.messages.map((msg) => {
@@ -557,22 +580,40 @@ function App() {
                     return (
                       <div key={msg.id} className={`message ${msg.sender_type}`} data-sender={msg.sender_type}>
                         {msg.sender_type === 'persona' && (
-                          <div className="sender-name" style={borderColor ? { color: borderColor } : undefined}>
-                            {persona?.name || msg.sender_id}
-                            {msg.emotion_label && (
-                              <span className={`emotion-tag ${(msg.emotion_score ?? 0) > 0 ? 'positive' : (msg.emotion_score ?? 0) < 0 ? 'negative' : 'neutral'}`}>
-                                {msg.emotion_label}
-                              </span>
-                            )}
+                          <div className="message-row">
+                            <Avatar name={persona?.name || msg.sender_id} color={borderColor || '#6366f1'} size={28} />
+                            <div className="message-content">
+                              <div className="sender-name" style={borderColor ? { color: borderColor } : undefined}>
+                                {persona?.name || msg.sender_id}
+                                {msg.emotion_label && (
+                                  <span className={`emotion-tag ${(msg.emotion_score ?? 0) > 0 ? 'positive' : (msg.emotion_score ?? 0) < 0 ? 'negative' : 'neutral'}`}>
+                                    {msg.emotion_label}
+                                  </span>
+                                )}
+                              </div>
+                              <div
+                                className="message-bubble"
+                                style={borderColor ? { borderLeft: `2px solid ${borderColor}` } : undefined}
+                              >
+                                {renderContent(msg.content)}
+                              </div>
+                              <div className="message-time">{formatTime(msg.timestamp)}</div>
+                            </div>
                           </div>
                         )}
-                        <div
-                          className="message-bubble"
-                          style={borderColor ? { borderLeft: `3px solid ${borderColor}` } : undefined}
-                        >
-                          {renderContent(msg.content)}
-                        </div>
-                        <div className="message-time">{formatTime(msg.timestamp)}</div>
+                        {msg.sender_type === 'user' && (
+                          <>
+                            <div className="message-bubble">
+                              {renderContent(msg.content)}
+                            </div>
+                            <div className="message-time">{formatTime(msg.timestamp)}</div>
+                          </>
+                        )}
+                        {msg.sender_type === 'system' && (
+                          <div className="message-bubble">
+                            {renderContent(msg.content)}
+                          </div>
+                        )}
                       </div>
                     )
                   })}
@@ -582,15 +623,20 @@ function App() {
                     const borderColor = persona?.avatar_color || undefined
                     return (
                       <div key={`streaming-${personaId}`} className="message persona streaming" data-sender="persona">
-                        <div className="sender-name" style={borderColor ? { color: borderColor } : undefined}>
-                          {persona?.name || personaId}
-                        </div>
-                        <div
-                          className="message-bubble"
-                          style={borderColor ? { borderLeft: `3px solid ${borderColor}` } : undefined}
-                        >
-                          {renderContent(text)}
-                          <span className="streaming-cursor" />
+                        <div className="message-row">
+                          <Avatar name={persona?.name || personaId} color={borderColor || '#6366f1'} size={28} />
+                          <div className="message-content">
+                            <div className="sender-name" style={borderColor ? { color: borderColor } : undefined}>
+                              {persona?.name || personaId}
+                            </div>
+                            <div
+                              className="message-bubble"
+                              style={borderColor ? { borderLeft: `2px solid ${borderColor}` } : undefined}
+                            >
+                              {renderContent(text)}
+                              <span className="streaming-cursor" />
+                            </div>
+                          </div>
                         </div>
                       </div>
                     )
@@ -601,7 +647,7 @@ function App() {
               {dispatchSummary && dispatchSummary.length > 0 && (
                 <div className="dispatch-summary" onClick={() => setDispatchExpanded((v) => !v)}>
                   <div className="dispatch-summary-header">
-                    <span className="dispatch-summary-icon">&#128203;</span>
+                    <ClipboardList size={15} className="dispatch-summary-icon" />
                     <span>
                       本轮{' '}
                       {dispatchSummary.reduce((n, p) => n + p.responders.length, 0)}{' '}
@@ -637,7 +683,8 @@ function App() {
               )}
               {typingPersona && streamingEntries.length === 0 && (
                 <div className="typing-indicator">
-                  {personaMap[typingPersona]?.name || typingPersona} 正在回复...
+                  <div className="typing-dots"><span /><span /><span /></div>
+                  {personaMap[typingPersona]?.name || typingPersona} 正在回复
                 </div>
               )}
             </div>
@@ -650,11 +697,8 @@ function App() {
                       className="mention-item"
                       onClick={() => insertMention(p)}
                     >
-                      <span
-                        className="persona-dot"
-                        style={{ background: p.avatar_color || '#999' }}
-                      />
-                      {p.name}{' '}
+                      <Avatar name={p.name} color={p.avatar_color || '#6366f1'} size={24} />
+                      <span className="mention-name">{p.name}</span>
                       <span className="mention-role">{p.role}</span>
                     </div>
                   ))}
@@ -672,13 +716,26 @@ function App() {
                 }
                 disabled={sending}
               />
-              <button onClick={handleSend} disabled={!inputValue.trim() || sending}>
-                {sending ? '...' : '发送'}
+              <button className="send-btn" onClick={handleSend} disabled={!inputValue.trim() || sending}>
+                <Send size={18} />
               </button>
             </div>
           </div>
         ) : (
-          <p className="main-placeholder">选择或创建一个聊天室开始对话</p>
+          <div className="welcome-page">
+            <div className="welcome-icon">
+              <MessageCircle size={48} strokeWidth={1.5} />
+            </div>
+            <h2 className="welcome-title">开始一场对话</h2>
+            <p className="welcome-desc">
+              创建聊天室，与 AI 角色进行利益相关者沟通模拟，<br />
+              提升你的沟通策略与应变能力。
+            </p>
+            <button className="welcome-cta" onClick={() => setShowCreateDialog(true)}>
+              <Plus size={18} />
+              新建聊天室
+            </button>
+          </div>
         )}
       </main>
 
@@ -686,8 +743,11 @@ function App() {
       {coachingOpen && (
         <aside className="coaching-panel">
           <div className="coaching-header">
+            <GraduationCap size={18} />
             <h3>AI Coach 复盘</h3>
-            <button className="coaching-close" onClick={() => setCoachingOpen(false)}>×</button>
+            <button className="coaching-close" onClick={() => setCoachingOpen(false)}>
+              <X size={18} />
+            </button>
           </div>
           <div className="coaching-messages" ref={coachingListRef}>
             {coachingMessages.map((msg) => (
@@ -708,7 +768,10 @@ function App() {
               </div>
             )}
             {coachingSending && !coachingStreaming && coachingMessages.length === 0 && (
-              <div className="coaching-loading">Coach 正在思考...</div>
+              <div className="coaching-loading">
+                <div className="typing-dots"><span /><span /><span /></div>
+                Coach 正在思考
+              </div>
             )}
           </div>
           <div className="coaching-input-bar">
@@ -720,8 +783,8 @@ function App() {
               placeholder="回复 Coach..."
               disabled={coachingSending || !coachingSessionId}
             />
-            <button onClick={handleSendCoaching} disabled={!coachingInput.trim() || coachingSending || !coachingSessionId}>
-              发送
+            <button className="send-btn coaching-send" onClick={handleSendCoaching} disabled={!coachingInput.trim() || coachingSending || !coachingSessionId}>
+              <Send size={16} />
             </button>
           </div>
         </aside>

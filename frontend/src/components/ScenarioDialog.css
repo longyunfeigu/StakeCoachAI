@@ -5,37 +5,37 @@
 .scenario-list-panel {
   max-height: 200px;
   overflow-y: auto;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-  margin-bottom: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 14px;
 }
 
 .scenario-list-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 10px;
+  padding: 9px 12px;
   cursor: pointer;
-  transition: background 0.1s;
+  transition: background var(--transition-fast);
 }
 
 .scenario-list-item:hover {
-  background: #f3f4f6;
+  background: var(--surface-hover);
 }
 
 .scenario-list-item.selected {
-  background: #eef2ff;
+  background: rgba(99, 102, 241, 0.08);
 }
 
 .scenario-list-item-name {
   font-size: 14px;
   font-weight: 500;
-  color: #333;
+  color: var(--text-primary);
 }
 
 .scenario-list-item-desc {
   font-size: 12px;
-  color: #888;
+  color: var(--text-muted);
   margin-left: 8px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -43,75 +43,82 @@
 }
 
 .scenario-form {
-  border-top: 1px solid #e5e7eb;
-  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
   margin-top: 4px;
 }
 
 .scenario-form h4 {
-  margin: 0 0 12px 0;
+  margin: 0 0 14px 0;
   font-size: 15px;
-  color: #333;
+  font-weight: 600;
+  color: var(--text-primary);
 }
 
 .scenario-dialog .field-label textarea {
   display: block;
   width: 100%;
-  margin-top: 4px;
-  padding: 8px 10px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
+  margin-top: 5px;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
   font-size: 14px;
   font-family: inherit;
   outline: none;
-  transition: border-color 0.15s;
+  transition: all var(--transition-fast);
   box-sizing: border-box;
   resize: vertical;
   min-height: 120px;
+  color: var(--text-primary);
 }
 
 .scenario-dialog .field-label textarea:focus {
-  border-color: #4f46e5;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
 .persona-checkbox-list {
   max-height: 150px;
   overflow-y: auto;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-  margin-top: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin-top: 5px;
 }
 
 .persona-checkbox-item {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 10px;
+  padding: 7px 12px;
   cursor: pointer;
-  transition: background 0.1s;
+  transition: background var(--transition-fast);
+  font-size: 14px;
+  color: var(--text-primary);
 }
 
 .persona-checkbox-item:hover {
-  background: #f3f4f6;
+  background: var(--surface-hover);
 }
 
 .persona-checkbox-item input[type="checkbox"] {
   margin: 0;
+  accent-color: var(--primary);
 }
 
 .add-scenario-btn {
   width: 100%;
-  padding: 6px;
-  margin-bottom: 8px;
-  border: 1px dashed #ccc;
-  border-radius: 6px;
+  padding: 7px;
+  margin-bottom: 10px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
   background: none;
-  color: #888;
+  color: var(--text-muted);
   font-size: 13px;
   cursor: pointer;
+  transition: all var(--transition-fast);
 }
 
 .add-scenario-btn:hover {
-  border-color: #999;
-  color: #555;
+  border-color: var(--primary);
+  color: var(--primary);
 }

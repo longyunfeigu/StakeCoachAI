@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { MessageSquare, Users, Plus, Trash2 } from 'lucide-react'
 import { fetchRooms, deleteRoom, type ChatRoom } from '../services/api'
 import './RoomList.css'
 
@@ -35,17 +36,19 @@ export default function RoomList({ selectedRoomId, onSelectRoom, onCreateRoom, o
     }
   }
 
-  if (loading) return <div className="room-list">Loading...</div>
-  if (error) return <div className="room-list">Error: {error}</div>
+  if (loading) return <div className="room-list"><span className="room-list-loading">加载中...</span></div>
+  if (error) return <div className="room-list"><span className="room-list-loading">加载失败</span></div>
 
   return (
     <div className="room-list">
-      <div className="room-list-header">
-        <h3>聊天室</h3>
-        <button className="create-room-btn" onClick={onCreateRoom} title="创建聊天室">+</button>
+      <div className="sidebar-section-header">
+        <span className="sidebar-section-title">聊天室</span>
+        <button className="create-room-btn" onClick={onCreateRoom} title="创建聊天室">
+          <Plus size={15} />
+        </button>
       </div>
       {rooms.length === 0 ? (
-        <div className="empty-state">暂无聊天室，点击 + 创建</div>
+        <div className="room-empty">暂无聊天室</div>
       ) : (
         rooms.map((room) => (
           <div
@@ -53,23 +56,21 @@ export default function RoomList({ selectedRoomId, onSelectRoom, onCreateRoom, o
             className={`room-item ${selectedRoomId === room.id ? 'active' : ''}`}
             onClick={() => onSelectRoom(room)}
           >
+            <div className="room-item-icon">
+              {room.type === 'private' ? <MessageSquare size={16} /> : <Users size={16} />}
+            </div>
             <div className="room-info">
               <span className="room-name">{room.name}</span>
-              <div className="room-meta">
-                <span className={`room-type-badge ${room.type}`}>
-                  {room.type === 'private' ? '私聊' : '群聊'}
-                </span>
-                <span className="room-personas">
-                  {room.persona_ids.join(', ')}
-                </span>
-              </div>
+              <span className="room-personas">
+                {room.persona_ids.join(', ')}
+              </span>
             </div>
             <button
               className="room-delete-btn"
               onClick={(e) => handleDelete(e, room)}
               title="删除聊天室"
             >
-              ×
+              <Trash2 size={13} />
             </button>
           </div>
         ))

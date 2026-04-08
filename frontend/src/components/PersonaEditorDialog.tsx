@@ -6,6 +6,7 @@ import {
   deletePersona,
   type PersonaSummary,
 } from '../services/api'
+import Avatar from './Avatar'
 import './PersonaEditorDialog.css'
 
 interface PersonaEditorDialogProps {
@@ -120,62 +121,67 @@ export default function PersonaEditorDialog({
         onClick={(e) => e.stopPropagation()}
       >
         <h3>{isEdit ? '编辑角色' : '新建角色'}</h3>
-
-        <label className="field-label">
-          ID
-          <input
-            type="text"
-            value={id}
-            onChange={(e) => setId(e.target.value)}
-            placeholder="英文标识符，如 ceo"
-            disabled={isEdit}
-            autoFocus={!isEdit}
-          />
-        </label>
-
-        <label className="field-label">
-          名称
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="角色显示名称"
-          />
-        </label>
-
-        <label className="field-label">
-          角色
-          <input
-            type="text"
-            value={role}
-            onChange={(e) => setRole(e.target.value)}
-            placeholder="如：CEO、产品经理"
-          />
-        </label>
-
-        <label className="field-label">
-          头像颜色
-          <div className="color-field">
-            <input
-              type="color"
-              value={avatarColor}
-              onChange={(e) => setAvatarColor(e.target.value)}
-            />
-            <span className="color-value">{avatarColor}</span>
+        <div className="dialog-body">
+          <div className="persona-avatar-preview">
+            <Avatar name={name || '?'} color={avatarColor} size={48} />
           </div>
-        </label>
 
-        <label className="field-label">
-          内容（Markdown）
-          <textarea
-            value={loading ? '加载中...' : content}
-            onChange={(e) => setContent(e.target.value)}
-            placeholder="角色画像的详细内容..."
-            disabled={loading}
-          />
-        </label>
+          <label className="field-label">
+            ID
+            <input
+              type="text"
+              value={id}
+              onChange={(e) => setId(e.target.value)}
+              placeholder="英文标识符，如 ceo"
+              disabled={isEdit}
+              autoFocus={!isEdit}
+            />
+          </label>
 
-        {error && <div className="dialog-error">{error}</div>}
+          <label className="field-label">
+            名称
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="角色显示名称"
+            />
+          </label>
+
+          <label className="field-label">
+            角色
+            <input
+              type="text"
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+              placeholder="如：CEO、产品经理"
+            />
+          </label>
+
+          <label className="field-label">
+            头像颜色
+            <div className="color-field">
+              <input
+                type="color"
+                value={avatarColor}
+                onChange={(e) => setAvatarColor(e.target.value)}
+              />
+              <span className="color-value">{avatarColor}</span>
+            </div>
+          </label>
+
+          <label className="field-label">
+            内容（Markdown）
+            <textarea
+              value={loading ? '加载中...' : content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder="角色画像的详细内容..."
+              disabled={loading}
+            />
+          </label>
+
+          {error && <div className="dialog-error">{error}</div>}
+        </div>
 
         <div className="dialog-actions">
           {isEdit && (

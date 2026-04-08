@@ -1,0 +1,11 @@
+.sc-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  color: #fff;
+  font-weight: 700;
+  flex-shrink: 0;
+  user-select: none;
+  letter-spacing: -0.02em;
+}

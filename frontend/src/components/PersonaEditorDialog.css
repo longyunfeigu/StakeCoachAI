@@ -2,58 +2,69 @@
   width: 500px;
 }
 
+.persona-avatar-preview {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
 .persona-editor-dialog .field-label textarea {
   display: block;
   width: 100%;
-  margin-top: 4px;
-  padding: 8px 10px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
+  margin-top: 5px;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
   font-size: 14px;
   font-family: inherit;
   outline: none;
-  transition: border-color 0.15s;
+  transition: all var(--transition-fast);
   box-sizing: border-box;
   resize: vertical;
   min-height: 200px;
+  color: var(--text-primary);
 }
 
 .persona-editor-dialog .field-label textarea:focus {
-  border-color: #4f46e5;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
 .persona-editor-dialog .color-field {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-top: 4px;
+  gap: 10px;
+  margin-top: 5px;
 }
 
 .persona-editor-dialog .color-field input[type="color"] {
   width: 40px;
   height: 32px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
   padding: 2px;
   cursor: pointer;
 }
 
 .persona-editor-dialog .color-field .color-value {
   font-size: 13px;
-  color: #666;
+  color: var(--text-muted);
+  font-family: monospace;
 }
 
 .btn-delete {
-  padding: 8px 16px;
-  border: 1px solid #fca5a5;
-  border-radius: 6px;
-  background: #fff;
-  color: #dc2626;
+  padding: 8px 18px;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--danger);
   font-size: 14px;
   cursor: pointer;
   margin-right: auto;
+  transition: all var(--transition-fast);
 }
 
 .btn-delete:hover {
-  background: #fef2f2;
+  background: var(--danger-bg);
+  border-color: rgba(239, 68, 68, 0.5);
 }

@@ -4,39 +4,41 @@
 }
 
 .emotion-dialog h3 {
-  margin: 0 0 12px;
+  margin: 0 0 4px;
   font-size: 17px;
-  color: #333;
+  font-weight: 600;
+  color: var(--text-primary);
 }
 
 /* Tab bar */
 .emotion-tabs {
   display: flex;
   gap: 4px;
-  margin-bottom: 16px;
-  border-bottom: 1px solid #e5e7eb;
+  margin: 0 24px 16px;
+  border-bottom: 1px solid var(--border);
   padding-bottom: 0;
 }
 
 .emotion-tab {
-  padding: 6px 16px;
+  padding: 7px 18px;
   border: none;
   background: none;
-  color: #6b7280;
+  color: var(--text-muted);
   font-size: 13px;
   cursor: pointer;
   border-bottom: 2px solid transparent;
   margin-bottom: -1px;
-  transition: all 0.15s;
+  transition: all var(--transition-fast);
+  font-weight: 500;
 }
 
 .emotion-tab:hover {
-  color: #374151;
+  color: var(--text-primary);
 }
 
 .emotion-tab.active {
-  color: #7c3aed;
-  border-bottom-color: #7c3aed;
+  color: var(--primary);
+  border-bottom-color: var(--primary);
   font-weight: 600;
 }
 
@@ -44,16 +46,17 @@
 .emotion-chart-wrapper {
   width: 100%;
   height: 350px;
+  padding: 0 24px;
 }
 
 /* Tooltip */
 .emotion-tooltip {
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
   padding: 8px 12px;
   font-size: 13px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-md);
   max-width: 280px;
 }
 
@@ -62,8 +65,8 @@
   display: inline-block;
   margin-top: 2px;
   padding: 1px 6px;
-  background: #fef2f2;
-  color: #dc2626;
+  background: var(--danger-bg);
+  color: var(--danger);
   border-radius: 4px;
   font-size: 11px;
   font-weight: 500;
@@ -71,10 +74,10 @@
 
 /* Turning points summary strip */
 .emotion-tp-summary {
-  margin-top: 10px;
+  margin: 12px 24px 0;
   padding: 8px 12px;
-  background: #fef2f2;
-  border-radius: 8px;
+  background: var(--danger-bg);
+  border-radius: var(--radius-sm);
   font-size: 12px;
   color: #991b1b;
   display: flex;
@@ -86,9 +89,9 @@
 .emotion-tp-chip {
   display: inline-block;
   padding: 2px 8px;
-  background: #fff;
-  border: 1px solid #fca5a5;
-  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: var(--radius-full);
   font-size: 11px;
   white-space: nowrap;
 }
@@ -98,7 +101,7 @@
   display: flex;
   gap: 16px;
   flex-wrap: wrap;
-  margin-top: 12px;
+  margin: 12px 24px 0;
   justify-content: center;
 }
 
@@ -107,7 +110,7 @@
   align-items: center;
   gap: 6px;
   font-size: 13px;
-  color: #555;
+  color: var(--text-secondary);
 }
 
 .emotion-legend-dot {
@@ -119,14 +122,14 @@
 .emotion-legend-line {
   width: 20px;
   height: 0;
-  border-top: 2px dashed #888;
+  border-top: 2px dashed var(--text-muted);
 }
 
 /* Heatmap */
 .emotion-heatmap {
   position: relative;
   overflow-x: auto;
-  padding-bottom: 8px;
+  padding: 0 24px 8px;
 }
 
 .heatmap-row {
@@ -150,6 +153,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  color: var(--text-primary);
 }
 
 .heatmap-col-header {
@@ -157,7 +161,7 @@
   min-width: 36px;
   text-align: center;
   font-size: 10px;
-  color: #9ca3af;
+  color: var(--text-muted);
 }
 
 .heatmap-cell {
@@ -175,7 +179,7 @@
 
 .heatmap-cell:hover {
   transform: scale(1.2);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-md);
   z-index: 1;
 }
 
@@ -202,7 +206,7 @@
   background: #1f2937;
   color: #fff;
   padding: 4px 10px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-size: 12px;
   white-space: nowrap;
   pointer-events: none;
@@ -217,13 +221,13 @@
   gap: 8px;
   margin-top: 12px;
   font-size: 11px;
-  color: #6b7280;
+  color: var(--text-muted);
 }
 
 .heatmap-gradient {
   width: 120px;
   height: 12px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: linear-gradient(to right, #ef4444, #fbbf24, #22c55e);
 }
 
@@ -234,8 +238,8 @@
 /* Empty state */
 .emotion-empty {
   text-align: center;
-  color: #aaa;
-  padding: 60px 0;
+  color: var(--text-muted);
+  padding: 60px 24px;
   font-size: 14px;
 }
 
