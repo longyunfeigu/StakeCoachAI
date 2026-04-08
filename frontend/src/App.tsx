@@ -535,7 +535,7 @@ function App() {
                 setPersonaEditorState({ open: true, persona: p })
               }
             >
-              <Avatar name={p.name} color={p.avatar_color || '#6366f1'} size={28} />
+              <Avatar name={p.name} color={p.avatar_color || '#2D9C6F'} size={28} />
               <div className="persona-item-info">
                 <span className="persona-item-name">{p.name}</span>
                 <span className="persona-item-role">{p.role}</span>
@@ -662,7 +662,7 @@ function App() {
                       <div key={msg.id} className={`message ${msg.sender_type}`} data-sender={msg.sender_type}>
                         {msg.sender_type === 'persona' && (
                           <div className="message-row">
-                            <Avatar name={persona?.name || msg.sender_id} color={borderColor || '#6366f1'} size={28} />
+                            <Avatar name={persona?.name || msg.sender_id} color={borderColor || '#2D9C6F'} size={28} />
                             <div className="message-content">
                               <div className="sender-name" style={borderColor ? { color: borderColor } : undefined}>
                                 {persona?.name || msg.sender_id}
@@ -705,7 +705,7 @@ function App() {
                     return (
                       <div key={`streaming-${personaId}`} className="message persona streaming" data-sender="persona">
                         <div className="message-row">
-                          <Avatar name={persona?.name || personaId} color={borderColor || '#6366f1'} size={28} />
+                          <Avatar name={persona?.name || personaId} color={borderColor || '#2D9C6F'} size={28} />
                           <div className="message-content">
                             <div className="sender-name" style={borderColor ? { color: borderColor } : undefined}>
                               {persona?.name || personaId}
@@ -778,7 +778,7 @@ function App() {
                       className="mention-item"
                       onClick={() => insertMention(p)}
                     >
-                      <Avatar name={p.name} color={p.avatar_color || '#6366f1'} size={24} />
+                      <Avatar name={p.name} color={p.avatar_color || '#2D9C6F'} size={24} />
                       <span className="mention-name">{p.name}</span>
                       <span className="mention-role">{p.role}</span>
                     </div>

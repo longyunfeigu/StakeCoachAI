@@ -24,7 +24,7 @@
 }
 
 .scenario-list-item.selected {
-  background: rgba(99, 102, 241, 0.08);
+  background: rgba(45, 156, 111, 0.08);
 }
 
 .scenario-list-item-name {
@@ -74,7 +74,7 @@
 
 .scenario-dialog .field-label textarea:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  box-shadow: 0 0 0 3px rgba(45, 156, 111, 0.1);
 }
 
 .persona-checkbox-list {

@@ -136,13 +136,13 @@
 }
 
 .header-action-btn.coaching {
-  color: #8b5cf6;
+  color: #5B8C5A;
   border-color: rgba(139, 92, 246, 0.3);
 }
 
 .header-action-btn.coaching:hover {
   background: rgba(139, 92, 246, 0.08);
-  color: #7c3aed;
+  color: #2D9C6F;
 }
 
 .header-action-btn:disabled {
@@ -344,7 +344,7 @@
   background: var(--primary-gradient);
   color: #fff;
   border-bottom-right-radius: 4px;
-  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.2);
+  box-shadow: 0 2px 8px rgba(45, 156, 111, 0.2);
 }
 
 .message.persona .message-bubble {
@@ -371,8 +371,8 @@
 .dispatch-summary {
   margin: 8px 0;
   padding: 10px 14px;
-  background: rgba(99, 102, 241, 0.06);
-  border: 1px solid rgba(99, 102, 241, 0.15);
+  background: rgba(45, 156, 111, 0.06);
+  border: 1px solid rgba(45, 156, 111, 0.15);
   border-radius: var(--radius-md);
   cursor: pointer;
   font-size: 13px;
@@ -404,7 +404,7 @@
 .dispatch-summary-body {
   margin-top: 10px;
   padding-top: 8px;
-  border-top: 1px solid rgba(99, 102, 241, 0.15);
+  border-top: 1px solid rgba(45, 156, 111, 0.15);
 }
 
 .dispatch-phase {
@@ -450,7 +450,7 @@
   gap: 8px;
   padding: 14px 18px;
   border-bottom: 1px solid var(--border);
-  background: linear-gradient(135deg, #7c3aed, #8b5cf6);
+  background: linear-gradient(135deg, #2D9C6F, #5B8C5A);
   color: #fff;
 }
 
@@ -496,7 +496,7 @@
 }
 
 .coaching-msg.coach .coaching-msg-role {
-  color: #7c3aed;
+  color: #2D9C6F;
 }
 
 .coaching-msg-bubble {
@@ -513,7 +513,7 @@
 }
 
 .coaching-msg.user .coaching-msg-bubble {
-  background: linear-gradient(135deg, #7c3aed, #8b5cf6);
+  background: linear-gradient(135deg, #2D9C6F, #5B8C5A);
   color: #fff;
   border-bottom-right-radius: 4px;
   display: inline-block;
@@ -560,13 +560,13 @@
 }
 
 .coaching-input-bar input:focus {
-  border-color: #7c3aed;
+  border-color: #2D9C6F;
   background: var(--surface);
   box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
 }
 
 .coaching-send {
-  background: linear-gradient(135deg, #7c3aed, #8b5cf6) !important;
+  background: linear-gradient(135deg, #2D9C6F, #5B8C5A) !important;
   width: 36px !important;
   height: 36px !important;
 }
@@ -729,7 +729,7 @@
 .message-input-bar input:focus {
   border-color: var(--primary);
   background: var(--surface);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  box-shadow: 0 0 0 3px rgba(45, 156, 111, 0.1);
 }
 
 .send-btn {
@@ -862,7 +862,7 @@
 .mention-highlight {
   color: var(--primary);
   font-weight: 600;
-  background: rgba(99, 102, 241, 0.1);
+  background: rgba(45, 156, 111, 0.1);
   padding: 1px 4px;
   border-radius: 3px;
 }
@@ -894,9 +894,9 @@
   color: var(--text-primary, #1f2937);
 }
 .growth-btn.active {
-  background: var(--primary, #6366f1);
+  background: var(--primary, #2D9C6F);
   color: #fff;
-  border-color: var(--primary, #6366f1);
+  border-color: var(--primary, #2D9C6F);
   border-style: solid;
 }
 
@@ -947,7 +947,7 @@
 }
 .argument-text { flex: 1; }
 .argument-target {
-  color: var(--primary, #6366f1);
+  color: var(--primary, #2D9C6F);
   white-space: nowrap;
 }
 .suggestion-item {

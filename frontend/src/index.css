@@ -1,43 +1,43 @@
-/* Design Tokens */
+/* Design Tokens — Nature Green Theme */
 :root {
   /* Sidebar */
-  --sidebar-bg: #1a1d2e;
-  --sidebar-hover: #252840;
-  --sidebar-active: #2d3154;
-  --sidebar-text: #a0a3bd;
-  --sidebar-text-bright: #e4e5f0;
+  --sidebar-bg: #2C3E2D;
+  --sidebar-hover: #3A4F3B;
+  --sidebar-active: #456347;
+  --sidebar-text: #A3B8A4;
+  --sidebar-text-bright: #E2EBE3;
 
   /* Primary */
-  --primary: #6366f1;
-  --primary-hover: #4f46e5;
-  --primary-gradient: linear-gradient(135deg, #6366f1, #8b5cf6);
+  --primary: #2D9C6F;
+  --primary-hover: #258A60;
+  --primary-gradient: linear-gradient(135deg, #2D9C6F, #5B8C5A);
 
   /* Surfaces */
-  --surface: #ffffff;
-  --surface-secondary: #f8f9fc;
-  --surface-hover: #f1f3f8;
+  --surface: #F2F5EF;
+  --surface-secondary: #EDF0E9;
+  --surface-hover: #E5EAE0;
 
   /* Borders */
-  --border: #e5e7eb;
-  --border-light: #f0f1f5;
+  --border: #DDE5D9;
+  --border-light: #EBF0E7;
 
   /* Text */
-  --text-primary: #1f2937;
-  --text-secondary: #6b7280;
-  --text-muted: #9ca3af;
+  --text-primary: #2C3E2D;
+  --text-secondary: #5A6B5A;
+  --text-muted: #8FA38F;
 
   /* Semantic */
-  --success: #10b981;
-  --success-bg: #ecfdf5;
-  --warning: #f59e0b;
-  --warning-bg: #fffbeb;
-  --danger: #ef4444;
-  --danger-bg: #fef2f2;
+  --success: #16A34A;
+  --success-bg: #DCFCE7;
+  --warning: #D97706;
+  --warning-bg: #FEF9C3;
+  --danger: #DC2626;
+  --danger-bg: #FEE2E2;
 
   /* Shadows */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+  --shadow-sm: 0 1px 2px rgba(45, 80, 45, 0.06);
+  --shadow-md: 0 4px 12px rgba(45, 80, 45, 0.08);
+  --shadow-lg: 0 8px 24px rgba(45, 80, 45, 0.1);
 
   /* Radius */
   --radius-sm: 6px;

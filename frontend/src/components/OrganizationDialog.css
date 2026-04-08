@@ -24,7 +24,7 @@
 
 .org-dialog .field-label textarea:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  box-shadow: 0 0 0 3px rgba(45, 156, 111, 0.1);
 }
 
 /* Org selector dropdown */
@@ -334,7 +334,7 @@
   align-items: center;
   gap: 6px;
   padding: 6px 10px;
-  background: rgba(99, 102, 241, 0.1);
+  background: rgba(45, 156, 111, 0.1);
   border-radius: var(--radius-sm);
   cursor: pointer;
   transition: background var(--transition-fast);
@@ -343,7 +343,7 @@
 }
 
 .org-badge:hover {
-  background: rgba(99, 102, 241, 0.18);
+  background: rgba(45, 156, 111, 0.18);
 }
 
 .org-badge-name {
