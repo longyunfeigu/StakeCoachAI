@@ -1,5 +1,5 @@
 # input: Markdown 画像文件目录 (persona_dir), TTL 缓存配置
-# output: PersonaLoader 服务（含 TTL 缓存）, Persona 数据结构, get_name_to_id_map() 快速查找
+# output: PersonaLoader 服务（含 TTL 缓存）, Persona 数据结构(含 organization_id/team_id), get_name_to_id_map() 快速查找
 # owner: wanhua.gu
 # pos: 应用层 - 利益相关者画像加载与解析服务（带 30s TTL 内存缓存避免重复磁盘扫描）；一旦我被更新，务必更新我的开头注释以及所属文件夹的md
 """PersonaLoader: scan and parse stakeholder persona Markdown files."""
@@ -27,6 +27,8 @@ class Persona:
     name: str
     role: str
     avatar_color: Optional[str] = None
+    organization_id: Optional[int] = None
+    team_id: Optional[int] = None
     profile_summary: str = ""
     full_content: str = ""
     parse_status: str = "ok"  # ok | partial
@@ -122,6 +124,10 @@ class PersonaLoader:
         avatar_color = frontmatter.get("avatar_color")
         parse_status = "ok"
 
+        # Parse optional org/team IDs from frontmatter
+        organization_id = self._parse_optional_int(frontmatter.get("organization_id"))
+        team_id = self._parse_optional_int(frontmatter.get("team_id"))
+
         if not name or not role:
             parse_status = "partial"
             if not name:
@@ -134,6 +140,8 @@ class PersonaLoader:
             name=name,
             role=role,
             avatar_color=avatar_color,
+            organization_id=organization_id,
+            team_id=team_id,
             profile_summary=profile_summary,
             full_content=content,
             parse_status=parse_status,
@@ -168,6 +176,16 @@ class PersonaLoader:
         if len(parts) < 3:
             return content
         return parts[2].strip()
+
+    @staticmethod
+    def _parse_optional_int(value: str | None) -> int | None:
+        """Parse a string value to int, returning None if invalid."""
+        if value is None:
+            return None
+        try:
+            return int(value)
+        except (ValueError, TypeError):
+            return None
 
     def _extract_summary(self, body: str) -> str:
         """Extract first ~200 chars as profile summary."""

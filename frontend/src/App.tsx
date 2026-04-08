@@ -1,15 +1,18 @@
 import React, { useEffect, useRef, useState } from 'react'
 import Markdown from 'react-markdown'
-import { MessageCircle, Layers, Plus, BarChart3, GraduationCap, Download, FileText, FileDown, Send, ClipboardList, X } from 'lucide-react'
+import { MessageCircle, Layers, Plus, BarChart3, BarChart2, GraduationCap, Download, FileText, FileDown, Send, ClipboardList, X, Building2, TrendingUp } from 'lucide-react'
 import './App.css'
 import Avatar from './components/Avatar'
 import RoomList from './components/RoomList'
 import CreateRoomDialog from './components/CreateRoomDialog'
 import PersonaEditorDialog from './components/PersonaEditorDialog'
 import ScenarioDialog from './components/ScenarioDialog'
+import OrganizationDialog from './components/OrganizationDialog'
 import EmotionCurve from './components/EmotionCurve'
+import GrowthDashboard from './components/GrowthDashboard'
 import {
   fetchPersonas,
+  fetchOrganizations,
   fetchRoomDetail,
   sendMessage,
   exportRoom,
@@ -23,8 +26,10 @@ import {
   type CoachingMessageItem,
   type DispatchPhase,
   type Message,
+  type Organization,
   type PersonaSummary,
   type RoundEndData,
+  type AnalysisReport,
 } from './services/api'
 
 const API_BASE = '/api/v1/stakeholder'
@@ -81,6 +86,9 @@ function App() {
   const [selectedRoomId, setSelectedRoomId] = useState<number | null>(null)
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [showScenarioDialog, setShowScenarioDialog] = useState(false)
+  const [showOrgDialog, setShowOrgDialog] = useState(false)
+  const [showGrowth, setShowGrowth] = useState(false)
+  const [currentOrg, setCurrentOrg] = useState<Organization | null>(null)
   const [showEmotionCurve, setShowEmotionCurve] = useState(false)
   const [showExportMenu, setShowExportMenu] = useState(false)
   const [personaEditorState, setPersonaEditorState] = useState<{
@@ -108,6 +116,9 @@ function App() {
   // @mention autocomplete state
   const [mentionQuery, setMentionQuery] = useState<string | null>(null)
   const [mentionResults, setMentionResults] = useState<PersonaSummary[]>([])
+  // Analysis panel state
+  const [analysisResult, setAnalysisResult] = useState<AnalysisReport | null>(null)
+  const [analyzingRoom, setAnalyzingRoom] = useState(false)
   const messageListRef = useRef<HTMLDivElement>(null)
   const eventSourceRef = useRef<EventSource | null>(null)
 
@@ -124,8 +135,18 @@ function App() {
       .catch(() => {})
   }
 
+  const loadOrg = () => {
+    fetchOrganizations()
+      .then((orgs) => {
+        if (orgs.length > 0) setCurrentOrg(orgs[0])
+        else setCurrentOrg(null)
+      })
+      .catch(() => {})
+  }
+
   useEffect(() => {
     loadPersonas()
+    loadOrg()
   }, [])
 
   const scrollToBottom = () => {
@@ -218,6 +239,7 @@ function App() {
   }, [selectedRoomId])
 
   const handleSelectRoom = async (room: ChatRoom) => {
+    setShowGrowth(false)
     setSelectedRoomId(room.id)
     setTypingPersona(null)
     setStreamingContent({})
@@ -290,10 +312,12 @@ function App() {
     const atMatch = val.match(/@([\w\u4e00-\u9fff]*)$/)
     if (atMatch && selectedRoom?.room.type === 'group') {
       const query = atMatch[1].toLowerCase()
+      const roomPids = new Set(selectedRoom.room.persona_ids)
       const matches = Object.values(personaMap).filter(
         (p) =>
-          p.name.toLowerCase().includes(query) ||
-          p.id.toLowerCase().includes(query),
+          roomPids.has(p.id) &&
+          (p.name.toLowerCase().includes(query) ||
+          p.id.toLowerCase().includes(query)),
       )
       setMentionQuery(atMatch[1])
       setMentionResults(matches)
@@ -375,6 +399,25 @@ function App() {
     }
   }
 
+  const handleAnalyze = async () => {
+    if (!selectedRoomId || analyzingRoom) return
+    setAnalyzingRoom(true)
+    setAnalysisResult(null)
+    try {
+      const report = await createAnalysisReport(selectedRoomId)
+      setAnalysisResult(report)
+    } catch (e: any) {
+      const msg = e?.message || '分析失败'
+      if (msg.includes('No messages') || msg.includes('NoMessages')) {
+        alert('暂无消息可分析，请先发送消息后再试')
+      } else {
+        alert(msg)
+      }
+    } finally {
+      setAnalyzingRoom(false)
+    }
+  }
+
   const handleStartCoaching = async () => {
     if (!selectedRoomId) return
     setCoachingOpen(true)
@@ -448,6 +491,21 @@ function App() {
           </div>
         </div>
 
+        {/* Organization section */}
+        <div className="org-section">
+          <div className="org-section-header">
+            <span className="sidebar-section-title">组织</span>
+          </div>
+          <div className="org-badge" onClick={() => setShowOrgDialog(true)}>
+            <Building2 size={14} />
+            {currentOrg ? (
+              <span className="org-badge-name">{currentOrg.name}</span>
+            ) : (
+              <span style={{ color: 'var(--text-muted)' }}>点击创建组织</span>
+            )}
+          </div>
+        </div>
+
         {/* Persona panel */}
         <div className="persona-panel">
           <div className="sidebar-section-header">
@@ -498,9 +556,24 @@ function App() {
           }}
           refreshKey={refreshKey}
         />
+
+        {/* Growth tab button */}
+        <button
+          className={`growth-btn ${showGrowth ? 'active' : ''}`}
+          onClick={() => {
+            setShowGrowth(true)
+            setSelectedRoomId(null)
+            setSelectedRoom(null)
+          }}
+        >
+          <TrendingUp size={16} />
+          <span>成长轨迹</span>
+        </button>
       </aside>
       <main className="main-content">
-        {selectedRoom ? (
+        {showGrowth ? (
+          <GrowthDashboard onCreateRoom={() => setShowCreateDialog(true)} />
+        ) : selectedRoom ? (
           <div className="chat-view">
             <div className="chat-header">
               <div className="chat-header-left">
@@ -516,6 +589,14 @@ function App() {
                   title="情绪曲线"
                 >
                   <BarChart3 size={16} />
+                </button>
+                <button
+                  className="header-action-btn"
+                  onClick={handleAnalyze}
+                  title="分析"
+                  disabled={analyzingRoom}
+                >
+                  <BarChart2 size={16} />
                 </button>
                 <button
                   className="header-action-btn coaching"
@@ -566,6 +647,55 @@ function App() {
                 </div>
               </div>
             </div>
+            {/* Analysis result panel */}
+            {analysisResult && (
+              <div className="analysis-result">
+                <div className="analysis-result-header">
+                  <h4>对话分析报告</h4>
+                  <button className="analysis-close" onClick={() => setAnalysisResult(null)}>
+                    <X size={16} />
+                  </button>
+                </div>
+                <p className="analysis-summary">{analysisResult.summary}</p>
+                {analysisResult.content.resistance_ranking.length > 0 && (
+                  <div className="resistance-ranking">
+                    <h5>阻力排名</h5>
+                    {analysisResult.content.resistance_ranking.map((item, i) => (
+                      <div key={i} className="resistance-item">
+                        <span className="resistance-name">{item.persona_name}</span>
+                        <span className={`resistance-score ${item.score >= 0 ? 'positive' : 'negative'}`}>
+                          {item.score > 0 ? '+' : ''}{item.score}
+                        </span>
+                        <span className="resistance-reason">{item.reason}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {analysisResult.content.effective_arguments.length > 0 && (
+                  <div className="effective-arguments">
+                    <h5>有效论点</h5>
+                    {analysisResult.content.effective_arguments.map((item, i) => (
+                      <div key={i} className="argument-item">
+                        <span className="argument-text">{item.argument}</span>
+                        <span className="argument-target">→ {item.target_persona}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {analysisResult.content.communication_suggestions.length > 0 && (
+                  <div className="suggestions">
+                    <h5>沟通建议</h5>
+                    {analysisResult.content.communication_suggestions.map((item, i) => (
+                      <div key={i} className="suggestion-item">
+                        <span className={`suggestion-priority ${item.priority}`}>{item.priority}</span>
+                        <span className="suggestion-name">{item.persona_name}:</span>
+                        <span className="suggestion-text">{item.suggestion}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
             <div className="message-list" ref={messageListRef} onClick={() => showExportMenu && setShowExportMenu(false)}>
               {selectedRoom.messages.length === 0 && streamingEntries.length === 0 ? (
                 <div className="empty-messages">
@@ -801,11 +931,19 @@ function App() {
         onClose={() => setPersonaEditorState({ open: false, persona: null })}
         onSaved={loadPersonas}
         editingPersona={personaEditorState.persona}
+        currentOrg={currentOrg}
       />
 
       <ScenarioDialog
         open={showScenarioDialog}
         onClose={() => setShowScenarioDialog(false)}
+      />
+
+      <OrganizationDialog
+        open={showOrgDialog}
+        onClose={() => setShowOrgDialog(false)}
+        onOrgChanged={() => { loadOrg(); loadPersonas() }}
+        personas={Object.values(personaMap)}
       />
 
       <EmotionCurve

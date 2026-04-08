@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react'
 import {
   fetchPersonaDetail,
+  fetchTeams,
   createPersona,
   updatePersona,
   deletePersona,
   type PersonaSummary,
+  type Organization,
+  type Team,
 } from '../services/api'
 import Avatar from './Avatar'
 import './PersonaEditorDialog.css'
@@ -14,6 +17,7 @@ interface PersonaEditorDialogProps {
   onClose: () => void
   onSaved: () => void
   editingPersona?: PersonaSummary | null
+  currentOrg?: Organization | null
 }
 
 export default function PersonaEditorDialog({
@@ -21,6 +25,7 @@ export default function PersonaEditorDialog({
   onClose,
   onSaved,
   editingPersona,
+  currentOrg,
 }: PersonaEditorDialogProps) {
   const isEdit = !!editingPersona
 
@@ -29,6 +34,8 @@ export default function PersonaEditorDialog({
   const [role, setRole] = useState('')
   const [avatarColor, setAvatarColor] = useState('#888888')
   const [content, setContent] = useState('')
+  const [teamId, setTeamId] = useState<number | null>(null)
+  const [teams, setTeams] = useState<Team[]>([])
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -38,11 +45,19 @@ export default function PersonaEditorDialog({
     setError(null)
     setSubmitting(false)
 
+    // Load teams if org exists
+    if (currentOrg) {
+      fetchTeams(currentOrg.id).then(setTeams).catch(() => setTeams([]))
+    } else {
+      setTeams([])
+    }
+
     if (editingPersona) {
       setId(editingPersona.id)
       setName(editingPersona.name)
       setRole(editingPersona.role)
       setAvatarColor(editingPersona.avatar_color || '#888888')
+      setTeamId(editingPersona.team_id)
       setContent('')
       setLoading(true)
       fetchPersonaDetail(editingPersona.id)
@@ -58,6 +73,7 @@ export default function PersonaEditorDialog({
       setName('')
       setRole('')
       setAvatarColor('#888888')
+      setTeamId(null)
       setContent('')
       setLoading(false)
     }
@@ -67,12 +83,17 @@ export default function PersonaEditorDialog({
     setSubmitting(true)
     setError(null)
     try {
+      const orgFields = {
+        organization_id: currentOrg?.id ?? null,
+        team_id: teamId,
+      }
       if (isEdit) {
         await updatePersona(editingPersona!.id, {
           name,
           role,
           avatar_color: avatarColor,
           content,
+          ...orgFields,
         })
       } else {
         if (!id.trim()) {
@@ -86,6 +107,7 @@ export default function PersonaEditorDialog({
           role,
           avatar_color: avatarColor,
           content,
+          ...orgFields,
         })
       }
       onSaved()
@@ -169,6 +191,21 @@ export default function PersonaEditorDialog({
               <span className="color-value">{avatarColor}</span>
             </div>
           </label>
+
+          {teams.length > 0 && (
+            <label className="field-label">
+              所属团队
+              <select
+                value={teamId ?? ''}
+                onChange={(e) => setTeamId(e.target.value ? Number(e.target.value) : null)}
+              >
+                <option value="">不指定</option>
+                {teams.map((t) => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+              </select>
+            </label>
+          )}
 
           <label className="field-label">
             内容（Markdown）

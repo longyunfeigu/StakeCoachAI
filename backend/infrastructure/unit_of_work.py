@@ -32,6 +32,14 @@ from infrastructure.repositories.stakeholder_repository import (
     SQLAlchemyScenarioRepository,
     SQLAlchemyStakeholderMessageRepository,
 )
+from infrastructure.repositories.organization_repository import (
+    SQLAlchemyOrganizationRepository,
+    SQLAlchemyPersonaRelationshipRepository,
+    SQLAlchemyTeamRepository,
+)
+from infrastructure.repositories.competency_repository import (
+    SQLAlchemyCompetencyEvaluationRepository,
+)
 
 
 class SQLAlchemyUnitOfWork(AbstractUnitOfWork):
@@ -77,6 +85,20 @@ class SQLAlchemyUnitOfWork(AbstractUnitOfWork):
         self.register_repository("coaching_session_repository", self.coaching_session_repository)
         self.coaching_message_repository = SQLAlchemyCoachingMessageRepository(self.session)
         self.register_repository("coaching_message_repository", self.coaching_message_repository)
+        self.organization_repository = SQLAlchemyOrganizationRepository(self.session)
+        self.register_repository("organization_repository", self.organization_repository)
+        self.team_repository = SQLAlchemyTeamRepository(self.session)
+        self.register_repository("team_repository", self.team_repository)
+        self.persona_relationship_repository = SQLAlchemyPersonaRelationshipRepository(self.session)
+        self.register_repository(
+            "persona_relationship_repository", self.persona_relationship_repository
+        )
+        self.competency_evaluation_repository = SQLAlchemyCompetencyEvaluationRepository(
+            self.session
+        )
+        self.register_repository(
+            "competency_evaluation_repository", self.competency_evaluation_repository
+        )
         # 仅在非只读模式下显式开启事务
         if not self._readonly:
             self._transaction = await self.session.begin()
@@ -108,6 +130,10 @@ class SQLAlchemyUnitOfWork(AbstractUnitOfWork):
             self.analysis_report_repository = None  # type: ignore[assignment]
             self.coaching_session_repository = None  # type: ignore[assignment]
             self.coaching_message_repository = None  # type: ignore[assignment]
+            self.organization_repository = None  # type: ignore[assignment]
+            self.team_repository = None  # type: ignore[assignment]
+            self.persona_relationship_repository = None  # type: ignore[assignment]
+            self.competency_evaluation_repository = None  # type: ignore[assignment]
             self._repositories.clear()
 
     async def commit(self) -> None:

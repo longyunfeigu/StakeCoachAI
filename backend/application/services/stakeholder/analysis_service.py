@@ -17,6 +17,7 @@ import logging
 from typing import Callable, Optional
 
 from application.ports.llm import LLMMessage, LLMPort
+from application.services.stakeholder.prompt_builder import build_org_context
 from application.services.stakeholder.dto import (
     AnalysisContentDTO,
     AnalysisReportDTO,
@@ -105,14 +106,17 @@ def _build_conversation_text(history: list[dict], persona_loader) -> str:
     return "\n\n".join(lines)
 
 
-def _build_persona_profiles(persona_ids: list[str], persona_loader) -> str:
+def _build_persona_profiles(persona_ids: list[str], persona_loader, org_context: str = "") -> str:
     """Build persona profile summaries for the analysis prompt."""
     profiles: list[str] = []
     for pid in persona_ids:
         p = persona_loader.get_persona(pid)
         if p:
             profiles.append(f"- **{p.name}** ({pid}): {p.role}")
-    return "\n".join(profiles) if profiles else "（无角色信息）"
+    text = "\n".join(profiles) if profiles else "（无角色信息）"
+    if org_context:
+        text += f"\n\n{org_context}"
+    return text
 
 
 class AnalysisService:
@@ -165,7 +169,38 @@ class AnalysisService:
         ]
 
         conversation_text = _build_conversation_text(history, self._persona_loader)
-        persona_profiles = _build_persona_profiles(room.persona_ids, self._persona_loader)
+
+        # Build org context for analysis if any persona belongs to an org
+        org_ctx = ""
+        for pid in room.persona_ids:
+            p = self._persona_loader.get_persona(pid)
+            p_org_id = getattr(p, "organization_id", None) if p else None
+            if p_org_id:
+                async with self._uow_factory(readonly=True) as uow:
+                    org = await uow.organization_repository.get_by_id(p_org_id)
+                    if org:
+                        rels = await uow.persona_relationship_repository.list_by_organization(
+                            p.organization_id
+                        )
+                        rel_dicts = []
+                        for r in rels:
+                            fp = self._persona_loader.get_persona(r.from_persona_id)
+                            tp = self._persona_loader.get_persona(r.to_persona_id)
+                            rel_dicts.append(
+                                {
+                                    "persona_name": f"{fp.name if fp else r.from_persona_id} → {tp.name if tp else r.to_persona_id}",
+                                    "relationship_type": r.relationship_type,
+                                    "description": r.description,
+                                }
+                            )
+                        org_ctx = build_org_context(
+                            org_name=org.name,
+                            org_context_prompt=org.context_prompt,
+                            relationships=rel_dicts if rel_dicts else None,
+                        )
+                break
+
+        persona_profiles = _build_persona_profiles(room.persona_ids, self._persona_loader, org_ctx)
 
         system_prompt = _ANALYSIS_SYSTEM_PROMPT.format(
             persona_profiles=persona_profiles,

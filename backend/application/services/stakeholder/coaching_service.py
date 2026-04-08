@@ -17,6 +17,7 @@ from typing import AsyncIterator, Callable, Optional
 
 from application.ports.llm import LLMMessage, LLMPort
 from application.services.stakeholder.analysis_service import _build_conversation_text
+from application.services.stakeholder.prompt_builder import build_org_context
 from application.services.stakeholder.dto import (
     CoachingMessageDTO,
     CoachingSessionDTO,
@@ -39,6 +40,7 @@ def _build_coaching_system_prompt(
     report_summary: str,
     report_content: dict,
     conversation_text: str,
+    org_context: str = "",
 ) -> str:
     """Build the system prompt for the coaching LLM."""
     # Format resistance ranking
@@ -65,13 +67,19 @@ def _build_coaching_system_prompt(
         sug_lines.append(f"- [{s.get('priority', 'medium')}] {name}: {s.get('suggestion', '')}")
     suggestions_text = "\n".join(sug_lines) if sug_lines else "（无建议）"
 
-    return (
+    prompt = (
         "你是一位专业的沟通复盘教练。以下是用户与利益相关者的模拟对话分析报告。\n\n"
         f"## 分析摘要\n{report_summary}\n\n"
         f"## 阻力排名\n{resistance_text}\n\n"
         f"## 有效论点\n{args_text}\n\n"
         f"## 沟通建议\n{suggestions_text}\n\n"
         f"## 原始对话摘要\n{conversation_text}\n\n"
+    )
+
+    if org_context:
+        prompt += f"{org_context}\n\n"
+
+    prompt += (
         "## 你的任务\n"
         "1. 基于分析报告，向用户提出有针对性的反思问题\n"
         "2. 聚焦于阻力最大的角色和无效论点——用户在哪些关键时刻可以做得更好？\n"
@@ -79,7 +87,9 @@ def _build_coaching_system_prompt(
         "4. 每次回复以一个具体问题结尾，推动用户深入思考\n"
         "5. 语气温和但有挑战性，像资深导师\n"
         "6. 如果用户的回答展现了好的思路，给予肯定并追问如何在实际场景中应用\n"
+        "7. 从组织政治角度给出建议（例：「在向上级汇报前，建议先和某某对齐」）\n"
     )
+    return prompt
 
 
 class CoachingService:
@@ -94,6 +104,50 @@ class CoachingService:
         self._uow_factory = uow_factory
         self._llm = llm
         self._persona_loader = persona_loader
+
+    async def _build_room_org_context(self, room_id: int) -> str:
+        """Build combined org context for all personas in a room."""
+        async with self._uow_factory(readonly=True) as uow:
+            room = await uow.chat_room_repository.get_by_id(room_id)
+            if not room:
+                return ""
+
+            # Find first persona with an org_id
+            org_id = None
+            for pid in room.persona_ids:
+                persona = self._persona_loader.get_persona(pid)
+                p_org_id = getattr(persona, "organization_id", None) if persona else None
+                if p_org_id:
+                    org_id = p_org_id
+                    break
+
+            if not org_id:
+                return ""
+
+            org = await uow.organization_repository.get_by_id(org_id)
+            if not org:
+                return ""
+
+            rels = await uow.persona_relationship_repository.list_by_organization(org_id)
+
+        # Build a summary of all relationships
+        rel_dicts: list[dict] = []
+        for r in rels:
+            from_p = self._persona_loader.get_persona(r.from_persona_id)
+            to_p = self._persona_loader.get_persona(r.to_persona_id)
+            rel_dicts.append(
+                {
+                    "persona_name": f"{from_p.name if from_p else r.from_persona_id} → {to_p.name if to_p else r.to_persona_id}",
+                    "relationship_type": r.relationship_type,
+                    "description": r.description,
+                }
+            )
+
+        return build_org_context(
+            org_name=org.name,
+            org_context_prompt=org.context_prompt,
+            relationships=rel_dicts if rel_dicts else None,
+        )
 
     async def prepare_start_session(self, room_id: int, report_id: int) -> dict:
         """Validate inputs and prepare context for streaming.
@@ -130,11 +184,13 @@ class CoachingService:
         non_system = [h for h in history if h["sender_type"] != "system"]
         conversation_text = _build_conversation_text(non_system[-30:], self._persona_loader)
 
-        # 3. Build coaching system prompt
+        # 3. Build org context + coaching system prompt
+        org_ctx = await self._build_room_org_context(room_id)
         system_prompt = _build_coaching_system_prompt(
             report_summary=report.summary,
             report_content=report.content,
             conversation_text=conversation_text,
+            org_context=org_ctx,
         )
 
         # 4. Create session entity
@@ -257,10 +313,12 @@ class CoachingService:
         conversation_text = _build_conversation_text(non_system[-30:], self._persona_loader)
 
         # 4. Build LLM messages
+        org_ctx = await self._build_room_org_context(session.room_id)
         system_prompt = _build_coaching_system_prompt(
             report_summary=report.summary if report else "",
             report_content=report.content if report else {},
             conversation_text=conversation_text,
+            org_context=org_ctx,
         )
 
         llm_messages = [LLMMessage(role="system", content=system_prompt)]

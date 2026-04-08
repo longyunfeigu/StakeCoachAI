@@ -1,5 +1,14 @@
 import { useEffect, useState } from 'react'
-import { fetchPersonas, fetchScenarios, createRoom, type PersonaSummary, type Scenario } from '../services/api'
+import {
+  fetchPersonas,
+  fetchScenarios,
+  fetchOrganizations,
+  fetchRelationships,
+  createRoom,
+  type PersonaSummary,
+  type PersonaRelationship,
+  type Scenario,
+} from '../services/api'
 import './CreateRoomDialog.css'
 
 interface CreateRoomDialogProps {
@@ -11,10 +20,12 @@ interface CreateRoomDialogProps {
 export default function CreateRoomDialog({ open, onClose, onCreated }: CreateRoomDialogProps) {
   const [personas, setPersonas] = useState<PersonaSummary[]>([])
   const [scenarios, setScenarios] = useState<Scenario[]>([])
+  const [relationships, setRelationships] = useState<PersonaRelationship[]>([])
   const [selectedScenarioId, setSelectedScenarioId] = useState<number | null>(null)
   const [name, setName] = useState('')
   const [type, setType] = useState<'private' | 'group'>('private')
   const [selectedPersonas, setSelectedPersonas] = useState<string[]>([])
+  const [recommendedPersonas, setRecommendedPersonas] = useState<string[]>([])
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
@@ -22,14 +33,41 @@ export default function CreateRoomDialog({ open, onClose, onCreated }: CreateRoo
     if (open) {
       fetchPersonas().then(setPersonas).catch(() => {})
       fetchScenarios().then(setScenarios).catch(() => {})
+      // Load relationships for smart recommendations
+      fetchOrganizations().then((orgs) => {
+        if (orgs.length > 0) {
+          fetchRelationships(orgs[0].id).then(setRelationships).catch(() => {})
+        }
+      }).catch(() => {})
       // Reset form
       setName('')
       setType('private')
       setSelectedPersonas([])
+      setRecommendedPersonas([])
       setSelectedScenarioId(null)
       setError(null)
     }
   }, [open])
+
+  // Update recommendations when selected personas change
+  useEffect(() => {
+    if (selectedPersonas.length === 0 || relationships.length === 0) {
+      setRecommendedPersonas([])
+      return
+    }
+    const related = new Set<string>()
+    for (const pid of selectedPersonas) {
+      for (const r of relationships) {
+        if (r.from_persona_id === pid && !selectedPersonas.includes(r.to_persona_id)) {
+          related.add(r.to_persona_id)
+        }
+        if (r.to_persona_id === pid && !selectedPersonas.includes(r.from_persona_id)) {
+          related.add(r.from_persona_id)
+        }
+      }
+    }
+    setRecommendedPersonas([...related])
+  }, [selectedPersonas, relationships])
 
   const handleScenarioChange = (scenarioId: number | null) => {
     setSelectedScenarioId(scenarioId)
@@ -159,6 +197,30 @@ export default function CreateRoomDialog({ open, onClose, onCreated }: CreateRoo
               </div>
             ))}
           </div>
+
+          {type === 'group' && recommendedPersonas.length > 0 && (
+            <div style={{ marginTop: 8 }}>
+              <div className="field-label" style={{ marginBottom: 4 }}>推荐添加（有关系的角色）</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {recommendedPersonas.map((pid) => {
+                  const p = personas.find((pp) => pp.id === pid)
+                  if (!p) return null
+                  return (
+                    <button
+                      key={pid}
+                      className="btn-cancel"
+                      style={{ padding: '4px 10px', fontSize: 12, cursor: 'pointer' }}
+                      onClick={() => {
+                        setSelectedPersonas((prev) => [...prev, pid])
+                      }}
+                    >
+                      + {p.name}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
           {error && <div className="dialog-error">{error}</div>}
         </div>

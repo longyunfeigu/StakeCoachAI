@@ -1,5 +1,5 @@
-# input: PersonaLoader, PersonaEditorService, ChatRoomApplicationService, StakeholderChatService, ScenarioApplicationService, AnalysisService (via dependencies)
-# output: stakeholder API 路由 (personas CRUD + rooms + messages + scenarios CRUD + analysis reports)
+# input: PersonaLoader, PersonaEditorService, ChatRoomApplicationService, StakeholderChatService, ScenarioApplicationService, AnalysisService, GrowthService (via dependencies)
+# output: stakeholder API 路由 (personas CRUD + rooms + messages + scenarios CRUD + analysis reports + growth dashboard)
 # owner: wanhua.gu
 # pos: 表示层 - 利益相关者聊天 API 路由（角色 + 聊天室 + 消息 + 场景）；一旦我被更新，务必更新我的开头注释以及所属文件夹的md
 """Stakeholder chat API routes."""
@@ -17,6 +17,8 @@ from api.dependencies import (
     get_analysis_reader_service,
     get_chatroom_service,
     get_coaching_service,
+    get_growth_service,
+    get_organization_service,
     get_persona_editor_service,
     get_persona_loader,
     get_scenario_service,
@@ -25,12 +27,19 @@ from api.dependencies import (
 from application.services.stakeholder.chatroom_service import ChatRoomApplicationService
 from application.services.stakeholder.dto import (
     CreateChatRoomDTO,
+    CreateOrganizationDTO,
     CreatePersonaDTO,
+    CreateRelationshipDTO,
     CreateScenarioDTO,
+    CreateTeamDTO,
     SendMessageDTO,
+    UpdateOrganizationDTO,
     UpdatePersonaDTO,
+    UpdateRelationshipDTO,
     UpdateScenarioDTO,
+    UpdateTeamDTO,
 )
+from application.services.stakeholder.organization_service import OrganizationService
 from application.services.stakeholder.persona_editor_service import PersonaEditorService
 from application.services.stakeholder.persona_loader import PersonaLoader
 from application.services.stakeholder.scenario_service import ScenarioApplicationService
@@ -60,6 +69,8 @@ async def list_personas(
                 "name": p.name,
                 "role": p.role,
                 "avatar_color": p.avatar_color,
+                "organization_id": p.organization_id,
+                "team_id": p.team_id,
                 "parse_status": p.parse_status,
             }
             for p in personas
@@ -82,6 +93,8 @@ async def get_persona(
             "name": persona.name,
             "role": persona.role,
             "avatar_color": persona.avatar_color,
+            "organization_id": persona.organization_id,
+            "team_id": persona.team_id,
             "profile_summary": persona.profile_summary,
             "content": body,
             "parse_status": persona.parse_status,
@@ -496,9 +509,13 @@ async def delete_scenario(
 @router.post("/rooms/{room_id}/analysis", summary="生成对话分析报告", status_code=201)
 async def generate_analysis(
     room_id: int,
+    background_tasks: BackgroundTasks,
     svc: AnalysisService = Depends(get_analysis_service),
+    growth_svc=Depends(get_growth_service),
 ):
     report = await svc.generate_report(room_id)
+    # Auto-trigger competency evaluation in background
+    background_tasks.add_task(growth_svc.evaluate_competency, report.id)
     return success_response(data=report.model_dump())
 
 
@@ -594,3 +611,164 @@ async def list_coaching_sessions(
 ):
     sessions = await svc.list_sessions(room_id, skip=skip, limit=limit)
     return success_response(data=[s.model_dump() for s in sessions])
+
+
+# ---------------------------------------------------------------------------
+# Organization endpoints
+# ---------------------------------------------------------------------------
+
+
+@router.post("/organizations", status_code=201, summary="创建组织")
+async def create_organization(
+    body: CreateOrganizationDTO,
+    svc: OrganizationService = Depends(get_organization_service),
+):
+    org = await svc.create_organization(body)
+    return success_response(data=org.model_dump())
+
+
+@router.get("/organizations", summary="列出所有组织")
+async def list_organizations(
+    svc: OrganizationService = Depends(get_organization_service),
+):
+    orgs = await svc.list_organizations()
+    return success_response(data=[o.model_dump() for o in orgs])
+
+
+@router.get("/organizations/{org_id}", summary="获取组织详情（含团队）")
+async def get_organization(
+    org_id: int,
+    svc: OrganizationService = Depends(get_organization_service),
+):
+    detail = await svc.get_organization(org_id)
+    return success_response(data=detail.model_dump())
+
+
+@router.put("/organizations/{org_id}", summary="更新组织")
+async def update_organization(
+    org_id: int,
+    body: UpdateOrganizationDTO,
+    svc: OrganizationService = Depends(get_organization_service),
+):
+    org = await svc.update_organization(org_id, body)
+    return success_response(data=org.model_dump())
+
+
+@router.delete("/organizations/{org_id}", summary="删除组织")
+async def delete_organization(
+    org_id: int,
+    svc: OrganizationService = Depends(get_organization_service),
+):
+    await svc.delete_organization(org_id)
+    return success_response(data=None)
+
+
+# ---------------------------------------------------------------------------
+# Team endpoints
+# ---------------------------------------------------------------------------
+
+
+@router.post("/organizations/{org_id}/teams", status_code=201, summary="创建团队")
+async def create_team(
+    org_id: int,
+    body: CreateTeamDTO,
+    svc: OrganizationService = Depends(get_organization_service),
+):
+    team = await svc.create_team(org_id, body)
+    return success_response(data=team.model_dump())
+
+
+@router.get("/organizations/{org_id}/teams", summary="列出团队")
+async def list_teams(
+    org_id: int,
+    svc: OrganizationService = Depends(get_organization_service),
+):
+    teams = await svc.list_teams(org_id)
+    return success_response(data=[t.model_dump() for t in teams])
+
+
+@router.put("/organizations/{org_id}/teams/{team_id}", summary="更新团队")
+async def update_team(
+    org_id: int,
+    team_id: int,
+    body: UpdateTeamDTO,
+    svc: OrganizationService = Depends(get_organization_service),
+):
+    team = await svc.update_team(org_id, team_id, body)
+    return success_response(data=team.model_dump())
+
+
+@router.delete("/organizations/{org_id}/teams/{team_id}", summary="删除团队")
+async def delete_team(
+    org_id: int,
+    team_id: int,
+    svc: OrganizationService = Depends(get_organization_service),
+):
+    await svc.delete_team(org_id, team_id)
+    return success_response(data=None)
+
+
+# ---------------------------------------------------------------------------
+# Persona Relationship endpoints
+# ---------------------------------------------------------------------------
+
+
+@router.post("/organizations/{org_id}/relationships", status_code=201, summary="创建角色关系")
+async def create_relationship(
+    org_id: int,
+    body: CreateRelationshipDTO,
+    svc: OrganizationService = Depends(get_organization_service),
+):
+    rel = await svc.create_relationship(org_id, body)
+    return success_response(data=rel.model_dump())
+
+
+@router.get("/organizations/{org_id}/relationships", summary="列出角色关系")
+async def list_relationships(
+    org_id: int,
+    svc: OrganizationService = Depends(get_organization_service),
+):
+    rels = await svc.list_relationships(org_id)
+    return success_response(data=[r.model_dump() for r in rels])
+
+
+@router.put("/organizations/{org_id}/relationships/{rel_id}", summary="更新角色关系")
+async def update_relationship(
+    org_id: int,
+    rel_id: int,
+    body: UpdateRelationshipDTO,
+    svc: OrganizationService = Depends(get_organization_service),
+):
+    rel = await svc.update_relationship(org_id, rel_id, body)
+    return success_response(data=rel.model_dump())
+
+
+@router.delete("/organizations/{org_id}/relationships/{rel_id}", summary="删除角色关系")
+async def delete_relationship(
+    org_id: int,
+    rel_id: int,
+    svc: OrganizationService = Depends(get_organization_service),
+):
+    await svc.delete_relationship(org_id, rel_id)
+    return success_response(data=None)
+
+
+# ---------------------------------------------------------------------------
+# Growth Dashboard endpoints
+# ---------------------------------------------------------------------------
+
+
+@router.get("/growth/dashboard", summary="获取成长轨迹 Dashboard 数据")
+async def get_growth_dashboard(
+    svc=Depends(get_growth_service),
+):
+    dashboard = await svc.get_dashboard()
+    return success_response(data=dashboard.model_dump())
+
+
+@router.post("/growth/insight", summary="生成跨 session 成长洞察")
+async def generate_growth_insight(
+    svc=Depends(get_growth_service),
+):
+    insight = await svc.generate_insight()
+    return success_response(data=insight.model_dump())

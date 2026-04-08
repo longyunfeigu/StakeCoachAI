@@ -143,6 +143,21 @@ def get_scenario_service() -> ScenarioApplicationService:
     return ScenarioApplicationService(uow_factory=SQLAlchemyUnitOfWork)
 
 
+def get_organization_service():
+    from application.services.stakeholder.organization_service import OrganizationService
+
+    return OrganizationService(uow_factory=SQLAlchemyUnitOfWork)
+
+
+async def get_growth_service(
+    loader: PersonaLoader = Depends(get_persona_loader),
+    llm: LLMPort = Depends(get_stakeholder_llm_port),
+):
+    from application.services.stakeholder.growth_service import GrowthService
+
+    return GrowthService(uow_factory=SQLAlchemyUnitOfWork, llm=llm, persona_loader=loader)
+
+
 async def get_chat_service(
     llm: LLMPort = Depends(get_llm_port),
 ) -> ChatApplicationService:

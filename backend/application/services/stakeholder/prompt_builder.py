@@ -39,6 +39,66 @@ _GROUP_SYSTEM_TEMPLATE = (
 )
 
 
+def build_org_context(
+    *,
+    org_name: str = "",
+    org_context_prompt: str = "",
+    team_name: str = "",
+    team_description: str = "",
+    relationships: list[dict] | None = None,
+) -> str:
+    """Build an organization context block to inject into system prompts.
+
+    Args:
+        org_name: Name of the organization.
+        org_context_prompt: Freeform org background text.
+        team_name: Name of the persona's team.
+        team_description: Description of the team's role.
+        relationships: List of dicts with 'persona_name', 'relationship_type', 'description'.
+
+    Returns:
+        A formatted string, or "" if no org info is available.
+    """
+    parts: list[str] = []
+    if org_context_prompt:
+        parts.append(f"## 组织背景\n{org_context_prompt}")
+    elif org_name:
+        parts.append(f"## 组织背景\n你所在的组织是「{org_name}」。")
+
+    if team_name:
+        line = f"## 你在组织中的位置\n所属团队：{team_name}"
+        if team_description:
+            line += f" — {team_description}"
+        parts.append(line)
+
+    if relationships:
+        rel_lines = ["## 你与其他角色的关系"]
+        for r in relationships:
+            name = r.get("persona_name", r.get("to_persona_id", "?"))
+            rtype = r.get("relationship_type", "")
+            desc = r.get("description", "")
+            label = {
+                "superior": "上级",
+                "subordinate": "下级",
+                "peer": "同级",
+                "cross_department": "跨部门",
+            }.get(rtype, rtype)
+            line = f"- {name}：{label}"
+            if desc:
+                line += f"（{desc}）"
+            rel_lines.append(line)
+        parts.append("\n".join(rel_lines))
+
+    return "\n\n".join(parts)
+
+
+def _append_org_context(system: str, org_context: str | None) -> str:
+    """Append organization context block after persona profile."""
+    if org_context:
+        system += f"\n\n{org_context}"
+    return system
+
+
 def _append_scenario_context(system: str, scenario_context: str | None) -> str:
     """Append scenario context to system prompt if provided."""
     if scenario_context:
@@ -67,6 +127,7 @@ def build_llm_messages(
     persona_name: str,
     history: list[dict],
     scenario_context: str | None = None,
+    org_context: str | None = None,
 ) -> tuple[str, list[dict]]:
     """Build system prompt and message list for LLM call.
 
@@ -74,6 +135,7 @@ def build_llm_messages(
         persona_full_content: Full markdown content of the persona file.
         persona_name: Display name of the persona.
         history: List of dicts with 'sender_type' and 'content' keys.
+        org_context: Pre-built organization context block.
 
     Returns:
         (system_prompt, messages) where messages use 'role'/'content' format.
@@ -83,6 +145,7 @@ def build_llm_messages(
         name=persona_name,
         persona_content=persona_full_content,
     )
+    system = _append_org_context(system, org_context)
     system += _ROLE_BEHAVIOR_INSTRUCTION
     system = _append_scenario_context(system, scenario_context)
     system = _append_emotion_instruction(system)
@@ -106,6 +169,7 @@ def build_group_llm_messages(
     history: list[dict],
     is_mentioned: bool = False,
     scenario_context: str | None = None,
+    org_context: str | None = None,
 ) -> tuple[str, list[dict]]:
     """Build prompt for a persona in a group chat context.
 
@@ -119,6 +183,7 @@ def build_group_llm_messages(
         persona_id: ID of the current persona being prompted.
         history: List of dicts with 'sender_type', 'sender_id', and 'content'.
         is_mentioned: Whether the user @mentioned this persona directly.
+        org_context: Pre-built organization context block.
 
     Returns:
         (system_prompt, messages) where messages use 'role'/'content' format.
@@ -127,6 +192,7 @@ def build_group_llm_messages(
         name=persona_name,
         persona_content=persona_full_content,
     )
+    system = _append_org_context(system, org_context)
     system += _ROLE_BEHAVIOR_INSTRUCTION
     system = _append_scenario_context(system, scenario_context)
     system = _append_emotion_instruction(system)

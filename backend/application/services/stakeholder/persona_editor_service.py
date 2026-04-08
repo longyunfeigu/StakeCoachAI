@@ -30,17 +30,33 @@ class PersonaEditorService:
         return path
 
     @staticmethod
-    def _build_markdown(name: str, role: str, avatar_color: str, content: str) -> str:
+    def _build_markdown(
+        name: str,
+        role: str,
+        avatar_color: str,
+        content: str,
+        *,
+        organization_id: int | None = None,
+        team_id: int | None = None,
+        extra_frontmatter: dict | None = None,
+    ) -> str:
         """Build a persona Markdown file with YAML frontmatter."""
         lines = [
             "---",
             f"name: {name}",
             f"role: {role}",
             f'avatar_color: "{avatar_color}"',
-            "---",
-            "",
-            content,
         ]
+        if organization_id is not None:
+            lines.append(f"organization_id: {organization_id}")
+        if team_id is not None:
+            lines.append(f"team_id: {team_id}")
+        # Preserve any extra frontmatter keys (e.g. last_updated, confidence)
+        if extra_frontmatter:
+            for key, value in extra_frontmatter.items():
+                if key not in ("name", "role", "avatar_color", "organization_id", "team_id"):
+                    lines.append(f"{key}: {value}")
+        lines.extend(["---", "", content])
         return "\n".join(lines)
 
     def create_persona(self, dto: CreatePersonaDTO) -> None:
@@ -50,7 +66,14 @@ class PersonaEditorService:
             raise FileExistsError(f"Persona '{dto.id}' already exists")
 
         self._persona_dir.mkdir(parents=True, exist_ok=True)
-        md = self._build_markdown(dto.name, dto.role, dto.avatar_color, dto.content)
+        md = self._build_markdown(
+            dto.name,
+            dto.role,
+            dto.avatar_color,
+            dto.content,
+            organization_id=dto.organization_id,
+            team_id=dto.team_id,
+        )
         path.write_text(md, encoding="utf-8")
         logger.info("persona_created", persona_id=dto.id)
         self._loader.reload()
@@ -76,7 +99,31 @@ class PersonaEditorService:
         )
         content = dto.content if dto.content is not None else body
 
-        md = self._build_markdown(name, role, avatar_color, content)
+        # Merge org/team: use DTO value if provided, else keep existing
+        org_id = (
+            dto.organization_id
+            if dto.organization_id is not None
+            else PersonaLoader._parse_optional_int(frontmatter.get("organization_id"))
+        )
+        t_id = (
+            dto.team_id
+            if dto.team_id is not None
+            else PersonaLoader._parse_optional_int(frontmatter.get("team_id"))
+        )
+
+        # Collect extra frontmatter keys to preserve (e.g. last_updated, confidence)
+        managed_keys = {"name", "role", "avatar_color", "organization_id", "team_id"}
+        extra_fm = {k: v for k, v in frontmatter.items() if k not in managed_keys}
+
+        md = self._build_markdown(
+            name,
+            role,
+            avatar_color,
+            content,
+            organization_id=org_id,
+            team_id=t_id,
+            extra_frontmatter=extra_fm,
+        )
         path.write_text(md, encoding="utf-8")
         logger.info("persona_updated", persona_id=persona_id)
         self._loader.reload()

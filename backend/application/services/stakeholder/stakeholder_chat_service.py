@@ -26,6 +26,7 @@ from application.services.stakeholder.dto import MessageDTO
 from application.services.stakeholder.prompt_builder import (
     build_group_llm_messages,
     build_llm_messages,
+    build_org_context,
 )
 from application.services.stakeholder.sse import room_event_bus
 from domain.common.exceptions import BusinessException
@@ -124,6 +125,65 @@ class StakeholderChatService:
 
         return user_dto, room
 
+    async def _load_org_context(self, persona_id: str) -> str | None:
+        """Load organization context for a persona, if it belongs to one."""
+        persona = self._persona_loader.get_persona(persona_id)
+        org_id = getattr(persona, "organization_id", None) if persona else None
+        if not org_id:
+            return None
+
+        async with self._uow_factory(readonly=True) as uow:
+            org = await uow.organization_repository.get_by_id(org_id)
+            if not org:
+                return None
+
+            team = None
+            team_id = getattr(persona, "team_id", None)
+            if team_id:
+                team = await uow.team_repository.get_by_id(team_id)
+
+            rels = await uow.persona_relationship_repository.list_by_organization(org_id)
+
+        # Filter relationships involving this persona
+        my_rels: list[dict] = []
+        for r in rels:
+            if r.from_persona_id == persona_id:
+                target = self._persona_loader.get_persona(r.to_persona_id)
+                my_rels.append(
+                    {
+                        "persona_name": target.name if target else r.to_persona_id,
+                        "relationship_type": r.relationship_type,
+                        "description": r.description,
+                    }
+                )
+            elif r.to_persona_id == persona_id:
+                source = self._persona_loader.get_persona(r.from_persona_id)
+                # Invert relationship type for the reverse direction
+                inv = {
+                    "superior": "subordinate",
+                    "subordinate": "superior",
+                    "peer": "peer",
+                    "cross_department": "cross_department",
+                }
+                my_rels.append(
+                    {
+                        "persona_name": source.name if source else r.from_persona_id,
+                        "relationship_type": inv.get(r.relationship_type, r.relationship_type),
+                        "description": r.description,
+                    }
+                )
+
+        return (
+            build_org_context(
+                org_name=org.name,
+                org_context_prompt=org.context_prompt,
+                team_name=team.name if team else "",
+                team_description=team.description if team else "",
+                relationships=my_rels if my_rels else None,
+            )
+            or None
+        )
+
     async def _load_scenario_context(self, room: ChatRoom) -> str | None:
         """Load scenario context_prompt for a room, if it has a scenario_id."""
         if not room.scenario_id:
@@ -179,6 +239,9 @@ class StakeholderChatService:
             logger.warning("Persona %s not found, skipping reply", persona_id)
             return False, None
 
+        # Load org context (non-blocking, returns None if persona has no org)
+        org_ctx = await self._load_org_context(persona_id)
+
         # Emit typing start
         await room_event_bus.publish(
             room_id, "typing", {"persona_id": persona_id, "status": "start"}
@@ -211,6 +274,7 @@ class StakeholderChatService:
                         history=history,
                         is_mentioned=is_mentioned,
                         scenario_context=scenario_context,
+                        org_context=org_ctx,
                     )
                 else:
                     system_prompt, llm_messages = build_llm_messages(
@@ -218,6 +282,7 @@ class StakeholderChatService:
                         persona_name=persona.name,
                         history=history,
                         scenario_context=scenario_context,
+                        org_context=org_ctx,
                     )
 
                 # Stream LLM response, pushing incremental deltas via SSE

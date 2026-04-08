@@ -10,6 +10,8 @@ from .conversation import (
 )
 from .stakeholder import ChatRoomModel, StakeholderMessageModel
 from .scenario import ScenarioModel
+from .organization import OrganizationModel, TeamModel, PersonaRelationshipModel
+from .competency import CompetencyEvaluationModel
 from .mixins import TimestampMixin
 
 __all__ = [
@@ -24,4 +26,8 @@ __all__ = [
     "ChatRoomModel",
     "StakeholderMessageModel",
     "ScenarioModel",
+    "OrganizationModel",
+    "TeamModel",
+    "PersonaRelationshipModel",
+    "CompetencyEvaluationModel",
 ]

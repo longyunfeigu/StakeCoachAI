@@ -5,6 +5,8 @@ export interface PersonaSummary {
   name: string
   role: string
   avatar_color: string | null
+  organization_id: number | null
+  team_id: number | null
   parse_status: string
 }
 
@@ -163,6 +165,8 @@ export async function createPersona(data: {
   role: string
   avatar_color: string
   content: string
+  organization_id?: number | null
+  team_id?: number | null
 }): Promise<void> {
   const resp = await fetch(`${API_BASE}/personas`, {
     method: 'POST',
@@ -177,7 +181,7 @@ export async function createPersona(data: {
 
 export async function updatePersona(
   id: string,
-  data: { name?: string; role?: string; avatar_color?: string; content?: string },
+  data: { name?: string; role?: string; avatar_color?: string; content?: string; organization_id?: number | null; team_id?: number | null },
 ): Promise<void> {
   const resp = await fetch(`${API_BASE}/personas/${id}`, {
     method: 'PUT',
@@ -296,10 +300,45 @@ export async function listAnalysisReports(roomId: number): Promise<{ id: number 
   return json.data
 }
 
-export async function createAnalysisReport(roomId: number): Promise<{ id: number }> {
+export interface ResistanceItem {
+  persona_id: string
+  persona_name: string
+  score: number
+  reason: string
+}
+
+export interface ArgumentItem {
+  argument: string
+  target_persona: string
+  effectiveness: string
+}
+
+export interface SuggestionItem {
+  persona_id: string
+  persona_name: string
+  suggestion: string
+  priority: string
+}
+
+export interface AnalysisReport {
+  id: number
+  room_id: number
+  summary: string
+  content: {
+    resistance_ranking: ResistanceItem[]
+    effective_arguments: ArgumentItem[]
+    communication_suggestions: SuggestionItem[]
+  }
+  created_at: string | null
+}
+
+export async function createAnalysisReport(roomId: number): Promise<AnalysisReport> {
   const resp = await fetch(`${API_BASE}/rooms/${roomId}/analysis`, { method: 'POST' })
-  if (!resp.ok) throw new Error(`Failed to create analysis report: ${resp.status}`)
-  const json: ApiResponse<{ id: number }> = await resp.json()
+  if (!resp.ok) {
+    const json = await resp.json().catch(() => null)
+    throw new Error(json?.message || `Failed to create analysis report: ${resp.status}`)
+  }
+  const json: ApiResponse<AnalysisReport> = await resp.json()
   return json.data
 }
 
@@ -313,4 +352,175 @@ export function sendCoachingMessageStream(roomId: number, sessionId: number, con
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ content }),
   })
+}
+
+// ---------------------------------------------------------------------------
+// Organization types & API
+// ---------------------------------------------------------------------------
+
+export interface Organization {
+  id: number
+  name: string
+  industry: string
+  description: string
+  context_prompt: string
+  created_at: string | null
+}
+
+export interface OrganizationDetail {
+  organization: Organization
+  teams: Team[]
+}
+
+export interface Team {
+  id: number
+  organization_id: number
+  name: string
+  description: string
+  created_at: string | null
+}
+
+export interface PersonaRelationship {
+  id: number
+  organization_id: number
+  from_persona_id: string
+  to_persona_id: string
+  relationship_type: 'superior' | 'subordinate' | 'peer' | 'cross_department'
+  description: string
+  created_at: string | null
+}
+
+export async function fetchOrganizations(): Promise<Organization[]> {
+  const resp = await fetch(`${API_BASE}/organizations`)
+  if (!resp.ok) throw new Error(`Failed to fetch organizations: ${resp.status}`)
+  const json: ApiResponse<Organization[]> = await resp.json()
+  return json.data
+}
+
+export async function fetchOrganizationDetail(orgId: number): Promise<OrganizationDetail> {
+  const resp = await fetch(`${API_BASE}/organizations/${orgId}`)
+  if (!resp.ok) throw new Error(`Failed to fetch organization: ${resp.status}`)
+  const json: ApiResponse<OrganizationDetail> = await resp.json()
+  return json.data
+}
+
+export async function createOrganization(data: { name: string; industry?: string; description?: string; context_prompt?: string }): Promise<Organization> {
+  const resp = await fetch(`${API_BASE}/organizations`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+  if (!resp.ok) throw new Error(`Failed to create organization: ${resp.status}`)
+  const json: ApiResponse<Organization> = await resp.json()
+  return json.data
+}
+
+export async function updateOrganization(orgId: number, data: Partial<Pick<Organization, 'name' | 'industry' | 'description' | 'context_prompt'>>): Promise<void> {
+  const resp = await fetch(`${API_BASE}/organizations/${orgId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+  if (!resp.ok) throw new Error(`Failed to update organization: ${resp.status}`)
+}
+
+export async function deleteOrganization(orgId: number): Promise<void> {
+  const resp = await fetch(`${API_BASE}/organizations/${orgId}`, { method: 'DELETE' })
+  if (!resp.ok) throw new Error(`Failed to delete organization: ${resp.status}`)
+}
+
+export async function fetchTeams(orgId: number): Promise<Team[]> {
+  const resp = await fetch(`${API_BASE}/organizations/${orgId}/teams`)
+  if (!resp.ok) throw new Error(`Failed to fetch teams: ${resp.status}`)
+  const json: ApiResponse<Team[]> = await resp.json()
+  return json.data
+}
+
+export async function createTeam(orgId: number, data: { name: string; description?: string }): Promise<Team> {
+  const resp = await fetch(`${API_BASE}/organizations/${orgId}/teams`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+  if (!resp.ok) throw new Error(`Failed to create team: ${resp.status}`)
+  const json: ApiResponse<Team> = await resp.json()
+  return json.data
+}
+
+export async function deleteTeam(orgId: number, teamId: number): Promise<void> {
+  const resp = await fetch(`${API_BASE}/organizations/${orgId}/teams/${teamId}`, { method: 'DELETE' })
+  if (!resp.ok) throw new Error(`Failed to delete team: ${resp.status}`)
+}
+
+export async function fetchRelationships(orgId: number): Promise<PersonaRelationship[]> {
+  const resp = await fetch(`${API_BASE}/organizations/${orgId}/relationships`)
+  if (!resp.ok) throw new Error(`Failed to fetch relationships: ${resp.status}`)
+  const json: ApiResponse<PersonaRelationship[]> = await resp.json()
+  return json.data
+}
+
+export async function createRelationship(orgId: number, data: {
+  from_persona_id: string
+  to_persona_id: string
+  relationship_type: string
+  description?: string
+}): Promise<PersonaRelationship> {
+  const resp = await fetch(`${API_BASE}/organizations/${orgId}/relationships`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+  if (!resp.ok) throw new Error(`Failed to create relationship: ${resp.status}`)
+  const json: ApiResponse<PersonaRelationship> = await resp.json()
+  return json.data
+}
+
+export async function deleteRelationship(orgId: number, relId: number): Promise<void> {
+  const resp = await fetch(`${API_BASE}/organizations/${orgId}/relationships/${relId}`, { method: 'DELETE' })
+  if (!resp.ok) throw new Error(`Failed to delete relationship: ${resp.status}`)
+}
+
+// ---------------------------------------------------------------------------
+// Growth Dashboard
+// ---------------------------------------------------------------------------
+
+export interface DimensionScore {
+  score: number
+  evidence: string
+  suggestion: string
+}
+
+export interface CompetencyEvaluation {
+  id: number
+  report_id: number
+  room_id: number
+  room_name: string
+  scores: Record<string, DimensionScore>
+  overall_score: number
+  created_at: string | null
+}
+
+export interface GrowthDashboard {
+  overview: {
+    total_sessions: number
+    total_evaluations: number
+    avg_overall_score: number
+    latest_score: number
+  }
+  evaluations: CompetencyEvaluation[]
+  dimension_trends: Record<string, { date: string | null; score: number }[]>
+}
+
+export async function fetchGrowthDashboard(): Promise<GrowthDashboard> {
+  const resp = await fetch(`${API_BASE}/growth/dashboard`)
+  if (!resp.ok) throw new Error(`Failed to fetch growth dashboard: ${resp.status}`)
+  const json: ApiResponse<GrowthDashboard> = await resp.json()
+  return json.data
+}
+
+export async function generateGrowthInsight(): Promise<string> {
+  const resp = await fetch(`${API_BASE}/growth/insight`, { method: 'POST' })
+  if (!resp.ok) throw new Error(`Failed to generate growth insight: ${resp.status}`)
+  const json: ApiResponse<{ insight: string }> = await resp.json()
+  return json.data.insight
 }
