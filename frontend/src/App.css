@@ -900,46 +900,20 @@
   border-style: solid;
 }
 
-/* Analysis result panel */
-.analysis-result {
-  background: var(--bg-card, #fff);
-  border-bottom: 1px solid var(--border, #e5e7eb);
-  padding: 16px 20px;
-  max-height: 50vh;
+/* Analysis result dialog */
+.analysis-dialog {
+  max-width: 640px;
+  max-height: 80vh;
   overflow-y: auto;
-  font-size: 14px;
-}
-.analysis-result-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
-}
-.analysis-result-header h4 {
-  margin: 0;
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--text-primary, #1f2937);
-}
-.analysis-close {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--text-muted, #9ca3af);
-  padding: 4px;
-  border-radius: 4px;
-}
-.analysis-close:hover {
-  background: var(--bg-hover, #f3f4f6);
 }
 .analysis-summary {
   margin: 0 0 14px;
   color: var(--text-secondary, #4b5563);
   line-height: 1.5;
 }
-.analysis-result h5 {
-  margin: 12px 0 6px;
-  font-size: 13px;
+.analysis-dialog h4 {
+  margin: 16px 0 8px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--text-primary, #1f2937);
 }

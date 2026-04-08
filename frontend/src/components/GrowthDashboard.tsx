@@ -109,7 +109,7 @@ export default function GrowthDashboard({ onCreateRoom }: Props) {
   }
 
   const radarData = buildRadarData(data)
-  const { overview, evaluations, dimension_trends } = data
+  const { overview, evaluations } = data
 
   return (
     <div className="growth-dashboard">
@@ -182,34 +182,56 @@ export default function GrowthDashboard({ onCreateRoom }: Props) {
         </div>
       </div>
 
-      {/* Dimension trends */}
-      <div className="dimension-trends">
-        <h3>各维度趋势</h3>
-        {DIMENSIONS.map((dim) => {
-          const points = dimension_trends[dim] || []
-          return (
-            <div key={dim} className="trend-row">
-              <span className="trend-label">{DIMENSION_LABELS[dim]}</span>
-              <div className="trend-dots">
-                {points.map((pt, i) => (
-                  <div key={i} className="trend-dot-wrap" title={`${pt.score}/5`}>
-                    <div
-                      className="trend-dot"
-                      style={{
-                        background: scoreColor(pt.score),
-                        width: 10 + pt.score * 3,
-                        height: 10 + pt.score * 3,
-                      }}
-                    />
-                    <span className="trend-score">{pt.score}</span>
-                  </div>
+      {/* Dimension trends as table */}
+      {evaluations.length > 1 && (
+        <div className="dimension-trends">
+          <h3>各维度趋势对比</h3>
+          <div className="trends-table-wrap">
+            <table className="trends-table">
+              <thead>
+                <tr>
+                  <th>维度</th>
+                  {evaluations.map((ev, i) => (
+                    <th key={ev.id}>
+                      <div className="trends-th-room">{ev.room_name || `#${i + 1}`}</div>
+                      <div className="trends-th-date">
+                        {ev.created_at ? new Date(ev.created_at).toLocaleDateString() : ''}
+                      </div>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {DIMENSIONS.map((dim) => (
+                  <tr key={dim}>
+                    <td className="trends-dim-name">{DIMENSION_LABELS[dim]}</td>
+                    {evaluations.map((ev) => {
+                      const sc = ev.scores[dim]?.score ?? 0
+                      return (
+                        <td key={ev.id} className="trends-score-cell">
+                          <span className="trends-score-badge" style={{ background: scoreColor(sc) + '20', color: scoreColor(sc) }}>
+                            {sc}
+                          </span>
+                        </td>
+                      )
+                    })}
+                  </tr>
                 ))}
-                {points.length === 0 && <span className="trend-empty">暂无数据</span>}
-              </div>
-            </div>
-          )
-        })}
-      </div>
+                <tr className="trends-total-row">
+                  <td className="trends-dim-name">总分</td>
+                  {evaluations.map((ev) => (
+                    <td key={ev.id} className="trends-score-cell">
+                      <strong style={{ color: scoreColor(ev.overall_score) }}>
+                        {ev.overall_score.toFixed(1)}
+                      </strong>
+                    </td>
+                  ))}
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Latest evaluation detail */}
       {evaluations.length > 0 && (

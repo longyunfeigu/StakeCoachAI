@@ -123,7 +123,7 @@
   border: 2px dashed #9ca3af;
 }
 
-/* Dimension trends */
+/* Dimension trends table */
 .dimension-trends {
   background: var(--bg-card, #fff);
   border: 1px solid var(--border, #e5e7eb);
@@ -136,49 +136,59 @@
   font-weight: 600;
   margin: 0 0 14px;
 }
-.trend-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 0;
+.trends-table-wrap {
+  overflow-x: auto;
+}
+.trends-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.trends-table th,
+.trends-table td {
+  padding: 8px 10px;
+  text-align: center;
   border-bottom: 1px solid var(--border-light, #f3f4f6);
 }
-.trend-row:last-child {
-  border-bottom: none;
-}
-.trend-label {
-  font-size: 13px;
+.trends-table th {
   font-weight: 500;
-  min-width: 80px;
-  color: var(--text-primary, #1f2937);
-}
-.trend-dots {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex: 1;
-}
-.trend-dot-wrap {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-}
-.trend-dot {
-  border-radius: 50%;
-  transition: transform 0.15s;
-}
-.trend-dot-wrap:hover .trend-dot {
-  transform: scale(1.3);
-}
-.trend-score {
-  font-size: 10px;
-  font-weight: 600;
   color: var(--text-muted, #9ca3af);
-}
-.trend-empty {
   font-size: 12px;
+}
+.trends-table th:first-child,
+.trends-table td:first-child {
+  text-align: left;
+}
+.trends-th-room {
+  font-weight: 600;
+  color: var(--text-primary, #1f2937);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100px;
+}
+.trends-th-date {
+  font-size: 11px;
   color: var(--text-muted, #9ca3af);
+}
+.trends-dim-name {
+  font-weight: 500;
+  color: var(--text-primary, #1f2937);
+  white-space: nowrap;
+}
+.trends-score-cell {
+  min-width: 50px;
+}
+.trends-score-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 700;
+  font-size: 13px;
+}
+.trends-total-row td {
+  border-top: 2px solid var(--border, #e5e7eb);
+  padding-top: 10px;
 }
 
 /* Latest evaluation detail */

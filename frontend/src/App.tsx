@@ -647,55 +647,6 @@ function App() {
                 </div>
               </div>
             </div>
-            {/* Analysis result panel */}
-            {analysisResult && (
-              <div className="analysis-result">
-                <div className="analysis-result-header">
-                  <h4>对话分析报告</h4>
-                  <button className="analysis-close" onClick={() => setAnalysisResult(null)}>
-                    <X size={16} />
-                  </button>
-                </div>
-                <p className="analysis-summary">{analysisResult.summary}</p>
-                {analysisResult.content.resistance_ranking.length > 0 && (
-                  <div className="resistance-ranking">
-                    <h5>阻力排名</h5>
-                    {analysisResult.content.resistance_ranking.map((item, i) => (
-                      <div key={i} className="resistance-item">
-                        <span className="resistance-name">{item.persona_name}</span>
-                        <span className={`resistance-score ${item.score >= 0 ? 'positive' : 'negative'}`}>
-                          {item.score > 0 ? '+' : ''}{item.score}
-                        </span>
-                        <span className="resistance-reason">{item.reason}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                {analysisResult.content.effective_arguments.length > 0 && (
-                  <div className="effective-arguments">
-                    <h5>有效论点</h5>
-                    {analysisResult.content.effective_arguments.map((item, i) => (
-                      <div key={i} className="argument-item">
-                        <span className="argument-text">{item.argument}</span>
-                        <span className="argument-target">→ {item.target_persona}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                {analysisResult.content.communication_suggestions.length > 0 && (
-                  <div className="suggestions">
-                    <h5>沟通建议</h5>
-                    {analysisResult.content.communication_suggestions.map((item, i) => (
-                      <div key={i} className="suggestion-item">
-                        <span className={`suggestion-priority ${item.priority}`}>{item.priority}</span>
-                        <span className="suggestion-name">{item.persona_name}:</span>
-                        <span className="suggestion-text">{item.suggestion}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
             <div className="message-list" ref={messageListRef} onClick={() => showExportMenu && setShowExportMenu(false)}>
               {selectedRoom.messages.length === 0 && streamingEntries.length === 0 ? (
                 <div className="empty-messages">
@@ -952,6 +903,56 @@ function App() {
         messages={selectedRoom?.messages || []}
         personaMap={personaMap}
       />
+
+      {/* Analysis result dialog */}
+      {analysisResult && (
+        <div className="dialog-overlay" onClick={() => setAnalysisResult(null)}>
+          <div className="dialog analysis-dialog" onClick={(e) => e.stopPropagation()}>
+            <h3>对话分析报告</h3>
+            <p className="analysis-summary">{analysisResult.summary}</p>
+            {analysisResult.content.resistance_ranking.length > 0 && (
+              <div className="resistance-ranking">
+                <h4>阻力排名</h4>
+                {analysisResult.content.resistance_ranking.map((item, i) => (
+                  <div key={i} className="resistance-item">
+                    <span className="resistance-name">{item.persona_name}</span>
+                    <span className={`resistance-score ${item.score >= 0 ? 'positive' : 'negative'}`}>
+                      {item.score > 0 ? '+' : ''}{item.score}
+                    </span>
+                    <span className="resistance-reason">{item.reason}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            {analysisResult.content.effective_arguments.length > 0 && (
+              <div className="effective-arguments">
+                <h4>有效论点</h4>
+                {analysisResult.content.effective_arguments.map((item, i) => (
+                  <div key={i} className="argument-item">
+                    <span className="argument-text">{item.argument}</span>
+                    <span className="argument-target">→ {item.target_persona}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            {analysisResult.content.communication_suggestions.length > 0 && (
+              <div className="suggestions">
+                <h4>沟通建议</h4>
+                {analysisResult.content.communication_suggestions.map((item, i) => (
+                  <div key={i} className="suggestion-item">
+                    <span className={`suggestion-priority ${item.priority}`}>{item.priority}</span>
+                    <span className="suggestion-name">{item.persona_name}:</span>
+                    <span className="suggestion-text">{item.suggestion}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="dialog-actions">
+              <button className="btn-cancel" onClick={() => setAnalysisResult(null)}>关闭</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
