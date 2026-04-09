@@ -567,6 +567,52 @@ async def start_coaching(
     )
 
 
+# ---------------------------------------------------------------------------
+# Live coaching endpoints (stateless, no DB writes)
+# ---------------------------------------------------------------------------
+
+
+@router.post(
+    "/rooms/{room_id}/coaching/live",
+    summary="实时求助教练",
+)
+async def start_live_coaching(
+    room_id: int,
+    svc: CoachingService = Depends(get_coaching_service),
+):
+    """Stream live coaching advice based on current conversation context (SSE)."""
+    ctx = await svc.prepare_live_advice(room_id)
+    return StreamingResponse(
+        svc.stream_live_advice(ctx),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
+@router.post(
+    "/rooms/{room_id}/coaching/live/reply",
+    summary="实时教练追问",
+)
+async def send_live_coaching_reply(
+    room_id: int,
+    body: dict,
+    svc: CoachingService = Depends(get_coaching_service),
+):
+    """Follow-up question to live coach. Frontend sends full coaching history."""
+    content = body.get("content", "").strip()
+    if not content:
+        raise HTTPException(status_code=422, detail="Message content is required")
+    coaching_history: list[dict] = body.get("history", [])
+    # Append the new user message to history
+    coaching_history.append({"role": "user", "content": content})
+    ctx = await svc.prepare_live_advice(room_id)
+    return StreamingResponse(
+        svc.stream_live_advice(ctx, coaching_history=coaching_history),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
 @router.post(
     "/rooms/{room_id}/coaching/{session_id}/messages",
     summary="发送复盘消息",

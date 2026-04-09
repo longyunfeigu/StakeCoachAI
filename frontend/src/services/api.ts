@@ -372,6 +372,26 @@ export function sendCoachingMessageStream(roomId: number, sessionId: number, con
 }
 
 // ---------------------------------------------------------------------------
+// Live coaching (stateless, mid-conversation advice)
+// ---------------------------------------------------------------------------
+
+export function startLiveCoaching(roomId: number): Promise<Response> {
+  return fetch(`${API_BASE}/rooms/${roomId}/coaching/live`, { method: 'POST' })
+}
+
+export function sendLiveCoachingMessage(
+  roomId: number,
+  history: { role: string; content: string }[],
+  content: string,
+): Promise<Response> {
+  return fetch(`${API_BASE}/rooms/${roomId}/coaching/live/reply`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ history, content }),
+  })
+}
+
+// ---------------------------------------------------------------------------
 // Organization types & API
 // ---------------------------------------------------------------------------
 

@@ -1,12 +1,17 @@
 # input: AbstractUnitOfWork, LLMPort, PersonaLoader
-# output: CoachingService 交互式复盘 Coach 服务
+# output: CoachingService 交互式复盘 Coach 服务 + 实时求助 Live Coaching（无状态流式）
 # owner: wanhua.gu
-# pos: 应用层服务 - 基于分析报告的交互式 AI Coach 复盘对话（流式 SSE）；一旦我被更新，务必更新我的开头注释以及所属文件夹的md
-"""Application service for interactive coaching sessions based on analysis reports.
+# pos: 应用层服务 - 基于分析报告的交互式 AI Coach 复盘对话（流式 SSE）+ 对话中途实时教练建议；一旦我被更新，务必更新我的开头注释以及所属文件夹的md
+"""Application service for interactive coaching sessions based on analysis reports,
+and stateless live coaching for mid-conversation advice.
 
 After a conversation analysis report is generated, users can start a coaching
 dialogue where an AI Coach asks probing questions about their decisions.
 Coach replies are streamed via SSE events (message_delta / message_complete / done).
+
+Live coaching (``prepare_live_advice`` / ``stream_live_advice``) is a lightweight,
+stateless mode: no DB writes, no CoachingSession. The frontend keeps the coaching
+exchange in memory and sends the full history on each follow-up request.
 """
 
 from __future__ import annotations
@@ -88,6 +93,31 @@ def _build_coaching_system_prompt(
         "5. 语气温和但有挑战性，像资深导师\n"
         "6. 如果用户的回答展现了好的思路，给予肯定并追问如何在实际场景中应用\n"
         "7. 从组织政治角度给出建议（例：「在向上级汇报前，建议先和某某对齐」）\n"
+    )
+    return prompt
+
+
+def _build_live_coaching_system_prompt(
+    conversation_text: str,
+    org_context: str = "",
+) -> str:
+    """Build the system prompt for live mid-conversation coaching."""
+    prompt = (
+        "你是一位实时沟通顾问，正在旁观用户与利益相关者的模拟对话。\n"
+        "用户在对话中遇到困难，暂停来向你求助。\n\n"
+        f"## 当前对话上下文\n{conversation_text}\n\n"
+    )
+
+    if org_context:
+        prompt += f"{org_context}\n\n"
+
+    prompt += (
+        "## 你的任务\n"
+        "1. 简要分析对方最后一条发言的意图和潜台词\n"
+        "2. 给出 2-3 个回应策略，说明每种的优劣\n"
+        "3. 推荐最适合的策略，附上可以直接使用的回应示例\n"
+        "4. 语气像坐在旁边的资深同事——快速、直接、实用\n"
+        "5. 保持简洁，用户需要尽快回去继续对话\n"
     )
     return prompt
 
@@ -413,3 +443,86 @@ class CoachingService:
             )
             for s in sessions
         ]
+
+    # ------------------------------------------------------------------
+    # Live coaching (stateless, no DB writes)
+    # ------------------------------------------------------------------
+
+    async def prepare_live_advice(self, room_id: int) -> dict:
+        """Build context for a live coaching stream. No DB writes."""
+        async with self._uow_factory(readonly=True) as uow:
+            room = await uow.chat_room_repository.get_by_id(room_id)
+            if room is None:
+                raise BusinessException(
+                    code=BusinessCode.CHATROOM_NOT_FOUND,
+                    message=f"Chat room {room_id} not found",
+                    error_type="ChatRoomNotFound",
+                    details={"room_id": room_id},
+                )
+            history_entities = await uow.stakeholder_message_repository.list_by_room_id(
+                room_id, limit=200
+            )
+
+        history = [
+            {
+                "sender_type": m.sender_type,
+                "sender_id": m.sender_id,
+                "content": m.content,
+                "emotion_score": m.emotion_score,
+                "emotion_label": m.emotion_label,
+            }
+            for m in history_entities
+        ]
+        non_system = [h for h in history if h["sender_type"] != "system"]
+        if not non_system:
+            raise BusinessException(
+                code=BusinessCode.ANALYSIS_NO_MESSAGES,
+                message="No messages to coach on",
+                error_type="NoMessages",
+                details={"room_id": room_id},
+            )
+
+        conversation_text, _ = _build_conversation_text(non_system[-30:], self._persona_loader)
+        org_ctx = await self._build_room_org_context(room_id)
+        system_prompt = _build_live_coaching_system_prompt(conversation_text, org_ctx)
+
+        return {"room_id": room_id, "system_prompt": system_prompt}
+
+    async def stream_live_advice(
+        self, ctx: dict, coaching_history: list[dict] | None = None
+    ) -> AsyncIterator[str]:
+        """Stream live coaching advice via SSE. Stateless — no DB writes.
+
+        Args:
+            ctx: Result of ``prepare_live_advice``.
+            coaching_history: Previous coaching exchanges as
+                ``[{"role": "assistant"|"user", "content": "..."}]``.
+                Omit or pass empty list for the opening advice.
+        """
+        llm_messages = [LLMMessage(role="system", content=ctx["system_prompt"])]
+
+        if coaching_history:
+            for msg in coaching_history:
+                llm_messages.append(LLMMessage(role=msg["role"], content=msg["content"]))
+        else:
+            llm_messages.append(
+                LLMMessage(
+                    role="user",
+                    content="我在对话中卡住了，请分析对方最后的发言并给我建议。",
+                )
+            )
+
+        full_content = ""
+        try:
+            async for chunk in self._llm.stream(llm_messages):
+                if chunk.content:
+                    full_content += chunk.content
+                    yield _sse_event("message_delta", {"content": chunk.content})
+        except Exception as exc:
+            logger.error("Live coaching LLM stream failed: %s", exc)
+            yield _sse_event("error", {"message": "实时教练回复生成失败"})
+
+        if full_content:
+            yield _sse_event("message_complete", {"role": "assistant", "content": full_content})
+
+        yield _sse_event("done", {})

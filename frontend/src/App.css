@@ -770,6 +770,33 @@
   cursor: not-allowed;
 }
 
+.live-coach-btn {
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: var(--surface-secondary);
+  color: var(--primary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.live-coach-btn:hover:not(:disabled) {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+  transform: scale(1.04);
+}
+
+.live-coach-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
 /* Persona panel in sidebar */
 .persona-panel {
   padding: 12px 0;

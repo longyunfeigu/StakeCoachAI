@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import Markdown from 'react-markdown'
-import { MessageCircle, Layers, Plus, BarChart3, BarChart2, GraduationCap, Download, FileText, FileDown, Send, ClipboardList, X, Building2, TrendingUp, Activity } from 'lucide-react'
+import { MessageCircle, Layers, Plus, BarChart3, BarChart2, GraduationCap, Download, FileText, FileDown, Send, ClipboardList, X, Building2, TrendingUp, Activity, Lightbulb } from 'lucide-react'
 import './App.css'
 import Avatar from './components/Avatar'
 import RoomList from './components/RoomList'
@@ -23,6 +23,8 @@ import {
   fetchAnalysisReport,
   startCoachingStream,
   sendCoachingMessageStream,
+  startLiveCoaching,
+  sendLiveCoachingMessage,
   type ChatRoom,
   type ChatRoomDetail,
   type CoachingMessageItem,
@@ -111,6 +113,7 @@ function App() {
   const [dispatchExpanded, setDispatchExpanded] = useState(false)
   // Coaching panel state
   const [coachingOpen, setCoachingOpen] = useState(false)
+  const [coachingMode, setCoachingMode] = useState<'review' | 'live'>('review')
   const [coachingSessionId, setCoachingSessionId] = useState<number | null>(null)
   const [coachingMessages, setCoachingMessages] = useState<CoachingMessageItem[]>([])
   const [coachingStreaming, setCoachingStreaming] = useState('')
@@ -405,6 +408,54 @@ function App() {
     }
   }
 
+  async function processLiveCoachingSSE(resp: globalThis.Response) {
+    const reader = resp.body?.getReader()
+    if (!reader) return
+    const decoder = new TextDecoder()
+    let buffer = ''
+    let streamedText = ''
+
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      buffer += decoder.decode(value, { stream: true })
+
+      const lines = buffer.split('\n')
+      buffer = lines.pop() || ''
+
+      for (const line of lines) {
+        if (line.startsWith('event: ')) continue
+        if (line.startsWith('data: ')) {
+          const raw = line.slice(6)
+          try {
+            const data = JSON.parse(raw)
+            if (data.content !== undefined && data.role === undefined) {
+              // message_delta
+              streamedText += data.content
+              setCoachingStreaming(streamedText)
+              setTimeout(scrollCoachingToBottom, 30)
+            } else if (data.role !== undefined && data.content !== undefined) {
+              // message_complete — add to messages with a temp id
+              const msg: CoachingMessageItem = {
+                id: Date.now(),
+                session_id: 0,
+                role: data.role === 'assistant' ? 'coach' : data.role,
+                content: data.content,
+                created_at: null,
+              }
+              setCoachingMessages((prev) => [...prev, msg])
+              setCoachingStreaming('')
+              streamedText = ''
+              setTimeout(scrollCoachingToBottom, 50)
+            }
+          } catch {
+            // ignore parse errors
+          }
+        }
+      }
+    }
+  }
+
   const handleAnalyze = async () => {
     if (!selectedRoomId || analyzingRoom) return
     setAnalyzingRoom(true)
@@ -486,6 +537,7 @@ function App() {
 
   const handleStartCoaching = async () => {
     if (!selectedRoomId) return
+    setCoachingMode('review')
     setCoachingOpen(true)
     setCoachingMessages([])
     setCoachingStreaming('')
@@ -514,16 +566,37 @@ function App() {
     }
   }
 
+  const handleStartLiveCoaching = async () => {
+    if (!selectedRoomId) return
+    setCoachingMode('live')
+    setCoachingOpen(true)
+    setCoachingMessages([])
+    setCoachingStreaming('')
+    setCoachingSessionId(null)
+    setCoachingSending(true)
+
+    try {
+      const resp = await startLiveCoaching(selectedRoomId)
+      await processLiveCoachingSSE(resp)
+    } catch (e) {
+      console.error('Start live coaching failed:', e)
+    } finally {
+      setCoachingSending(false)
+    }
+  }
+
   const handleSendCoaching = async () => {
     const content = coachingInput.trim()
-    if (!content || !selectedRoomId || !coachingSessionId || coachingSending) return
+    if (!content || !selectedRoomId || coachingSending) return
+    // Review mode requires a session; live mode does not
+    if (coachingMode === 'review' && !coachingSessionId) return
     setCoachingInput('')
     setCoachingSending(true)
 
     // Add user message optimistically
     const tempMsg: CoachingMessageItem = {
       id: Date.now(),
-      session_id: coachingSessionId,
+      session_id: coachingSessionId || 0,
       role: 'user',
       content,
       created_at: null,
@@ -532,9 +605,21 @@ function App() {
     setTimeout(scrollCoachingToBottom, 50)
 
     try {
-      const resp = await sendCoachingMessageStream(selectedRoomId, coachingSessionId, content)
-      if (resp instanceof Response) {
-        await processCoachingSSE(resp)
+      if (coachingMode === 'live') {
+        // Build history from existing coaching messages for context
+        const history = coachingMessages
+          .filter((m) => m.role === 'user' || m.role === 'coach')
+          .map((m) => ({
+            role: m.role === 'coach' ? 'assistant' : 'user',
+            content: m.content,
+          }))
+        const resp = await sendLiveCoachingMessage(selectedRoomId, history, content)
+        await processLiveCoachingSSE(resp)
+      } else {
+        const resp = await sendCoachingMessageStream(selectedRoomId, coachingSessionId!, content)
+        if (resp instanceof Response) {
+          await processCoachingSSE(resp)
+        }
       }
     } catch (e) {
       console.error('Send coaching message failed:', e)
@@ -871,6 +956,14 @@ function App() {
                 }
                 disabled={sending}
               />
+              <button
+                className="live-coach-btn"
+                onClick={handleStartLiveCoaching}
+                title="求助教练"
+                disabled={coachingSending}
+              >
+                <Lightbulb size={18} />
+              </button>
               <button className="send-btn" onClick={handleSend} disabled={!inputValue.trim() || sending}>
                 <Send size={18} />
               </button>
@@ -907,8 +1000,8 @@ function App() {
       {coachingOpen && (
         <aside className="coaching-panel">
           <div className="coaching-header">
-            <GraduationCap size={18} />
-            <h3>AI Coach 复盘</h3>
+            {coachingMode === 'live' ? <Lightbulb size={18} /> : <GraduationCap size={18} />}
+            <h3>{coachingMode === 'live' ? '实时教练' : 'AI Coach 复盘'}</h3>
             <button className="coaching-close" onClick={() => setCoachingOpen(false)}>
               <X size={18} />
             </button>
@@ -945,9 +1038,9 @@ function App() {
               onChange={(e) => setCoachingInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendCoaching() } }}
               placeholder="回复 Coach..."
-              disabled={coachingSending || !coachingSessionId}
+              disabled={coachingSending || (coachingMode === 'review' && !coachingSessionId)}
             />
-            <button className="send-btn coaching-send" onClick={handleSendCoaching} disabled={!coachingInput.trim() || coachingSending || !coachingSessionId}>
+            <button className="send-btn coaching-send" onClick={handleSendCoaching} disabled={!coachingInput.trim() || coachingSending || (coachingMode === 'review' && !coachingSessionId)}>
               <Send size={16} />
             </button>
           </div>
