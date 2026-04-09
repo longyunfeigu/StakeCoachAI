@@ -134,6 +134,7 @@ class ResistanceItem(BaseModel):
     persona_name: str
     score: int = Field(..., ge=-5, le=5, description="阻力分数 -5(强烈反对) 到 +5(强烈支持)")
     reason: str = Field(..., description="阻力原因分析")
+    message_indices: list[int] = Field(default_factory=list, description="关联的对话消息序号")
 
 
 class ArgumentItem(BaseModel):
@@ -142,6 +143,7 @@ class ArgumentItem(BaseModel):
     argument: str = Field(..., description="有效论点内容")
     target_persona: str = Field(..., description="论点影响的目标 persona")
     effectiveness: str = Field(..., description="有效性说明")
+    message_indices: list[int] = Field(default_factory=list, description="关联的对话消息序号")
 
 
 class SuggestionItem(BaseModel):
@@ -159,6 +161,7 @@ class AnalysisContentDTO(BaseModel):
     resistance_ranking: list[ResistanceItem] = Field(default_factory=list)
     effective_arguments: list[ArgumentItem] = Field(default_factory=list)
     communication_suggestions: list[SuggestionItem] = Field(default_factory=list)
+    message_id_map: dict[str, int] = Field(default_factory=dict, description="消息序号→消息ID映射")
 
 
 class AnalysisReportDTO(BaseModel):

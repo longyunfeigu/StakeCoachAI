@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Style C: 清透蓝系</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg: #F0F4FA;
+    --bg-card: #FFFFFF;
+    --sidebar-bg: #FAFCFF;
+    --primary: #4F8CFF;
+    --primary-dark: #3366CC;
+    --primary-light: #EBF3FF;
+    --text-primary: #1A2B3D;
+    --text-secondary: #4A6080;
+    --text-muted: #8BA3C1;
+    --border: #DEE8F3;
+    --radius: 8px;
+    --shadow: 0 1px 2px rgba(30,60,120,0.05);
+  }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
+    height: 100vh;
+    display: flex;
+    overflow: hidden;
+  }
+
+  .sidebar {
+    width: 256px;
+    background: var(--sidebar-bg);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 18px 14px;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 22px;
+    padding: 0 4px;
+  }
+  .brand-icon {
+    width: 34px; height: 34px;
+    background: linear-gradient(135deg, #4F8CFF, #7EB3FF);
+    border-radius: var(--radius);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 16px; font-weight: 700;
+  }
+  .brand-name { font-size: 15px; font-weight: 600; }
+  .brand-sub { font-size: 11px; color: var(--text-muted); }
+
+  .section-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin: 14px 4px 6px;
+    letter-spacing: 0.3px;
+  }
+
+  .persona-chip {
+    display: flex; align-items: center; gap: 10px;
+    padding: 7px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.12s;
+  }
+  .persona-chip:hover { background: var(--primary-light); }
+  .avatar {
+    width: 30px; height: 30px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 600; color: #fff;
+  }
+  .persona-name { font-size: 13px; font-weight: 500; }
+  .persona-role { font-size: 11px; color: var(--text-muted); }
+
+  .room-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 10px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.12s;
+    font-size: 13px;
+  }
+  .room-item:hover { background: var(--primary-light); }
+  .room-item.active {
+    background: var(--primary);
+    color: #fff;
+  }
+  .room-item.active .room-time { color: rgba(255,255,255,0.7); }
+  .room-icon { font-size: 15px; }
+  .room-name { font-weight: 500; flex: 1; }
+  .room-time { font-size: 11px; color: var(--text-muted); }
+
+  .growth-btn {
+    margin-top: auto;
+    padding: 9px 12px;
+    border: none;
+    border-radius: var(--radius);
+    background: var(--primary-light);
+    font-size: 13px;
+    color: var(--primary-dark);
+    cursor: pointer;
+    display: flex; align-items: center; gap: 8px;
+    font-weight: 500;
+    transition: all 0.15s;
+  }
+  .growth-btn:hover { background: var(--primary); color: #fff; }
+
+  .main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .header {
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border);
+  }
+  .header h2 { font-size: 16px; font-weight: 600; }
+  .header-actions { display: flex; gap: 6px; }
+  .header-btn {
+    width: 32px; height: 32px;
+    border-radius: 6px;
+    border: none;
+    background: var(--primary-light);
+    color: var(--primary);
+    cursor: pointer;
+    font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.12s;
+  }
+  .header-btn:hover { background: var(--primary); color: #fff; }
+  .badge {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: var(--primary-light);
+    color: var(--primary);
+    font-weight: 500;
+    margin-left: 8px;
+  }
+
+  .messages {
+    flex: 1;
+    padding: 20px 24px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    background: var(--bg);
+  }
+  .msg {
+    display: flex;
+    gap: 10px;
+    max-width: 72%;
+  }
+  .msg.user { align-self: flex-end; flex-direction: row-reverse; }
+  .msg-avatar {
+    width: 30px; height: 30px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 600; color: #fff;
+    flex-shrink: 0;
+  }
+  .msg-bubble {
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 13.5px;
+    line-height: 1.6;
+  }
+  .msg:not(.user) .msg-bubble {
+    background: var(--bg-card);
+    color: var(--text-primary);
+    box-shadow: var(--shadow);
+    border-bottom-left-radius: 3px;
+  }
+  .msg.user .msg-bubble {
+    background: linear-gradient(135deg, #4F8CFF, #6BA3FF);
+    color: #fff;
+    border-bottom-right-radius: 3px;
+  }
+  .msg-emotion {
+    font-size: 11px;
+    margin-top: 3px;
+    padding: 1px 6px;
+    border-radius: 3px;
+    background: #FEF3C7;
+    color: #92400E;
+    display: inline-block;
+  }
+
+  .input-bar {
+    padding: 14px 24px;
+    background: var(--bg-card);
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 8px;
+  }
+  .input-bar input {
+    flex: 1;
+    padding: 9px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 13.5px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .input-bar input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,140,255,0.12); }
+  .send-btn {
+    width: 38px; height: 38px;
+    border-radius: var(--radius);
+    border: none;
+    background: var(--primary);
+    color: #fff;
+    font-size: 17px;
+    cursor: pointer;
+  }
+  .send-btn:hover { background: var(--primary-dark); }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    padding: 20px 24px;
+  }
+  .stat {
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    padding: 14px;
+    text-align: center;
+    box-shadow: var(--shadow);
+  }
+  .stat-value { font-size: 26px; font-weight: 700; }
+  .stat-label { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-icon">SC</div>
+    <div>
+      <div class="brand-name">StakeCoach AI</div>
+      <div class="brand-sub">利益相关者沟通教练</div>
+    </div>
+  </div>
+
+  <div class="section-title">角色</div>
+  <div class="persona-chip">
+    <div class="avatar" style="background:#E45C3A">陈</div>
+    <div>
+      <div class="persona-name">陈总 (Boss)</div>
+      <div class="persona-role">CEO, 决策导向</div>
+    </div>
+  </div>
+  <div class="persona-chip">
+    <div class="avatar" style="background:#2563EB">李</div>
+    <div>
+      <div class="persona-name">李总监 (CTO)</div>
+      <div class="persona-role">技术负责人</div>
+    </div>
+  </div>
+  <div class="persona-chip">
+    <div class="avatar" style="background:#7C3AED">王</div>
+    <div>
+      <div class="persona-name">王经理 (PM)</div>
+      <div class="persona-role">产品经理</div>
+    </div>
+  </div>
+
+  <div class="section-title">聊天室</div>
+  <div class="room-item active">
+    <span class="room-icon">💬</span>
+    <span class="room-name">预算审批讨论</span>
+    <span class="room-time">14:30</span>
+  </div>
+  <div class="room-item">
+    <span class="room-icon">👥</span>
+    <span class="room-name">技术方案评审</span>
+    <span class="room-time">昨天</span>
+  </div>
+  <div class="room-item">
+    <span class="room-icon">💬</span>
+    <span class="room-name">资源协调会议</span>
+    <span class="room-time">3天前</span>
+  </div>
+
+  <button class="growth-btn">📈 成长轨迹</button>
+</aside>
+
+<main class="main">
+  <div class="header">
+    <div style="display:flex;align-items:center">
+      <h2>预算审批讨论</h2>
+      <span class="badge">私聊</span>
+    </div>
+    <div class="header-actions">
+      <button class="header-btn" title="分析">📊</button>
+      <button class="header-btn" title="AI 复盘">🎓</button>
+      <button class="header-btn" title="情绪曲线">📈</button>
+      <button class="header-btn" title="导出">⬇️</button>
+    </div>
+  </div>
+
+  <div class="messages">
+    <div class="msg user">
+      <div class="msg-bubble">
+        陈总好，关于下个季度的 AI 工具预算，我准备了一份方案想和您讨论。核心投入在三个方向：模型训练、数据标注和开发工具链。
+      </div>
+    </div>
+    <div class="msg">
+      <div class="msg-avatar" style="background:#E45C3A">陈</div>
+      <div>
+        <div class="msg-bubble">
+          好，说说具体数字。上个季度你们的 ROI 怎么样？我需要看到可量化的产出，不要只给我技术指标。客户那边有什么反馈？
+        </div>
+        <div class="msg-emotion">质疑 (-1)</div>
+      </div>
+    </div>
+    <div class="msg user">
+      <div class="msg-bubble">
+        上季度通过 AI 自动化处理了 67% 的常规客服请求，人力成本降低了 23 万。客户满意度从 78% 提升到 85%。这个季度我们计划重点投入多语言能力。
+      </div>
+    </div>
+    <div class="msg">
+      <div class="msg-avatar" style="background:#E45C3A">陈</div>
+      <div>
+        <div class="msg-bubble">
+          数据还可以。多语言是哪些客户要的？如果是 IMDA 那个项目，我们上次谈过时间线很紧，别到时候做了一半交不出来。
+        </div>
+        <div class="msg-emotion">犹豫 (0)</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="input-bar">
+    <input type="text" placeholder="输入消息...  @提及角色">
+    <button class="send-btn">↑</button>
+  </div>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-value">12</div>
+      <div class="stat-label">练习次数</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value">8</div>
+      <div class="stat-label">评估次数</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value" style="color:#4F8CFF">3.2</div>
+      <div class="stat-label">平均分</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value" style="color:#16A34A">3.8</div>
+      <div class="stat-label">最新分</div>
+    </div>
+  </div>
+</main>
+
+</body>
+</html>

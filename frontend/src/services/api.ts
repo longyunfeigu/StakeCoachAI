@@ -293,10 +293,24 @@ export async function fetchCoachingSession(roomId: number, sessionId: number): P
   return json.data
 }
 
-export async function listAnalysisReports(roomId: number): Promise<{ id: number }[]> {
+export interface AnalysisReportSummary {
+  id: number
+  room_id: number
+  summary: string
+  created_at: string | null
+}
+
+export async function listAnalysisReports(roomId: number): Promise<AnalysisReportSummary[]> {
   const resp = await fetch(`${API_BASE}/rooms/${roomId}/analysis`)
   if (!resp.ok) throw new Error(`Failed to list analysis reports: ${resp.status}`)
-  const json: ApiResponse<{ id: number }[]> = await resp.json()
+  const json: ApiResponse<AnalysisReportSummary[]> = await resp.json()
+  return json.data
+}
+
+export async function fetchAnalysisReport(roomId: number, reportId: number): Promise<AnalysisReport> {
+  const resp = await fetch(`${API_BASE}/rooms/${roomId}/analysis/${reportId}`)
+  if (!resp.ok) throw new Error(`Failed to fetch analysis report: ${resp.status}`)
+  const json: ApiResponse<AnalysisReport> = await resp.json()
   return json.data
 }
 
@@ -305,12 +319,14 @@ export interface ResistanceItem {
   persona_name: string
   score: number
   reason: string
+  message_indices?: number[]
 }
 
 export interface ArgumentItem {
   argument: string
   target_persona: string
   effectiveness: string
+  message_indices?: number[]
 }
 
 export interface SuggestionItem {
@@ -328,6 +344,7 @@ export interface AnalysisReport {
     resistance_ranking: ResistanceItem[]
     effective_arguments: ArgumentItem[]
     communication_suggestions: SuggestionItem[]
+    message_id_map?: Record<string, number>
   }
   created_at: string | null
 }

@@ -53,14 +53,16 @@ _ANALYSIS_SYSTEM_PROMPT = """\
       "persona_id": "角色ID",
       "persona_name": "角色名称",
       "score": -5到5的整数（-5=强烈反对, 0=中立, 5=强烈支持）,
-      "reason": "该角色为什么持这个态度，基于对话中的具体表现"
+      "reason": "该角色为什么持这个态度，基于对话中的具体表现",
+      "message_indices": [1, 3, 7]
     }}
   ],
   "effective_arguments": [
     {{
       "argument": "用户使用的具体论点",
       "target_persona": "这个论点主要影响了哪个角色",
-      "effectiveness": "为什么这个论点有效，对方态度有什么变化"
+      "effectiveness": "为什么这个论点有效，对方态度有什么变化",
+      "message_indices": [5, 6]
     }}
   ],
   "communication_suggestions": [
@@ -79,16 +81,29 @@ _ANALYSIS_SYSTEM_PROMPT = """\
 - effective_arguments 只列出确实产生了效果的论点，如果没有则为空数组
 - communication_suggestions 要具体可操作，不要笼统的建议
 - 基于对话中的情绪变化（emotion_score）和实际发言内容做判断
+- message_indices 必须引用对话记录中 [#N] 的序号，列出支撑该结论的关键消息（通常 1-3 条最相关的）
 """
 
 
-def _build_conversation_text(history: list[dict], persona_loader) -> str:
-    """Format conversation history into readable text for LLM analysis."""
+def _build_conversation_text(history: list[dict], persona_loader) -> tuple[str, dict[int, int]]:
+    """Format conversation history into readable text for LLM analysis.
+
+    Returns:
+        Tuple of (conversation_text, message_id_map) where message_id_map
+        maps 1-based sequence numbers to database message IDs.
+    """
     lines: list[str] = []
+    message_id_map: dict[int, int] = {}
+    seq = 0
     for msg in history:
         sender_type = msg["sender_type"]
         if sender_type == "system":
             continue
+
+        seq += 1
+        msg_id = msg.get("id")
+        if msg_id is not None:
+            message_id_map[seq] = msg_id
 
         sender_id = msg["sender_id"]
         content = msg["content"]
@@ -97,13 +112,13 @@ def _build_conversation_text(history: list[dict], persona_loader) -> str:
             emotion = f" [情绪: {msg.get('emotion_label', '未知')}({msg['emotion_score']})]"
 
         if sender_type == "user":
-            lines.append(f"[用户]{emotion}: {content}")
+            lines.append(f"[#{seq}] [用户]{emotion}: {content}")
         elif sender_type == "persona":
             p = persona_loader.get_persona(sender_id) if persona_loader else None
             name = p.name if p else sender_id
-            lines.append(f"[{name}]{emotion}: {content}")
+            lines.append(f"[#{seq}] [{name}]{emotion}: {content}")
 
-    return "\n\n".join(lines)
+    return "\n\n".join(lines), message_id_map
 
 
 def _build_persona_profiles(persona_ids: list[str], persona_loader, org_context: str = "") -> str:
@@ -159,6 +174,7 @@ class AnalysisService:
         # 2. Build analysis prompt
         history = [
             {
+                "id": m.id,
                 "sender_type": m.sender_type,
                 "sender_id": m.sender_id,
                 "content": m.content,
@@ -168,7 +184,7 @@ class AnalysisService:
             for m in messages
         ]
 
-        conversation_text = _build_conversation_text(history, self._persona_loader)
+        conversation_text, message_id_map = _build_conversation_text(history, self._persona_loader)
 
         # Build org context for analysis if any persona belongs to an org
         org_ctx = ""
@@ -236,6 +252,7 @@ class AnalysisService:
             "resistance_ranking": parsed.get("resistance_ranking", []),
             "effective_arguments": parsed.get("effective_arguments", []),
             "communication_suggestions": parsed.get("communication_suggestions", []),
+            "message_id_map": {str(k): v for k, v in message_id_map.items()},
         }
 
         # 5. Validate with Pydantic (lenient: drop invalid items)

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import Markdown from 'react-markdown'
-import { MessageCircle, Layers, Plus, BarChart3, BarChart2, GraduationCap, Download, FileText, FileDown, Send, ClipboardList, X, Building2, TrendingUp } from 'lucide-react'
+import { MessageCircle, Layers, Plus, BarChart3, BarChart2, GraduationCap, Download, FileText, FileDown, Send, ClipboardList, X, Building2, TrendingUp, Activity } from 'lucide-react'
 import './App.css'
 import Avatar from './components/Avatar'
 import RoomList from './components/RoomList'
@@ -9,6 +9,7 @@ import PersonaEditorDialog from './components/PersonaEditorDialog'
 import ScenarioDialog from './components/ScenarioDialog'
 import OrganizationDialog from './components/OrganizationDialog'
 import EmotionCurve from './components/EmotionCurve'
+import EmotionSidebar from './components/EmotionSidebar'
 import GrowthDashboard from './components/GrowthDashboard'
 import {
   fetchPersonas,
@@ -19,6 +20,7 @@ import {
   exportRoomHtml,
   listAnalysisReports,
   createAnalysisReport,
+  fetchAnalysisReport,
   startCoachingStream,
   sendCoachingMessageStream,
   type ChatRoom,
@@ -30,6 +32,7 @@ import {
   type PersonaSummary,
   type RoundEndData,
   type AnalysisReport,
+  type AnalysisReportSummary,
 } from './services/api'
 
 const API_BASE = '/api/v1/stakeholder'
@@ -89,6 +92,7 @@ function App() {
   const [showOrgDialog, setShowOrgDialog] = useState(false)
   const [showGrowth, setShowGrowth] = useState(false)
   const [currentOrg, setCurrentOrg] = useState<Organization | null>(null)
+  const [showEmotionSidebar, setShowEmotionSidebar] = useState(false)
   const [showEmotionCurve, setShowEmotionCurve] = useState(false)
   const [showExportMenu, setShowExportMenu] = useState(false)
   const [personaEditorState, setPersonaEditorState] = useState<{
@@ -119,6 +123,8 @@ function App() {
   // Analysis panel state
   const [analysisResult, setAnalysisResult] = useState<AnalysisReport | null>(null)
   const [analyzingRoom, setAnalyzingRoom] = useState(false)
+  const [analysisReportList, setAnalysisReportList] = useState<AnalysisReportSummary[]>([])
+  const [highlightedMessageId, setHighlightedMessageId] = useState<number | null>(null)
   const messageListRef = useRef<HTMLDivElement>(null)
   const eventSourceRef = useRef<EventSource | null>(null)
 
@@ -404,8 +410,21 @@ function App() {
     setAnalyzingRoom(true)
     setAnalysisResult(null)
     try {
-      const report = await createAnalysisReport(selectedRoomId)
-      setAnalysisResult(report)
+      // Load existing reports list
+      const reports = await listAnalysisReports(selectedRoomId)
+      setAnalysisReportList(reports)
+
+      if (reports.length > 0) {
+        // Show latest existing report (API returns newest first)
+        const latest = reports[0]
+        const full = await fetchAnalysisReport(selectedRoomId, latest.id)
+        setAnalysisResult(full)
+      } else {
+        // No reports yet, generate a new one
+        const report = await createAnalysisReport(selectedRoomId)
+        setAnalysisResult(report)
+        setAnalysisReportList([{ id: report.id, room_id: report.room_id, summary: report.summary, created_at: report.created_at }])
+      }
     } catch (e: any) {
       const msg = e?.message || '分析失败'
       if (msg.includes('No messages') || msg.includes('NoMessages')) {
@@ -415,6 +434,53 @@ function App() {
       }
     } finally {
       setAnalyzingRoom(false)
+    }
+  }
+
+  const handleGenerateNewReport = async () => {
+    if (!selectedRoomId || analyzingRoom) return
+    setAnalyzingRoom(true)
+    try {
+      const report = await createAnalysisReport(selectedRoomId)
+      setAnalysisResult(report)
+      // Refresh list
+      const reports = await listAnalysisReports(selectedRoomId)
+      setAnalysisReportList(reports)
+    } catch (e: any) {
+      alert(e?.message || '生成失败')
+    } finally {
+      setAnalyzingRoom(false)
+    }
+  }
+
+  const handleSelectReport = async (reportId: number) => {
+    if (!selectedRoomId) return
+    try {
+      const full = await fetchAnalysisReport(selectedRoomId, reportId)
+      setAnalysisResult(full)
+    } catch {
+      alert('加载报告失败')
+    }
+  }
+
+  const handleScrollToMessage = (messageIndices: number[] | undefined, messageIdMap: Record<string, number> | undefined) => {
+    if (!messageIndices?.length || !messageIdMap) return
+    // Find the first valid message ID
+    for (const idx of messageIndices) {
+      const msgId = messageIdMap[String(idx)]
+      if (msgId == null) continue
+      // Close dialog
+      setAnalysisResult(null)
+      // Scroll to message after dialog closes
+      setTimeout(() => {
+        const el = document.getElementById(`msg-${msgId}`)
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          setHighlightedMessageId(msgId)
+          setTimeout(() => setHighlightedMessageId(null), 2500)
+        }
+      }, 100)
+      return
     }
   }
 
@@ -431,7 +497,7 @@ function App() {
       let reports = await listAnalysisReports(selectedRoomId)
       let reportId: number
       if (reports.length > 0) {
-        reportId = reports[reports.length - 1].id
+        reportId = reports[0].id
       } else {
         const created = await createAnalysisReport(selectedRoomId)
         reportId = created.id
@@ -574,6 +640,7 @@ function App() {
         {showGrowth ? (
           <GrowthDashboard onCreateRoom={() => setShowCreateDialog(true)} />
         ) : selectedRoom ? (
+          <div className="chat-with-emotion">
           <div className="chat-view">
             <div className="chat-header">
               <div className="chat-header-left">
@@ -584,9 +651,16 @@ function App() {
               </div>
               <div className="chat-header-actions">
                 <button
+                  className={`header-action-btn ${showEmotionSidebar ? 'active' : ''}`}
+                  onClick={() => setShowEmotionSidebar((v) => !v)}
+                  title="实时情绪面板"
+                >
+                  <Activity size={16} />
+                </button>
+                <button
                   className="header-action-btn"
                   onClick={() => setShowEmotionCurve(true)}
-                  title="情绪曲线"
+                  title="情绪详细分析"
                 >
                   <BarChart3 size={16} />
                 </button>
@@ -659,7 +733,7 @@ function App() {
                     const persona = msg.sender_type === 'persona' ? personaMap[msg.sender_id] : null
                     const borderColor = persona?.avatar_color || undefined
                     return (
-                      <div key={msg.id} className={`message ${msg.sender_type}`} data-sender={msg.sender_type}>
+                      <div key={msg.id} id={`msg-${msg.id}`} className={`message ${msg.sender_type}${highlightedMessageId === msg.id ? ' highlighted' : ''}`} data-sender={msg.sender_type}>
                         {msg.sender_type === 'persona' && (
                           <div className="message-row">
                             <Avatar name={persona?.name || msg.sender_id} color={borderColor || '#2D9C6F'} size={28} />
@@ -802,6 +876,15 @@ function App() {
               </button>
             </div>
           </div>
+          {showEmotionSidebar && (
+            <EmotionSidebar
+              messages={selectedRoom?.messages || []}
+              personaMap={personaMap}
+              onClose={() => setShowEmotionSidebar(false)}
+              onExpand={() => setShowEmotionCurve(true)}
+            />
+          )}
+          </div>
         ) : (
           <div className="welcome-page">
             <div className="welcome-icon">
@@ -908,48 +991,123 @@ function App() {
       {analysisResult && (
         <div className="dialog-overlay" onClick={() => setAnalysisResult(null)}>
           <div className="dialog analysis-dialog" onClick={(e) => e.stopPropagation()}>
-            <h3>对话分析报告</h3>
-            <p className="analysis-summary">{analysisResult.summary}</p>
-            {analysisResult.content.resistance_ranking.length > 0 && (
-              <div className="resistance-ranking">
-                <h4>阻力排名</h4>
-                {analysisResult.content.resistance_ranking.map((item, i) => (
-                  <div key={i} className="resistance-item">
-                    <span className="resistance-name">{item.persona_name}</span>
-                    <span className={`resistance-score ${item.score >= 0 ? 'positive' : 'negative'}`}>
-                      {item.score > 0 ? '+' : ''}{item.score}
-                    </span>
-                    <span className="resistance-reason">{item.reason}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-            {analysisResult.content.effective_arguments.length > 0 && (
-              <div className="effective-arguments">
-                <h4>有效论点</h4>
-                {analysisResult.content.effective_arguments.map((item, i) => (
-                  <div key={i} className="argument-item">
-                    <span className="argument-text">{item.argument}</span>
-                    <span className="argument-target">→ {item.target_persona}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-            {analysisResult.content.communication_suggestions.length > 0 && (
-              <div className="suggestions">
-                <h4>沟通建议</h4>
-                {analysisResult.content.communication_suggestions.map((item, i) => (
-                  <div key={i} className="suggestion-item">
-                    <span className={`suggestion-priority ${item.priority}`}>{item.priority}</span>
-                    <span className="suggestion-name">{item.persona_name}:</span>
-                    <span className="suggestion-text">{item.suggestion}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-            <div className="dialog-actions">
-              <button className="btn-cancel" onClick={() => setAnalysisResult(null)}>关闭</button>
+            <div className="analysis-header">
+              <h3>对话分析报告</h3>
+              <button className="analysis-close" onClick={() => setAnalysisResult(null)}>
+                <X size={18} />
+              </button>
             </div>
+
+            {/* Historical report selector */}
+            {analysisReportList.length > 1 && (
+              <div className="analysis-report-selector">
+                <select
+                  value={analysisResult.id}
+                  onChange={(e) => handleSelectReport(Number(e.target.value))}
+                >
+                  {analysisReportList.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.created_at ? new Date(r.created_at).toLocaleString() : `报告 #${r.id}`}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  className="analysis-new-btn"
+                  onClick={handleGenerateNewReport}
+                  disabled={analyzingRoom}
+                >
+                  {analyzingRoom ? '生成中...' : '+ 新报告'}
+                </button>
+              </div>
+            )}
+            {analysisReportList.length <= 1 && (
+              <div className="analysis-report-selector">
+                <span className="analysis-report-date">
+                  {analysisResult.created_at ? new Date(analysisResult.created_at).toLocaleString() : ''}
+                </span>
+                <button
+                  className="analysis-new-btn"
+                  onClick={handleGenerateNewReport}
+                  disabled={analyzingRoom}
+                >
+                  {analyzingRoom ? '生成中...' : '重新分析'}
+                </button>
+              </div>
+            )}
+
+            <p className="analysis-summary">{analysisResult.summary}</p>
+
+            {/* Resistance ranking cards */}
+            {analysisResult.content.resistance_ranking.length > 0 && (
+              <div className="analysis-section">
+                <h4>阻力排名</h4>
+                <div className="analysis-cards">
+                  {analysisResult.content.resistance_ranking.map((item, i) => {
+                    const hasLinks = item.message_indices && item.message_indices.length > 0 && analysisResult.content.message_id_map
+                    return (
+                      <div key={i} className={`analysis-card${hasLinks ? ' clickable' : ''}`}
+                        onClick={() => hasLinks && handleScrollToMessage(item.message_indices, analysisResult.content.message_id_map)}
+                      >
+                        <div className="analysis-card-header">
+                          <span className="analysis-card-name">{item.persona_name}</span>
+                          <span className={`analysis-card-score ${item.score >= 0 ? 'positive' : 'negative'}`}>
+                            {item.score > 0 ? '+' : ''}{item.score}
+                          </span>
+                        </div>
+                        <div className="analysis-card-body">{item.reason}</div>
+                        {hasLinks && (
+                          <div className="analysis-card-link">点击查看对话原文 →</div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Effective arguments cards */}
+            {analysisResult.content.effective_arguments.length > 0 && (
+              <div className="analysis-section">
+                <h4>有效论点</h4>
+                <div className="analysis-cards">
+                  {analysisResult.content.effective_arguments.map((item, i) => {
+                    const hasLinks = item.message_indices && item.message_indices.length > 0 && analysisResult.content.message_id_map
+                    return (
+                      <div key={i} className={`analysis-card argument${hasLinks ? ' clickable' : ''}`}
+                        onClick={() => hasLinks && handleScrollToMessage(item.message_indices, analysisResult.content.message_id_map)}
+                      >
+                        <div className="analysis-card-header">
+                          <span className="analysis-card-argument">{item.argument}</span>
+                          <span className="analysis-card-target">→ {item.target_persona}</span>
+                        </div>
+                        <div className="analysis-card-body">{item.effectiveness}</div>
+                        {hasLinks && (
+                          <div className="analysis-card-link">点击查看对话原文 →</div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Communication suggestions */}
+            {analysisResult.content.communication_suggestions.length > 0 && (
+              <div className="analysis-section">
+                <h4>沟通建议</h4>
+                <div className="analysis-cards">
+                  {analysisResult.content.communication_suggestions.map((item, i) => (
+                    <div key={i} className="analysis-card suggestion">
+                      <div className="analysis-card-header">
+                        <span className="analysis-card-name">{item.persona_name}</span>
+                        <span className={`suggestion-priority ${item.priority}`}>{item.priority}</span>
+                      </div>
+                      <div className="analysis-card-body">{item.suggestion}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
