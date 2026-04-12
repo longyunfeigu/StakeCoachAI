@@ -1,0 +1,444 @@
+/* ================================================
+   HomePage — Dashboard Landing Page
+   ================================================ */
+
+.home-page {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ---------- shared section helpers ---------- */
+
+.home-section-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+}
+
+.home-section-label--green {
+  color: var(--green);
+}
+
+.home-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.home-section-link {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  transition: color var(--transition-normal);
+}
+
+.home-section-link:hover {
+  color: var(--green);
+}
+
+/* ---------- 1. Daily Challenge Banner ---------- */
+
+.home-daily-challenge {
+  display: flex;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.home-daily-challenge-accent {
+  width: 3px;
+  flex-shrink: 0;
+  background: var(--green);
+}
+
+.home-daily-challenge-body {
+  flex: 1;
+  padding: 18px;
+}
+
+.home-daily-challenge-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.home-daily-xp {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--green);
+}
+
+.home-daily-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.home-daily-progress-track {
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--green-soft);
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+
+.home-daily-progress-fill {
+  height: 100%;
+  background: var(--green);
+  border-radius: var(--radius-full);
+  transition: width 0.4s ease;
+}
+
+.home-daily-btn {
+  padding: 6px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--green);
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background var(--transition-normal);
+}
+
+.home-daily-btn:hover {
+  background: var(--green-hover);
+}
+
+/* ---------- 2. Quick Action Cards ---------- */
+
+.home-actions-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.home-action-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 18px;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color var(--transition-normal);
+  position: relative;
+}
+
+.home-action-card--amber:hover {
+  border-color: var(--amber);
+}
+.home-action-card--green:hover {
+  border-color: var(--green);
+}
+.home-action-card--violet:hover {
+  border-color: var(--violet);
+}
+.home-action-card--neutral:hover {
+  border-color: var(--text-secondary);
+}
+
+/* Icon containers */
+.home-action-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.home-action-icon--amber {
+  background: var(--amber-soft);
+  color: var(--amber);
+}
+.home-action-icon--green {
+  background: var(--green-soft);
+  color: var(--green);
+}
+.home-action-icon--violet {
+  background: var(--violet-soft);
+  color: var(--violet);
+}
+.home-action-icon--neutral {
+  background: var(--green-soft);
+  color: var(--text-muted);
+}
+
+/* Text stack */
+.home-action-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.home-action-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.home-action-label--amber { color: var(--amber); }
+.home-action-label--green { color: var(--green); }
+.home-action-label--violet { color: var(--violet); }
+.home-action-label--neutral { color: var(--text-muted); }
+
+.home-action-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.home-action-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+/* Score block (growth card) */
+.home-action-score-block {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.home-action-score-number {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--violet);
+  line-height: 1;
+}
+
+.home-action-score-trend {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--green);
+}
+
+/* Stacked avatar circles (settings card) */
+.home-action-avatars {
+  display: flex;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.home-action-avatar-circle {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  border: 2px solid var(--bg-card);
+  margin-left: -8px;
+}
+
+.home-action-avatar-circle:first-child {
+  margin-left: 0;
+}
+
+.home-action-avatar-more {
+  margin-left: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--bg-base);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  padding: 2px 8px;
+}
+
+/* ---------- 3. Recent Conversations ---------- */
+
+.home-recent-row {
+  display: flex;
+  gap: 12px;
+}
+
+.home-recent-card {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color var(--transition-normal);
+}
+
+.home-recent-card:hover {
+  border-color: var(--green);
+}
+
+.home-recent-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.home-recent-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.home-recent-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.home-recent-time {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.home-recent-grade {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--green);
+  flex-shrink: 0;
+}
+
+/* ---------- 4. Skill Path Preview ---------- */
+
+.home-skill-chain {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+
+.home-skill-line {
+  width: 32px;
+  height: 2px;
+  background: var(--border);
+  flex-shrink: 0;
+}
+
+.home-skill-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.home-skill-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  transition: background var(--transition-normal);
+}
+
+/* done */
+.home-skill-node--done .home-skill-circle {
+  background: var(--green);
+  color: #fff;
+}
+.home-skill-node--done .home-skill-label {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* current */
+.home-skill-node--current .home-skill-circle {
+  background: transparent;
+  border: 2px solid var(--amber);
+}
+.home-skill-node--current .home-skill-label {
+  color: var(--amber);
+  font-weight: 600;
+}
+
+.home-skill-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--amber);
+}
+
+/* locked */
+.home-skill-node--locked .home-skill-circle {
+  background: transparent;
+  border: 1.5px solid var(--border);
+  color: var(--text-secondary);
+}
+.home-skill-node--locked .home-skill-label {
+  color: var(--text-secondary);
+}
+
+.home-skill-label {
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+/* ---------- responsive: mobile < 768px ---------- */
+
+@media (max-width: 767px) {
+  .home-page {
+    padding: 16px;
+    gap: 18px;
+  }
+
+  .home-actions-grid {
+    gap: 10px;
+  }
+
+  .home-action-card {
+    padding: 14px;
+  }
+
+  /* Recent conversations: vertical list */
+  .home-recent-row {
+    flex-direction: column;
+  }
+
+  /* Skill path: scrollable */
+  .home-skill-chain {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}

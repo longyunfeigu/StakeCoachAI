@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import Layout from './components/layout/Layout'
+import HomePage from './pages/HomePage'
 import { AppProvider, useAppContext } from './contexts/AppContext'
 import Markdown from 'react-markdown'
 import { MessageCircle, Layers, Plus, BarChart3, BarChart2, GraduationCap, Download, FileText, FileDown, Send, ClipboardList, X, Building2, TrendingUp, Activity, Lightbulb, Volume2, VolumeX, Zap, Flag, Loader2 } from 'lucide-react'
@@ -1360,6 +1361,7 @@ function App() {
     <AppProvider>
       <Routes>
         <Route element={<Layout />}>
+          <Route index element={<HomePage />} />
           <Route path="*" element={<AppInner />} />
         </Route>
       </Routes>
