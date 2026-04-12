@@ -20,37 +20,49 @@ interface VoiceRecorderProps {
 
 const WS_BASE = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}`
 const API_PREFIX = '/api/v1/stakeholder'
+const HOLD_START_DELAY_MS = 250
+const TRANSCRIPTION_TIMEOUT_MS = 45000
 
 const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ roomId, disabled, onTranscription }) => {
   const [state, setState] = useState<RecordState>('idle')
   const [duration, setDuration] = useState(0)
   const [error, setError] = useState<string | null>(null)
+  const stateRef = useRef<RecordState>('idle')
   const wsRef = useRef<WebSocket | null>(null)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const timerRef = useRef<number>(0)
+  const holdStartTimerRef = useRef<number>(0)
+  const transcriptionTimeoutRef = useRef<number>(0)
   const holdModeRef = useRef(false)
+  const pointerHeldRef = useRef(false)
+  const suppressNextClickRef = useRef(false)
+  const stopAfterStartRef = useRef(false)
   const startingRef = useRef(false)
   const pendingSendsRef = useRef(0)
   const chunksRef = useRef<Blob[]>([])
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      stopEverything()
-    }
+  const setRecordState = useCallback((next: RecordState) => {
+    stateRef.current = next
+    setState(next)
   }, [])
 
-  // Cleanup on room change
   useEffect(() => {
-    stopEverything()
-    setState('idle')
-  }, [roomId])
+    stateRef.current = state
+  }, [state])
 
   const stopEverything = useCallback(() => {
     if (timerRef.current) {
       clearInterval(timerRef.current)
       timerRef.current = 0
+    }
+    if (holdStartTimerRef.current) {
+      clearTimeout(holdStartTimerRef.current)
+      holdStartTimerRef.current = 0
+    }
+    if (transcriptionTimeoutRef.current) {
+      clearTimeout(transcriptionTimeoutRef.current)
+      transcriptionTimeoutRef.current = 0
     }
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       mediaRecorderRef.current.stop()
@@ -65,30 +77,63 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ roomId, disabled, onTrans
     }
     wsRef.current = null
     chunksRef.current = []
+    pointerHeldRef.current = false
+    holdModeRef.current = false
+    suppressNextClickRef.current = false
+    stopAfterStartRef.current = false
     setDuration(0)
   }, [])
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      stopEverything()
+    }
+  }, [stopEverything])
+
+  // Cleanup on room change
+  useEffect(() => {
+    stopEverything()
+    setRecordState('idle')
+  }, [roomId, stopEverything, setRecordState])
 
   const connectWebSocket = useCallback((): Promise<WebSocket> => {
     return new Promise((resolve, reject) => {
       const ws = new WebSocket(`${WS_BASE}${API_PREFIX}/rooms/${roomId}/voice`)
       ws.onopen = () => resolve(ws)
       ws.onerror = () => reject(new Error('WebSocket connection failed'))
+      ws.onclose = () => {
+        if (wsRef.current === ws) {
+          wsRef.current = null
+        }
+      }
       ws.onmessage = (e) => {
         try {
           const msg = JSON.parse(e.data)
           if (msg.type === 'transcription' && msg.is_final && msg.text) {
             onTranscription?.(msg.text)
             // Transcription received — close WS and reset state
-            setState('idle')
+            if (transcriptionTimeoutRef.current) {
+              clearTimeout(transcriptionTimeoutRef.current)
+              transcriptionTimeoutRef.current = 0
+            }
+            setRecordState('idle')
             setDuration(0)
             if (wsRef.current && wsRef.current.readyState <= WebSocket.OPEN) {
               wsRef.current.close()
             }
           } else if (msg.type === 'error') {
+            if (transcriptionTimeoutRef.current) {
+              clearTimeout(transcriptionTimeoutRef.current)
+              transcriptionTimeoutRef.current = 0
+            }
             setError(msg.message || '语音识别失败')
             setTimeout(() => setError(null), 3000)
-            setState('idle')
+            setRecordState('idle')
             setDuration(0)
+            if (wsRef.current && wsRef.current.readyState <= WebSocket.OPEN) {
+              wsRef.current.close()
+            }
           }
         } catch {
           // ignore parse errors
@@ -96,7 +141,26 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ roomId, disabled, onTrans
       }
       wsRef.current = ws
     })
-  }, [roomId, onTranscription])
+  }, [roomId, onTranscription, setRecordState])
+
+  const stopActiveRecorder = useCallback(() => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current)
+      timerRef.current = 0
+    }
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      try {
+        mediaRecorderRef.current.requestData()
+      } catch {
+        // Some browsers may reject requestData while the recorder is stopping.
+      }
+      mediaRecorderRef.current.stop()
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop())
+      streamRef.current = null
+    }
+  }, [])
 
   const startRecording = useCallback(async () => {
     // Prevent double-trigger from pointerDown + click both firing
@@ -150,7 +214,7 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ roomId, disabled, onTrans
             // No audio data was actually sent — don't send speech_end
             setError('未录到音频数据，请重试')
             setTimeout(() => setError(null), 3000)
-            setState('idle')
+            setRecordState('idle')
             setDuration(0)
             if (ws.readyState === WebSocket.OPEN) ws.close()
             return
@@ -158,35 +222,47 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ roomId, disabled, onTrans
           if (ws.readyState === WebSocket.OPEN) {
             ws.send(JSON.stringify({ type: 'speech_end', format: 'webm' }))
           }
-          setState('processing')
+          setRecordState('processing')
+          if (transcriptionTimeoutRef.current) {
+            clearTimeout(transcriptionTimeoutRef.current)
+          }
           // Auto-close WS after a delay to receive transcription
-          setTimeout(() => {
+          transcriptionTimeoutRef.current = window.setTimeout(() => {
             if (wsRef.current && wsRef.current.readyState <= WebSocket.OPEN) {
               wsRef.current.close()
             }
-            setState('idle')
+            transcriptionTimeoutRef.current = 0
+            setError('语音识别超时，请重试')
+            setTimeout(() => setError(null), 3000)
+            setRecordState('idle')
             setDuration(0)
-          }, 10000) // 10s timeout for transcription
+          }, TRANSCRIPTION_TIMEOUT_MS)
         }
         flushAndEnd()
       }
 
       recorder.start(500) // 500ms chunks
-      setState('recording')
+      setRecordState('recording')
       setDuration(0)
       timerRef.current = window.setInterval(() => {
         setDuration((d) => d + 1)
       }, 1000)
-    } catch (err: any) {
+      if (stopAfterStartRef.current) {
+        stopAfterStartRef.current = false
+        stopActiveRecorder()
+      }
+    } catch (err: unknown) {
       console.error('Failed to start recording:', err)
       stopEverything()
-      setState('idle')
+      setRecordState('idle')
       // Show user-visible error
-      if (err?.name === 'NotAllowedError' || err?.name === 'PermissionDeniedError') {
+      const errorName = err instanceof DOMException ? err.name : ''
+      const errorMessage = err instanceof Error ? err.message : ''
+      if (errorName === 'NotAllowedError' || errorName === 'PermissionDeniedError') {
         setError('请允许麦克风权限')
-      } else if (err?.name === 'NotFoundError') {
+      } else if (errorName === 'NotFoundError') {
         setError('未检测到麦克风')
-      } else if (err?.message?.includes('WebSocket')) {
+      } else if (errorMessage.includes('WebSocket')) {
         setError('语音服务连接失败')
       } else {
         setError('录音启动失败')
@@ -195,48 +271,59 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ roomId, disabled, onTrans
     } finally {
       startingRef.current = false
     }
-  }, [connectWebSocket, stopEverything])
+  }, [connectWebSocket, setRecordState, stopActiveRecorder, stopEverything])
 
   const stopRecording = useCallback(() => {
-    if (timerRef.current) {
-      clearInterval(timerRef.current)
-      timerRef.current = 0
-    }
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-      mediaRecorderRef.current.stop()
-    }
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((t) => t.stop())
-      streamRef.current = null
-    }
-  }, [])
+    stopActiveRecorder()
+  }, [stopActiveRecorder])
 
   // Click mode: toggle recording
   const handleClick = useCallback(() => {
     if (disabled) return
+    if (suppressNextClickRef.current) {
+      suppressNextClickRef.current = false
+      return
+    }
     if (holdModeRef.current) return // Don't interfere with hold mode
 
-    if (state === 'idle') {
+    if (stateRef.current === 'idle') {
       startRecording()
-    } else if (state === 'recording') {
+    } else if (stateRef.current === 'recording') {
       stopRecording()
     }
-  }, [state, disabled, startRecording, stopRecording])
+  }, [disabled, startRecording, stopRecording])
 
   // Hold mode: press to start, release to stop
   const handlePointerDown = useCallback(() => {
-    if (disabled || state !== 'idle') return
-    holdModeRef.current = true
-    startRecording()
-  }, [disabled, state, startRecording])
+    if (disabled || stateRef.current !== 'idle') return
+
+    pointerHeldRef.current = true
+    holdStartTimerRef.current = window.setTimeout(() => {
+      holdStartTimerRef.current = 0
+      if (!pointerHeldRef.current || stateRef.current !== 'idle') return
+
+      holdModeRef.current = true
+      stopAfterStartRef.current = false
+      startRecording()
+    }, HOLD_START_DELAY_MS)
+  }, [disabled, startRecording])
 
   const handlePointerUp = useCallback(() => {
-    if (!holdModeRef.current) return
-    holdModeRef.current = false
-    if (state === 'recording') {
-      stopRecording()
+    pointerHeldRef.current = false
+    if (holdStartTimerRef.current) {
+      clearTimeout(holdStartTimerRef.current)
+      holdStartTimerRef.current = 0
     }
-  }, [state, stopRecording])
+    if (!holdModeRef.current) return
+
+    suppressNextClickRef.current = true
+    holdModeRef.current = false
+    if (stateRef.current === 'recording') {
+      stopRecording()
+    } else if (startingRef.current) {
+      stopAfterStartRef.current = true
+    }
+  }, [stopRecording])
 
   const formatDuration = (s: number): string => {
     const min = Math.floor(s / 60)

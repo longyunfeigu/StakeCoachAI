@@ -61,6 +61,13 @@ class FakeLLM:
         )
 
 
+class FailingLLM:
+    """Stub LLM that raises during dispatcher decision."""
+
+    async def generate(self, messages: list[LLMMessage], **kwargs) -> LLMResponse:
+        raise RuntimeError("dispatcher unavailable")
+
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -123,6 +130,44 @@ async def test_dispatcher_decide_responders_returns_list():
 
     assert isinstance(result, list)
     assert len(result) >= 1
+
+
+@pytest.mark.asyncio
+async def test_dispatcher_decide_responders_falls_back_when_empty():
+    from application.services.stakeholder.dispatcher import Dispatcher
+
+    llm = FakeLLM(response_json="[]")
+    loader = FakePersonaLoader(_PERSONAS)
+
+    dispatcher = Dispatcher(llm=llm, persona_loader=loader)
+    result = await dispatcher.decide_responders(
+        user_message="是你们到底在讨论什么问题啊",
+        history=_HISTORY,
+        persona_ids=["jianfeng", "mingzhu"],
+    )
+
+    assert result == [
+        {
+            "persona_id": "jianfeng",
+            "reason": "调度器未返回有效角色，默认回应以避免冷场",
+        }
+    ]
+
+
+@pytest.mark.asyncio
+async def test_dispatcher_decide_responders_falls_back_when_llm_fails():
+    from application.services.stakeholder.dispatcher import Dispatcher
+
+    loader = FakePersonaLoader(_PERSONAS)
+
+    dispatcher = Dispatcher(llm=FailingLLM(), persona_loader=loader)
+    result = await dispatcher.decide_responders(
+        user_message="普通群聊消息也需要有人回应",
+        history=_HISTORY,
+        persona_ids=["jianfeng", "mingzhu"],
+    )
+
+    assert result[0]["persona_id"] == "jianfeng"
 
 
 # ---------------------------------------------------------------------------

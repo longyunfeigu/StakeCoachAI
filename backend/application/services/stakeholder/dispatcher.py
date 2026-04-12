@@ -64,6 +64,19 @@ class Dispatcher:
                 if mid in valid_ids and mid not in existing_ids:
                     result.insert(0, {"persona_id": mid, "reason": "被用户 @点名"})
 
+        if not result and persona_ids:
+            fallback_id = persona_ids[0]
+            logger.warning(
+                "Dispatcher returned no valid responders; falling back to %s",
+                fallback_id,
+            )
+            result.append(
+                {
+                    "persona_id": fallback_id,
+                    "reason": "调度器未返回有效角色，默认回应以避免冷场",
+                }
+            )
+
         return result
 
     async def check_followup(

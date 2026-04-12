@@ -30,7 +30,6 @@ from api.dependencies import (
     get_persona_editor_service,
     get_persona_loader,
     get_scenario_service,
-    get_stt_port,
     get_stakeholder_chat_service,
 )
 from application.services.stakeholder.chatroom_service import ChatRoomApplicationService
@@ -462,7 +461,11 @@ async def stream_room(room_id: int):
 
 
 @router.websocket("/rooms/{room_id}/voice")
-async def voice_ws(websocket: WebSocket, room_id: int):
+async def voice_ws(
+    websocket: WebSocket,
+    room_id: int,
+    svc: StakeholderChatService = Depends(get_stakeholder_chat_service),
+):
     """WebSocket for voice message input.
 
     Client sends audio chunks while speaking, then a speech_end signal.
@@ -483,13 +486,29 @@ async def voice_ws(websocket: WebSocket, room_id: int):
     import base64
     import logging
 
+    import httpx
+
     from infrastructure.external.voice import get_stt_client
 
     logger = logging.getLogger(__name__)
     stt = get_stt_client()
 
+    async def send_voice_json(payload: dict) -> bool:
+        try:
+            await websocket.send_json(payload)
+            return True
+        except WebSocketDisconnect:
+            return False
+        except Exception as exc:
+            logger.debug(
+                "voice_websocket_send_failed room_id=%s error=%s",
+                room_id,
+                exc,
+            )
+            return False
+
     if stt is None:
-        await websocket.send_json({"type": "error", "message": "STT service not configured"})
+        await send_voice_json({"type": "error", "message": "STT service not configured"})
         await websocket.close(code=1011)
         return
 
@@ -508,9 +527,10 @@ async def voice_ws(websocket: WebSocket, room_id: int):
 
             elif msg_type == "speech_end":
                 if not audio_buffer:
-                    await websocket.send_json(
+                    if not await send_voice_json(
                         {"type": "error", "message": "No audio data received"}
-                    )
+                    ):
+                        break
                     continue
 
                 # Transcribe accumulated audio
@@ -523,24 +543,36 @@ async def voice_ws(websocket: WebSocket, room_id: int):
                     )
                     text = result.text.strip()
 
-                    await websocket.send_json(
+                    if not await send_voice_json(
                         {"type": "transcription", "text": text, "is_final": True}
-                    )
+                    ):
+                        break
 
                     # Auto-send as text message if transcription is not empty
                     if text:
-                        from api.dependencies import get_stakeholder_chat_service
-
-                        svc = await get_stakeholder_chat_service()
                         msg, room = await svc.send_message(room_id, text)
                         # Generate replies in background (TTS audio will come via SSE)
                         asyncio.create_task(svc.generate_replies(room_id, room))
 
+                except httpx.TimeoutException as exc:
+                    logger.warning(
+                        "STT transcription timed out for room %d: %s",
+                        room_id,
+                        exc.__class__.__name__,
+                    )
+                    if not await send_voice_json(
+                        {
+                            "type": "error",
+                            "message": "语音识别服务连接超时，请检查 STT 网络或稍后重试",
+                        }
+                    ):
+                        break
                 except Exception as exc:
                     logger.exception("STT transcription failed for room %d", room_id)
-                    await websocket.send_json(
+                    if not await send_voice_json(
                         {"type": "error", "message": f"Transcription failed: {exc}"}
-                    )
+                    ):
+                        break
                 finally:
                     audio_buffer.clear()
 

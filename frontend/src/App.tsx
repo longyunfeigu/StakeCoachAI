@@ -1015,23 +1015,13 @@ function App() {
                 <VoiceRecorder
                   roomId={selectedRoomId}
                   disabled={sending}
-                  onTranscription={async (text) => {
-                    setInputValue(text)
-                    if (text.trim() && selectedRoomId && !sending) {
-                      setSending(true)
-                      setDispatchSummary(null)
-                      audioPlayerRef.current?.stop()
-                      try {
-                        await sendMessage(selectedRoomId, text.trim())
-                        setInputValue('')
-                        setRefreshKey((k) => k + 1)
-                        setTimeout(scrollToBottom, 100)
-                      } catch (e) {
-                        console.error('Voice auto-send failed:', e)
-                      } finally {
-                        setSending(false)
-                      }
-                    }
+                  onTranscription={(text) => {
+                    if (!text.trim()) return
+                    setInputValue('')
+                    setDispatchSummary(null)
+                    audioPlayerRef.current?.stop()
+                    setRefreshKey((k) => k + 1)
+                    setTimeout(scrollToBottom, 100)
                   }}
                 />
               )}
