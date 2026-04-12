@@ -5,16 +5,13 @@ import HomePage from './pages/HomePage'
 import ChatPage from './pages/ChatPage'
 import BattlePrepPage from './pages/BattlePrepPage'
 import GrowthPage from './pages/GrowthPage'
+import SettingsPage from './pages/SettingsPage'
 import { AppProvider, useAppContext } from './contexts/AppContext'
 import { MessageCircle, Layers, Plus, Building2, TrendingUp, Zap } from 'lucide-react'
 import './App.css'
 import Avatar from './components/Avatar'
 import RoomList from './components/RoomList'
 import CreateRoomDialog from './components/CreateRoomDialog'
-import PersonaEditorDialog from './components/PersonaEditorDialog'
-import ScenarioDialog from './components/ScenarioDialog'
-import OrganizationDialog from './components/OrganizationDialog'
-import type { PersonaSummary } from './services/api'
 
 /**
  * AppInner — legacy shell for routes that have NOT yet been migrated
@@ -22,21 +19,12 @@ import type { PersonaSummary } from './services/api'
  * Chat functionality is now handled entirely by ChatPage.
  */
 function AppInner() {
-  const { personaMap, currentOrg, reloadPersonas, reloadOrganizations } = useAppContext()
+  const { personaMap, currentOrg } = useAppContext()
   const navigate = useNavigate()
 
   const [selectedRoomId, setSelectedRoomId] = useState<number | null>(null)
   const [showCreateDialog, setShowCreateDialog] = useState(false)
-  const [showScenarioDialog, setShowScenarioDialog] = useState(false)
-  const [showOrgDialog, setShowOrgDialog] = useState(false)
-  const [personaEditorState, setPersonaEditorState] = useState<{
-    open: boolean
-    persona: PersonaSummary | null
-  }>({ open: false, persona: null })
   const [refreshKey, setRefreshKey] = useState(0)
-
-  const loadPersonas = reloadPersonas
-  const loadOrg = reloadOrganizations
 
   const handleRoomCreated = async (roomId: number) => {
     setRefreshKey((k) => k + 1)
@@ -59,7 +47,7 @@ function AppInner() {
           <div className="org-section-header">
             <span className="sidebar-section-title">组织</span>
           </div>
-          <div className="org-badge" onClick={() => setShowOrgDialog(true)}>
+          <div className="org-badge" onClick={() => navigate('/settings')}>
             <Building2 size={14} />
             {currentOrg ? (
               <span className="org-badge-name">{currentOrg.name}</span>
@@ -76,14 +64,14 @@ function AppInner() {
             <div className="sidebar-section-actions">
               <button
                 className="sidebar-icon-btn"
-                onClick={() => setShowScenarioDialog(true)}
+                onClick={() => navigate('/settings')}
                 title="场景管理"
               >
                 <Layers size={14} />
               </button>
               <button
                 className="sidebar-icon-btn"
-                onClick={() => setPersonaEditorState({ open: true, persona: null })}
+                onClick={() => navigate('/settings')}
                 title="新建角色"
               >
                 <Plus size={14} />
@@ -94,9 +82,7 @@ function AppInner() {
             <div
               key={p.id}
               className="persona-item"
-              onClick={() =>
-                setPersonaEditorState({ open: true, persona: p })
-              }
+              onClick={() => navigate('/settings')}
             >
               <Avatar name={p.name} color={p.avatar_color || '#2D9C6F'} size={28} />
               <div className="persona-item-info">
@@ -160,26 +146,6 @@ function AppInner() {
         onClose={() => setShowCreateDialog(false)}
         onCreated={handleRoomCreated}
       />
-
-      <PersonaEditorDialog
-        open={personaEditorState.open}
-        onClose={() => setPersonaEditorState({ open: false, persona: null })}
-        onSaved={loadPersonas}
-        editingPersona={personaEditorState.persona}
-        currentOrg={currentOrg}
-      />
-
-      <ScenarioDialog
-        open={showScenarioDialog}
-        onClose={() => setShowScenarioDialog(false)}
-      />
-
-      <OrganizationDialog
-        open={showOrgDialog}
-        onClose={() => setShowOrgDialog(false)}
-        onOrgChanged={() => { loadOrg(); loadPersonas() }}
-        personas={Object.values(personaMap)}
-      />
     </div>
   )
 }
@@ -194,6 +160,7 @@ function App() {
           <Route path="chat/:roomId" element={<ChatPage />} />
           <Route path="battle-prep" element={<BattlePrepPage />} />
           <Route path="growth" element={<GrowthPage />} />
+          <Route path="settings" element={<SettingsPage />} />
           <Route path="*" element={<AppInner />} />
         </Route>
       </Routes>

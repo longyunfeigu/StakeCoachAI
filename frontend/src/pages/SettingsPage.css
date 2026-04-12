@@ -1,0 +1,532 @@
+.settings-page {
+  max-width: 880px;
+  margin: 0 auto;
+  min-height: 100%;
+  background: var(--bg-base);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Tab bar */
+.settings-tab-bar {
+  display: flex;
+  gap: 0;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.settings-tab {
+  padding: 14px 20px;
+  border: none;
+  background: none;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.settings-tab:hover {
+  color: var(--text-primary);
+}
+
+.settings-tab.active {
+  color: var(--green);
+  border-bottom-color: var(--green);
+}
+
+/* Tab content area */
+.settings-content {
+  padding: 24px;
+  flex: 1;
+}
+
+/* Section header with action */
+.settings-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.settings-section-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.settings-create-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--green);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.settings-create-btn:hover {
+  background: var(--green-hover);
+}
+
+/* List items */
+.settings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.settings-list-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.settings-list-item:hover {
+  border-color: var(--border-accent);
+  box-shadow: var(--shadow-sm);
+}
+
+.settings-list-item.selected {
+  border-color: var(--green);
+  background: rgba(45, 156, 111, 0.04);
+}
+
+.settings-item-avatar {
+  flex-shrink: 0;
+}
+
+.settings-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.settings-item-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.settings-item-role {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.settings-item-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-item-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.settings-item-btn {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+}
+
+.settings-item-btn:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.settings-item-btn.danger:hover {
+  background: var(--danger-bg);
+  color: var(--danger);
+  border-color: rgba(199, 91, 91, 0.3);
+}
+
+/* Persona chips on scenario items */
+.settings-persona-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.settings-persona-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  background: var(--green-soft);
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  color: var(--green);
+  font-weight: 500;
+}
+
+/* Inline form panel */
+.settings-form-panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 24px;
+  margin-top: 16px;
+}
+
+.settings-form-panel h4 {
+  margin: 0 0 16px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.settings-form-panel .field-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 14px;
+}
+
+.settings-form-panel .field-label input,
+.settings-form-panel .field-label select {
+  display: block;
+  width: 100%;
+  margin-top: 5px;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  outline: none;
+  transition: all var(--transition-fast);
+  box-sizing: border-box;
+  color: var(--text-primary);
+  background: var(--bg-base);
+}
+
+.settings-form-panel .field-label input:focus,
+.settings-form-panel .field-label select:focus {
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(45, 156, 111, 0.1);
+}
+
+.settings-form-panel .field-label textarea {
+  display: block;
+  width: 100%;
+  margin-top: 5px;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  transition: all var(--transition-fast);
+  box-sizing: border-box;
+  resize: vertical;
+  min-height: 120px;
+  color: var(--text-primary);
+  background: var(--bg-base);
+}
+
+.settings-form-panel .field-label textarea:focus {
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(45, 156, 111, 0.1);
+}
+
+.settings-form-panel .color-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 5px;
+}
+
+.settings-form-panel .color-field input[type="color"] {
+  width: 40px;
+  height: 32px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 2px;
+  cursor: pointer;
+}
+
+.settings-form-panel .color-field .color-value {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-family: monospace;
+}
+
+.settings-form-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.settings-form-actions .btn-delete {
+  padding: 8px 18px;
+  border: 1px solid rgba(199, 91, 91, 0.3);
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  color: var(--danger);
+  font-size: 14px;
+  cursor: pointer;
+  margin-right: auto;
+  transition: all var(--transition-fast);
+}
+
+.settings-form-actions .btn-delete:hover {
+  background: var(--danger-bg);
+  border-color: rgba(199, 91, 91, 0.5);
+}
+
+.settings-form-actions .btn-cancel {
+  padding: 8px 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.settings-form-actions .btn-cancel:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.settings-form-actions .btn-submit {
+  padding: 8px 22px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--green);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.settings-form-actions .btn-submit:hover {
+  background: var(--green-hover);
+}
+
+.settings-form-actions .btn-submit:disabled,
+.settings-form-actions .btn-delete:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Avatar preview in persona form */
+.settings-avatar-preview {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+/* Persona checkbox list for scenarios */
+.settings-checkbox-list {
+  max-height: 180px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin-top: 5px;
+}
+
+.settings-checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.settings-checkbox-item:hover {
+  background: var(--surface-hover);
+}
+
+.settings-checkbox-item input[type="checkbox"] {
+  margin: 0;
+  accent-color: var(--green);
+}
+
+.settings-checkbox-color {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Empty state */
+.settings-empty {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.settings-empty-icon {
+  margin-bottom: 12px;
+  color: var(--text-secondary);
+}
+
+/* Preferences placeholder */
+.settings-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 24px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.settings-placeholder-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: var(--green-soft);
+  color: var(--green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.settings-placeholder h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 6px;
+}
+
+.settings-placeholder p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* Organization tab styling - reuse org dialog patterns */
+.settings-org-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.settings-org-selector {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  outline: none;
+}
+
+.settings-org-selector:focus {
+  border-color: var(--green);
+}
+
+.settings-org-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.settings-org-tab {
+  padding: 8px 16px;
+  border: none;
+  background: none;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all var(--transition-fast);
+}
+
+.settings-org-tab:hover:not(:disabled) {
+  color: var(--text-primary);
+}
+
+.settings-org-tab:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.settings-org-tab.active {
+  color: var(--green);
+  border-bottom-color: var(--green);
+}
+
+.settings-org-content {
+  margin-top: 16px;
+}
+
+/* Reuse team/relationship styles from OrganizationDialog.css */
+.settings-form-panel .team-list {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 10px;
+}
+
+.settings-form-panel .team-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.settings-form-panel .team-item:last-child {
+  border-bottom: none;
+}
+
+.settings-form-panel .empty-hint {
+  padding: 16px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.settings-error {
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: var(--danger-bg);
+  color: var(--danger);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+}
