@@ -1,5 +1,5 @@
 # input: AbstractUnitOfWork, LLMPort, PersonaLoader
-# output: GrowthService 能力评估 + Dashboard 聚合 + 成长洞察服务
+# output: GrowthService 能力评估 + Dashboard 聚合 + 成长洞察服务 + 沟通力画像生成
 # owner: wanhua.gu
 # pos: 应用层服务 - LLM-as-Judge 多维能力评估、Dashboard 数据聚合、跨 session 成长洞察；一旦我被更新，务必更新我的开头注释以及所属文件夹的md
 """Growth tracking service: competency evaluation, dashboard, and insights."""
@@ -123,6 +123,35 @@ _INSIGHT_SYSTEM_PROMPT = """\
 6. 语气鼓励但直接，不要空洞的表扬
 
 直接输出分析文本，不要输出 JSON 或 Markdown 标题。
+"""
+
+_PROFILE_CARD_PROMPT = """\
+你是一个职场沟通分析师。请根据用户的多次沟通能力评估数据，生成一个简短的"沟通力画像"。
+
+## 评估数据
+
+{evaluation_data}
+
+## 输出要求
+
+输出严格 JSON，不要输出其他内容：
+
+```json
+{{
+  "style_label": "2-6个字的风格标签（如：数据驱动型说服者、温和共情型领导者、逻辑攻坚型谈判手）",
+  "tags": [
+    {{"text": "#标签内容", "type": "strength 或 weakness 或 trait"}},
+    {{"text": "#标签内容", "type": "strength 或 weakness 或 trait"}}
+  ],
+  "summary": "一句话点评（20-40字，指出最突出的优势和最需要提升的方向）"
+}}
+```
+
+规则：
+- style_label 像 MBTI 标签一样简短有辨识度，2-6 个字
+- tags 3-4 个，优势用 strength、弱项用 weakness、中性特征用 trait
+- summary 语气正向但诚实，不要空洞表扬
+- 必须基于具体分数，不允许编造数据
 """
 
 
@@ -410,3 +439,101 @@ class GrowthService:
         response = await self._llm.generate(llm_messages, temperature=0.4)
 
         return GrowthInsightDTO(insight=response.content.strip())
+
+    # ------------------------------------------------------------------
+    # 4. Profile Card Generation
+    # ------------------------------------------------------------------
+
+    async def generate_profile_card(self):
+        """Generate a profile card from historical competency data."""
+        from application.services.stakeholder.dto import ProfileCardDTO, ProfileTag
+
+        async with self._uow_factory(readonly=True) as uow:
+            evaluations = await uow.competency_evaluation_repository.list_all(limit=500)
+
+        if len(evaluations) < 2:
+            return ProfileCardDTO(
+                style_label="",
+                tags=[],
+                summary="练习次数还不够，至少完成 2 次对话分析后才能生成沟通力名片。继续练习吧！",
+                scores={},
+            )
+
+        # Calculate average scores per dimension
+        dim_totals: dict[str, list[float]] = {}
+        for ev in evaluations:
+            for dim in COMPETENCY_DIMENSIONS:
+                dim_data = ev.scores.get(dim, {})
+                score = dim_data.get("score", 0) if isinstance(dim_data, dict) else 0
+                if score > 0:
+                    dim_totals.setdefault(dim, []).append(float(score))
+
+        avg_scores: dict[str, float] = {}
+        for dim in COMPETENCY_DIMENSIONS:
+            vals = dim_totals.get(dim, [])
+            avg_scores[dim] = round(sum(vals) / len(vals), 1) if vals else 0.0
+
+        # Build evaluation summary for LLM
+        dim_labels = {
+            "persuasion": "说服力",
+            "emotional_management": "情绪管理",
+            "active_listening": "倾听回应",
+            "structured_expression": "结构化表达",
+            "conflict_resolution": "冲突处理",
+            "stakeholder_alignment": "利益对齐",
+        }
+
+        lines = [f"共 {len(evaluations)} 次评估\n"]
+        for dim in COMPETENCY_DIMENSIONS:
+            label = dim_labels.get(dim, dim)
+            avg = avg_scores[dim]
+            vals = dim_totals.get(dim, [])
+            if len(vals) >= 2:
+                trend = "进步" if vals[-1] > vals[0] else ("退步" if vals[-1] < vals[0] else "稳定")
+            else:
+                trend = "数据不足"
+            lines.append(f"- {label}: 平均 {avg}/5 ({trend})")
+
+        # Include evidence from recent evaluations
+        recent_evals = evaluations[-3:]
+        for i, ev in enumerate(recent_evals, 1):
+            lines.append(f"\n### 最近第 {i} 次评估")
+            for dim in COMPETENCY_DIMENSIONS:
+                dim_data = ev.scores.get(dim, {})
+                if isinstance(dim_data, dict):
+                    evidence = dim_data.get("evidence", "")
+                    if evidence:
+                        lines.append(f"- {dim_labels.get(dim, dim)}: {evidence}")
+
+        evaluation_data = "\n".join(lines)
+        prompt = _PROFILE_CARD_PROMPT.format(evaluation_data=evaluation_data)
+
+        llm_messages = [LLMMessage(role="user", content=prompt)]
+        response = await self._llm.generate(llm_messages, temperature=0.4)
+
+        raw_text = response.content.strip()
+        if raw_text.startswith("```"):
+            text_lines = raw_text.split("\n")
+            text_lines = [l for l in text_lines if not l.strip().startswith("```")]
+            raw_text = "\n".join(text_lines)
+
+        try:
+            parsed = json.loads(raw_text)
+        except json.JSONDecodeError:
+            logger.error("LLM returned invalid JSON for profile card: %s", raw_text[:500])
+            return None
+
+        tags = []
+        for t in parsed.get("tags", []):
+            if isinstance(t, dict):
+                tag_type = t.get("type", "trait")
+                if tag_type not in ("strength", "weakness", "trait"):
+                    tag_type = "trait"
+                tags.append(ProfileTag(text=t.get("text", ""), type=tag_type))
+
+        return ProfileCardDTO(
+            style_label=parsed.get("style_label", "沟通探索者"),
+            tags=tags,
+            summary=parsed.get("summary", ""),
+            scores=avg_scores,
+        )
