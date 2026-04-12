@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   Plus,
   Pencil,
@@ -37,7 +37,30 @@ import {
   type Team,
   type PersonaRelationship,
 } from '../services/api'
+import ConfirmDialog from '../components/layout/ConfirmDialog'
 import './SettingsPage.css'
+
+/** Reusable confirm dialog state hook */
+function useConfirmDialog() {
+  const [state, setState] = useState<{
+    open: boolean; title: string; message: string; onConfirm: () => void
+  }>({ open: false, title: '', message: '', onConfirm: () => {} })
+
+  const ask = useCallback((title: string, message: string, onConfirm: () => void) => {
+    setState({ open: true, title, message, onConfirm })
+  }, [])
+
+  const close = useCallback(() => {
+    setState((s) => ({ ...s, open: false }))
+  }, [])
+
+  const confirm = useCallback(() => {
+    state.onConfirm()
+    close()
+  }, [state.onConfirm, close])
+
+  return { ...state, ask, close, confirm }
+}
 
 type TabKey = 'personas' | 'scenarios' | 'organizations' | 'preferences'
 
@@ -55,6 +78,7 @@ const TABS: { key: TabKey; label: string; icon: React.ReactNode }[] = [
 function PersonasTab() {
   const { personaMap, currentOrg, reloadPersonas } = useAppContext()
   const personas = Object.values(personaMap)
+  const dialog = useConfirmDialog()
 
   const [editing, setEditing] = useState<PersonaSummary | null>(null)
   const [isNew, setIsNew] = useState(false)
@@ -164,19 +188,20 @@ function PersonasTab() {
     }
   }
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!editing) return
-    if (!confirm(`确定删除角色「${editing.name}」？`)) return
-    setSubmitting(true)
-    try {
-      await deletePersona(editing.id)
-      reloadPersonas()
-      handleCancel()
-    } catch (e: any) {
-      setError(e.message)
-    } finally {
-      setSubmitting(false)
-    }
+    dialog.ask('删除角色', `确定删除角色「${editing.name}」？此操作无法撤销。`, async () => {
+      setSubmitting(true)
+      try {
+        await deletePersona(editing.id)
+        reloadPersonas()
+        handleCancel()
+      } catch (e: any) {
+        setError(e.message)
+      } finally {
+        setSubmitting(false)
+      }
+    })
   }
 
   return (
@@ -223,11 +248,9 @@ function PersonasTab() {
                 className="settings-item-btn danger"
                 onClick={(e) => {
                   e.stopPropagation()
-                  setEditing(p)
-                  // Trigger delete immediately
-                  if (confirm(`确定删除角色「${p.name}」？`)) {
+                  dialog.ask('删除角色', `确定删除角色「${p.name}」？此操作无法撤销。`, () => {
                     deletePersona(p.id).then(() => { reloadPersonas(); handleCancel() })
-                  }
+                  })
                 }}
                 title="删除"
               >
@@ -335,6 +358,7 @@ function PersonasTab() {
           </div>
         </div>
       )}
+      <ConfirmDialog open={dialog.open} title={dialog.title} message={dialog.message} confirmLabel="删除" danger onConfirm={dialog.confirm} onCancel={dialog.close} />
     </>
   )
 }
@@ -345,6 +369,7 @@ function PersonasTab() {
 
 function ScenariosTab() {
   const { personaMap, reloadScenarios } = useAppContext()
+  const dialog = useConfirmDialog()
 
   const [scenarios, setScenarios] = useState<Scenario[]>([])
   const [allPersonas, setAllPersonas] = useState<PersonaSummary[]>([])
@@ -440,20 +465,21 @@ function ScenariosTab() {
     }
   }
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!editing) return
-    if (!confirm(`确定删除场景「${editing.name}」？`)) return
-    setSubmitting(true)
-    try {
-      await deleteScenario(editing.id)
-      await loadData()
-      reloadScenarios()
-      handleCancel()
-    } catch (e: any) {
-      setError(e.message)
-    } finally {
-      setSubmitting(false)
-    }
+    dialog.ask('删除场景', `确定删除场景「${editing.name}」？此操作无法撤销。`, async () => {
+      setSubmitting(true)
+      try {
+        await deleteScenario(editing.id)
+        await loadData()
+        reloadScenarios()
+        handleCancel()
+      } catch (e: any) {
+        setError(e.message)
+      } finally {
+        setSubmitting(false)
+      }
+    })
   }
 
   return (
@@ -508,9 +534,9 @@ function ScenariosTab() {
                 className="settings-item-btn danger"
                 onClick={(e) => {
                   e.stopPropagation()
-                  if (confirm(`确定删除场景「${s.name}」？`)) {
+                  dialog.ask('删除场景', `确定删除场景「${s.name}」？此操作无法撤销。`, () => {
                     deleteScenario(s.id).then(() => { loadData(); reloadScenarios() })
-                  }
+                  })
                 }}
                 title="删除"
               >
@@ -592,6 +618,7 @@ function ScenariosTab() {
           </div>
         </div>
       )}
+      <ConfirmDialog open={dialog.open} title={dialog.title} message={dialog.message} confirmLabel="删除" danger onConfirm={dialog.confirm} onCancel={dialog.close} />
     </>
   )
 }
@@ -609,6 +636,7 @@ const REL_LABELS: Record<string, string> = {
 
 function OrganizationsTab() {
   const { reloadOrganizations, reloadPersonas } = useAppContext()
+  const dialog = useConfirmDialog()
   const [personas, setPersonas] = useState<PersonaSummary[]>([])
 
   const [orgs, setOrgs] = useState<Organization[]>([])
@@ -701,23 +729,25 @@ function OrganizationsTab() {
     }
   }
 
-  const handleDeleteOrg = async () => {
-    if (!selectedOrg || !confirm(`确定删除组织「${selectedOrg.name}」？`)) return
-    try {
-      await deleteOrganization(selectedOrg.id)
-      setSelectedOrg(null)
-      setTeams([])
-      setRelationships([])
-      setOrgName('')
-      setOrgIndustry('')
-      setOrgDescription('')
-      setOrgContextPrompt('')
-      await loadOrgs()
-      reloadOrganizations()
-      reloadPersonas()
-    } catch (e: any) {
-      setError(e.message)
-    }
+  const handleDeleteOrg = () => {
+    if (!selectedOrg) return
+    dialog.ask('删除组织', `确定删除组织「${selectedOrg.name}」？所有关联的团队和关系数据将一并删除，此操作无法撤销。`, async () => {
+      try {
+        await deleteOrganization(selectedOrg.id)
+        setSelectedOrg(null)
+        setTeams([])
+        setRelationships([])
+        setOrgName('')
+        setOrgIndustry('')
+        setOrgDescription('')
+        setOrgContextPrompt('')
+        await loadOrgs()
+        reloadOrganizations()
+        reloadPersonas()
+      } catch (e: any) {
+        setError(e.message)
+      }
+    })
   }
 
   const handleAddTeam = async () => {
@@ -988,6 +1018,7 @@ function OrganizationsTab() {
           {error && <div className="settings-error">{error}</div>}
         </div>
       </div>
+      <ConfirmDialog open={dialog.open} title={dialog.title} message={dialog.message} confirmLabel="删除" danger onConfirm={dialog.confirm} onCancel={dialog.close} />
     </>
   )
 }
