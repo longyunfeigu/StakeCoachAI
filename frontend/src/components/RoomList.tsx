@@ -39,6 +39,8 @@ export default function RoomList({ selectedRoomId, onSelectRoom, onCreateRoom, o
   if (loading) return <div className="room-list"><span className="room-list-loading">加载中...</span></div>
   if (error) return <div className="room-list"><span className="room-list-loading">加载失败</span></div>
 
+  const regularRooms = rooms.filter(r => r.type !== 'battle_prep')
+
   return (
     <div className="room-list">
       <div className="sidebar-section-header">
@@ -47,10 +49,10 @@ export default function RoomList({ selectedRoomId, onSelectRoom, onCreateRoom, o
           <Plus size={15} />
         </button>
       </div>
-      {rooms.length === 0 ? (
+      {regularRooms.length === 0 ? (
         <div className="room-empty">暂无聊天室</div>
       ) : (
-        rooms.map((room) => (
+        regularRooms.map((room) => (
           <div
             key={room.id}
             className={`room-item ${selectedRoomId === room.id ? 'active' : ''}`}
