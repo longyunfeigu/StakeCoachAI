@@ -13,17 +13,17 @@
 
 [![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat&logo=python)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat&logo=fastapi)](https://fastapi.tiangolo.com)
-[![React](https://img.shields.io/badge/React-61DAFB?style=flat&logo=react)](https://react.dev)
+[![React](https://img.shields.io/badge/React_19-61DAFB?style=flat&logo=react)](https://react.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=flat&logo=typescript)](https://www.typescriptlang.org/)
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat)](LICENSE)
 
 ---
 
-[功能特性](#-核心功能) · [快速开始](#-30秒启动) · [架构设计](#-技术架构) · [路线图](#-roadmap)
+[功能特性](#-核心功能) · [快速开始](#-30秒启动) · [页面导览](#-页面导览) · [技术架构](#-技术架构) · [路线图](#-roadmap)
 
 ---
 
-<img src="docs/assets/hero-animation.svg" alt="DaBoss 工作流程动画" width="720"/>
+<img src="docs/assets/homepage.png" alt="DaBoss 首页仪表盘" width="720"/>
 
 </div>
 
@@ -40,48 +40,44 @@
 
 项目失败的头号原因不是技术——是沟通。PMI 研究显示，**56% 的项目风险源于沟通不畅**。一个关键会议的失误，可能意味着几个月的工作付诸东流。
 
-但问题在于：**高风险对话没有彩排机会。**
-
-| 现有方式 | 为什么不够 |
-|:---------|:----------|
-| 角色扮演工作坊 | 贵、频次低、对手不够真实 |
-| 沟通技巧书籍/课程 | 知道 ≠ 做到，上场还是会卡壳 |
-| 事后复盘总结 | 已经发生了，结果无法改变 |
-| 找同事模拟 | 碍于面子，很难真正施压 |
-
 **DaBoss** 用 AI 创造了一个「安全但真实」的练习场——角色会打断你、质疑你、带着隐藏议程和情绪跟你博弈。你可以反复练习同一个场景，直到找到最优策略，然后带着准备好的方案走进真实会议室。
 
 ---
 
 ## 核心功能
 
-<div align="center">
-  <img src="docs/assets/homepage.png" alt="DaBoss 主页" width="80%"/>
-</div>
+### 首页仪表盘
 
-### 实时演练系统
-
-创建聊天室，选择利益相关者角色，开始模拟对话：
+登录即看，一目了然：每日挑战、快捷入口、最近对话、技能成长路径。按 `Cmd+K` 全局搜索，秒速直达任何功能。
 
 <div align="center">
-  <img src="docs/assets/create-room-dialog.png" alt="创建聊天室对话框" width="60%"/>
+  <img src="docs/assets/homepage.png" alt="首页仪表盘" width="80%"/>
 </div>
 
-AI角色会根据角色设定做出真实反应——质疑、施压、带着隐藏议程博弈：
+### 沉浸式对话演练
+
+三栏布局：左侧房间列表，中间实时对话，右侧智能上下文面板（对手画像、情绪走势、实时评分）。AI 角色会根据角色设定做出真实反应——质疑、施压、带着隐藏议程博弈。
 
 <div align="center">
-  <img src="docs/assets/chat-conversation.png" alt="对话界面 - AI角色实时回复" width="80%"/>
+  <img src="docs/assets/chat-conversation.png" alt="沉浸式对话界面" width="80%"/>
 </div>
 
-实时查看每个角色的情绪变化曲线：
+### 紧急备战模式
+
+重要会议前 30 分钟，三步快速演练：
+
+1. **描述会议** — 输入你要谈什么、对方是谁、难度选择
+2. **AI 生成对手** — 自动创建高度还原的对方角色，支持微调
+3. **限时对练** — 12 轮模拟对话，AI 围绕训练重点施压
+4. **话术纸条** — 自动生成实战话术，一键复制或下载为图片
 
 <div align="center">
-  <img src="docs/assets/emotion-panel.png" alt="实时情绪面板" width="80%"/>
+  <img src="docs/assets/battle-prep.png" alt="紧急备战向导" width="80%"/>
 </div>
 
-### LLM-as-Judge 评估框架
+### LLM-as-Judge 六维评估
 
-每次对话后，AI从六个维度评估你的表现：
+每次对话后，AI 从六个维度评估你的表现：
 
 | 维度 | 评估内容 |
 |:---|:---|
@@ -92,94 +88,53 @@ AI角色会根据角色设定做出真实反应——质疑、施压、带着隐
 | **冲突处理** | 化解分歧、达成共识的能力 |
 | **利益对齐** | 识别并整合多方利益的能力 |
 
+### 成长追踪中心
+
+六维雷达图、等级经验值系统、技能成长路径、历史评价卡片，全方位追踪沟通能力进步。完成评估后可生成「沟通力名片」分享。
+
 <div align="center">
-  <img src="docs/assets/analysis-report.png" alt="对话分析报告 - 阻力排名与沟通建议" width="60%"/>
+  <img src="docs/assets/growth-dashboard.png" alt="成长追踪中心" width="80%"/>
 </div>
 
-### AI Coach 复盘
+### Cmd+K 命令面板
 
-对话结束后，AI教练对你的表现进行深度复盘，给出核心改进建议和反思问题：
+按 `Cmd+K`（或 `Ctrl+K`）全局呼出命令面板，搜索对话、快速跳转、一键新建。支持键盘导航，老用户效率神器。
 
 <div align="center">
-  <img src="docs/assets/ai-coaching.png" alt="AI Coach 复盘" width="80%"/>
+  <img src="docs/assets/command-palette.png" alt="Cmd+K 命令面板" width="60%"/>
 </div>
 
-### 成长追踪系统
+### 角色与组织管理
+
+在设置页统一管理 AI 对手角色、场景模板、组织架构与人物关系。角色不是孤立的个体——他们之间有权力关系、联盟和历史恩怨，AI 会据此做出反应。
 
 <div align="center">
-  <img src="docs/assets/growth-dashboard.png" alt="成长仪表板" width="80%"/>
+  <img src="docs/assets/settings.png" alt="角色与组织管理" width="80%"/>
 </div>
 
 ### 语音对话
 
-像打电话一样练习沟通——点击录音说话，AI 角色用独立音色语音回复。每个角色声音不同，群聊听起来像真实会议。
+像打电话一样练习沟通——点击录音说话，AI 角色用独立音色语音回复。
 
 | 能力 | 说明 |
 |:---|:---|
-| **语音输入** | 点击录音 / 长按说话，VAD 自动检测语音起止 |
-| **语音输出** | 每个 Persona 独立音色，逐句流式播放 |
+| **语音输入** | 点击录音 / VAD 自动检测语音起止 |
+| **语音输出** | 每个角色独立音色，逐句流式播放 |
 | **多厂商支持** | TTS: MiniMax / ElevenLabs；STT: OpenAI Whisper 兼容 |
-| **低延迟管道** | LLM 流式输出 → 按句切分 → TTS 并行合成 → 首句 ~1.5s 响应 |
-| **无侵入** | 语音是文本的增强层，所有消息仍以文字存储，分析报告等功能不受影响 |
 
-通过环境变量一键切换 TTS 厂商：
+---
 
-```bash
-# MiniMax TTS（默认）
-VOICE__TTS_PROVIDER=minimax
-VOICE__TTS_API_KEY=your-minimax-key
+## 页面导览
 
-# ElevenLabs TTS
-VOICE__TTS_PROVIDER=elevenlabs
-VOICE__TTS_API_KEY=your-elevenlabs-key
+| 路由 | 页面 | 说明 |
+|:---|:---|:---|
+| `/` | 首页仪表盘 | 每日挑战、快捷入口、最近对话、技能路径 |
+| `/chat/:roomId` | 沉浸式对话 | 三栏布局：房间列表 + 对话 + 上下文面板 |
+| `/battle-prep` | 紧急备战 | 三步向导：描述会议 → 生成对手 → 实战演练 |
+| `/growth` | 成长中心 | 雷达图、等级经验、技能路径、评价历史、名片 |
+| `/settings` | 设置 | 角色管理、场景管理、组织架构、偏好 |
 
-# STT（OpenAI Whisper 兼容）
-VOICE__STT_PROVIDER=whisper
-VOICE__STT_API_KEY=your-openai-key
-VOICE__STT_BASE_URL=https://api.openai.com/v1
-```
-
-### 紧急备战模式
-
-重要会议前 30 分钟，打开「紧急备战」：
-
-1. **描述会议** — 输入你要谈什么、对方是谁
-2. **AI 生成对手** — 自动创建高度还原的对方角色，支持微调和难度选择（温和/正常/强硬）
-3. **快速对练** — 限时 12 轮模拟对话，AI 围绕你选择的训练重点施压
-4. **话术纸条** — 对话结束后自动生成一页纸的实战话术：开场白、关键应对、避坑提醒、底线策略
-
-支持一键复制文本或下载为 PNG 图片，带进会议室直接用。
-
-### 沟通力名片
-
-在「成长轨迹」页面，完成 2 次以上能力评估后，一键生成你的「沟通力名片」：
-
-- AI 分析你的历史评分，生成个性化风格标签（如"数据驱动型说服者"）
-- 6 维进度条直观展示能力分布
-- 特征标签一眼看出优势和待提升方向
-- 下载为精美 PNG 图片，分享到朋友圈
-
-### 组织关系图谱
-
-角色不是孤立的个体——他们之间有权力关系、联盟和历史恩怨。
-
-```
-     ┌─────────┐
-     │  CTO   │ ◄──── 权力压制 ────┐
-     └────┬────┘                    │
-          │                       │
-          │ 信任                   │
-     ┌────▼────┐                  │
-     │  你     │ ◄───── 隐藏议程 ──┘
-     └────┬────┘
-          │
-          │ 历史分歧
-     ┌────▼────┐
-     │   PM   │
-     └─────────┘
-```
-
-AI会根据这些关系做出反应——PM反对你，可能因为CTO已经表态。
+全局功能：`Cmd+K` 命令面板、顶栏等级/XP/连续天数、响应式移动端适配。
 
 ---
 
@@ -206,9 +161,29 @@ cd frontend && npm install && npm run dev
 
 ## 技术架构
 
-<div align="center">
-  <img src="docs/assets/architecture-diagram.png" alt="DaBoss 技术架构" width="90%"/>
-</div>
+| 层 | 技术 |
+|:---|:---|
+| **前端** | React 19 + TypeScript + Vite + React Router v6 |
+| **样式** | 薄荷绿设计系统 (CSS Custom Properties) + Lucide Icons |
+| **图表** | Recharts (六维雷达图) |
+| **实时通信** | Server-Sent Events (SSE) |
+| **后端** | FastAPI + SQLAlchemy + Alembic |
+| **AI** | Claude (Anthropic SDK)，支持多 LLM 扩展 |
+| **语音** | MiniMax/ElevenLabs TTS + OpenAI Whisper STT |
+
+### 前端架构
+
+```
+frontend/src/
+├── pages/           # 5 个路由页面 (Home, Chat, BattlePrep, Growth, Settings)
+├── components/
+│   ├── layout/      # TopBar, NavRail, BottomTabBar, CommandPalette, ConfirmDialog
+│   └── chat/        # MessageList, ChatInput, ContextPanel, CoachingPanel, AnalysisPanel
+├── hooks/           # useChat, useVoice, useCoaching, useAnalysis, useGrowth, useRooms
+├── contexts/        # AppContext (全局状态), ChatContext (对话状态)
+├── services/        # API 客户端, 音频播放
+└── styles/          # 设计令牌 (薄荷绿主题)
+```
 
 ---
 
@@ -219,26 +194,32 @@ cd frontend && npm install && npm run dev
 | **真实性** | AI有情绪、有隐藏议程、有组织关系 | 静态脚本，过于理想化 |
 | **即时反馈** | 对话中可求助教练，实时获得建议 | 只有事后总结 |
 | **科学评估** | LLM-as-Judge六维度评估 | 无评估或主观打分 |
-| **成长追踪** | 跨会话趋势分析，可视化进步 | 无历史追踪 |
+| **成长追踪** | 等级经验值 + 技能路径 + 雷达图趋势 | 无历史追踪 |
 | **组织政治** | 角色间有权力关系和联盟博弈 | 角色相互独立 |
+| **效率工具** | Cmd+K 命令面板，键盘快捷键 | 纯鼠标操作 |
 
 ---
 
 ## Roadmap
 
+- [x] 多页面路由架构 (React Router)
+- [x] 薄荷绿设计系统 + 响应式布局
+- [x] 首页仪表盘 + 游戏化 (等级/XP/连续天数/技能路径)
+- [x] Cmd+K 全局命令面板
 - [x] 紧急备战模式（会前快速模拟 + 话术纸条）
 - [x] 沟通力名片（6维评分社交分享卡片）
 - [x] 语音对话支持（MiniMax / ElevenLabs TTS + OpenAI Whisper STT）
+- [x] 移动端底部导航栏适配
 - [ ] 更多评估维度（跨文化沟通、谈判技巧等）
 - [ ] 角色市场（预设的经典角色包）
 - [ ] 团队协作模式（多人实时演练）
-- [ ] 移动端适配
+- [ ] 深色模式切换
 
 ---
 
 ## 参与贡献
 
-欢迎贡献！查看 [CONTRIBUTING.md](CONTRIBUTING.md) 了解详情。
+欢迎贡献！
 
 1. Fork 本仓库
 2. 创建功能分支 (`git checkout -b feature/amazing-feature`)
