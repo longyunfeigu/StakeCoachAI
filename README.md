@@ -161,6 +161,11 @@ cd frontend && npm install && npm run dev
 
 ## 技术架构
 
+<div align="center">
+  <img src="docs/assets/architecture-overview.png" alt="DaBoss 模块协作架构" width="50%"/>
+  <p><em>6 个模块各司其职：练习 → 诊断 → 反思 → 成长 的完整闭环</em></p>
+</div>
+
 | 层 | 技术 |
 |:---|:---|
 | **前端** | React 19 + TypeScript + Vite + React Router v6 |
