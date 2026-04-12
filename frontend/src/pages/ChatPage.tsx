@@ -59,10 +59,16 @@ function ChatArea() {
   const [cheatSheetData, setCheatSheetData] = useState<CheatSheetData | null>(null)
   const [cheatSheetPersona, setCheatSheetPersona] = useState('')
 
-  // Reset battle prep round count when room changes
+  // Compute battle prep round count from existing messages
+  const roomMessages = chat.selectedRoom?.messages ?? []
   useEffect(() => {
-    setBattlePrepRoundCount(0)
-  }, [chat.selectedRoom?.room.id])
+    if (chat.selectedRoom?.room.type === 'battle_prep' && roomMessages.length > 0) {
+      const userMsgCount = roomMessages.filter((m: { sender_type: string }) => m.sender_type === 'user').length
+      setBattlePrepRoundCount(userMsgCount)
+    } else {
+      setBattlePrepRoundCount(0)
+    }
+  }, [chat.selectedRoom?.room.id, roomMessages.length])
 
   const roomPersonas = chat.selectedRoom
     ? chat.selectedRoom.room.persona_ids

@@ -51,6 +51,34 @@ export default function RoomList({ selectedRoomId, onSelectRoom, onCreateRoom, o
   if (error) return <div className="room-list"><span className="room-list-loading">加载失败</span></div>
 
   const regularRooms = rooms.filter(r => r.type !== 'battle_prep')
+  const battleRooms = rooms.filter(r => r.type === 'battle_prep')
+
+  const renderRoom = (room: ChatRoom) => (
+    <Link
+      key={room.id}
+      to={`/chat/${room.id}`}
+      className={`room-item ${isActive(room.id) ? 'active' : ''} ${room.type === 'battle_prep' ? 'battle-prep' : ''}`}
+      onClick={() => onSelectRoom(room)}
+      style={{ textDecoration: 'none', color: 'inherit' }}
+    >
+      <div className="room-item-icon">
+        {room.type === 'private' ? <MessageSquare size={16} /> : <Users size={16} />}
+      </div>
+      <div className="room-info">
+        <span className="room-name">{room.name}</span>
+        <span className="room-personas">
+          {room.persona_ids.join(', ')}
+        </span>
+      </div>
+      <button
+        className="room-delete-btn"
+        onClick={(e) => handleDelete(e, room)}
+        title="删除聊天室"
+      >
+        <Trash2 size={13} />
+      </button>
+    </Link>
+  )
 
   return (
     <div className="room-list">
@@ -68,32 +96,15 @@ export default function RoomList({ selectedRoomId, onSelectRoom, onCreateRoom, o
           </button>
         </div>
       ) : (
-        regularRooms.map((room) => (
-          <Link
-            key={room.id}
-            to={`/chat/${room.id}`}
-            className={`room-item ${isActive(room.id) ? 'active' : ''}`}
-            onClick={() => onSelectRoom(room)}
-            style={{ textDecoration: 'none', color: 'inherit' }}
-          >
-            <div className="room-item-icon">
-              {room.type === 'private' ? <MessageSquare size={16} /> : <Users size={16} />}
-            </div>
-            <div className="room-info">
-              <span className="room-name">{room.name}</span>
-              <span className="room-personas">
-                {room.persona_ids.join(', ')}
-              </span>
-            </div>
-            <button
-              className="room-delete-btn"
-              onClick={(e) => handleDelete(e, room)}
-              title="删除聊天室"
-            >
-              <Trash2 size={13} />
-            </button>
-          </Link>
-        ))
+        regularRooms.map(renderRoom)
+      )}
+      {battleRooms.length > 0 && (
+        <>
+          <div className="sidebar-section-header" style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid var(--border)' }}>
+            <span className="sidebar-section-title" style={{ color: 'var(--amber)' }}>备战</span>
+          </div>
+          {battleRooms.map(renderRoom)}
+        </>
       )}
     </div>
   )
