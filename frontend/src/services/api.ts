@@ -18,7 +18,7 @@ export interface PersonaDetail extends PersonaSummary {
 export interface ChatRoom {
   id: number
   name: string
-  type: 'private' | 'group'
+  type: 'private' | 'group' | 'battle_prep'
   persona_ids: string[]
   created_at: string | null
   last_message_at: string | null
@@ -560,4 +560,98 @@ export async function generateGrowthInsight(): Promise<string> {
   if (!resp.ok) throw new Error(`Failed to generate growth insight: ${resp.status}`)
   const json: ApiResponse<{ insight: string }> = await resp.json()
   return json.data.insight
+}
+
+// ---------------------------------------------------------------------------
+// Battle Prep
+// ---------------------------------------------------------------------------
+
+export interface BattlePrepResult {
+  persona_name: string
+  persona_role: string
+  persona_style: string
+  scenario_context: string
+  training_points: string[]
+}
+
+export interface TacticItem {
+  situation: string
+  response: string
+}
+
+export interface CheatSheet {
+  opening: string
+  key_tactics: TacticItem[]
+  pitfalls: string[]
+  bottom_line: string
+}
+
+export async function generateBattlePrep(description: string): Promise<BattlePrepResult> {
+  const resp = await fetch(`${API_BASE}/battle-prep/generate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ description }),
+  })
+  if (!resp.ok) {
+    const json = await resp.json().catch(() => null)
+    throw new Error(json?.message || `生成失败: ${resp.status}`)
+  }
+  const json: ApiResponse<BattlePrepResult> = await resp.json()
+  return json.data
+}
+
+export async function startBattle(data: {
+  persona_name: string
+  persona_role: string
+  persona_style: string
+  scenario_context: string
+  selected_training_points: string[]
+  difficulty: 'easy' | 'normal' | 'hard'
+}): Promise<ChatRoom> {
+  const resp = await fetch(`${API_BASE}/battle-prep/start`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+  if (!resp.ok) throw new Error(`Failed to start battle: ${resp.status}`)
+  const json: ApiResponse<ChatRoom> = await resp.json()
+  return json.data
+}
+
+export async function generateCheatSheet(roomId: number): Promise<CheatSheet> {
+  const resp = await fetch(`${API_BASE}/rooms/${roomId}/cheatsheet`, {
+    method: 'POST',
+  })
+  if (!resp.ok) {
+    const json = await resp.json().catch(() => null)
+    throw new Error(json?.message || `生成失败: ${resp.status}`)
+  }
+  const json: ApiResponse<CheatSheet> = await resp.json()
+  return json.data
+}
+
+// ---------------------------------------------------------------------------
+// Profile Card
+// ---------------------------------------------------------------------------
+
+export interface ProfileTag {
+  text: string
+  type: 'strength' | 'weakness' | 'trait'
+}
+
+export interface ProfileCard {
+  style_label: string
+  tags: ProfileTag[]
+  summary: string
+  scores: Record<string, number>
+}
+
+export async function generateProfileCard(): Promise<ProfileCard> {
+  const resp = await fetch(`${API_BASE}/growth/card`, { method: 'POST' })
+  if (!resp.ok) {
+    const json = await resp.json().catch(() => null)
+    throw new Error(json?.message || `生成失败: ${resp.status}`)
+  }
+  const json: ApiResponse<ProfileCard> = await resp.json()
+  return json.data
 }
