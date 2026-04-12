@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { Routes, Route } from 'react-router-dom'
+import { AppProvider, useAppContext } from './contexts/AppContext'
 import Markdown from 'react-markdown'
 import { MessageCircle, Layers, Plus, BarChart3, BarChart2, GraduationCap, Download, FileText, FileDown, Send, ClipboardList, X, Building2, TrendingUp, Activity, Lightbulb, Volume2, VolumeX, Zap, Flag, Loader2 } from 'lucide-react'
 import './App.css'
@@ -17,8 +18,6 @@ import CheatSheetComponent from './components/CheatSheet'
 import VoiceRecorder from './components/VoiceRecorder'
 import { AudioPlayQueue } from './services/audioPlayer'
 import {
-  fetchPersonas,
-  fetchOrganizations,
   fetchRoomDetail,
   sendMessage,
   exportRoom,
@@ -35,7 +34,6 @@ import {
   type CoachingMessageItem,
   type DispatchPhase,
   type Message,
-  type Organization,
   type PersonaSummary,
   type RoundEndData,
   type AnalysisReport,
@@ -93,14 +91,15 @@ function renderContent(text: string) {
   )
 }
 
-function App() {
+function AppInner() {
+  const { personaMap, currentOrg, reloadPersonas, reloadOrganizations } = useAppContext()
+
   const [selectedRoom, setSelectedRoom] = useState<ChatRoomDetail | null>(null)
   const [selectedRoomId, setSelectedRoomId] = useState<number | null>(null)
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [showScenarioDialog, setShowScenarioDialog] = useState(false)
   const [showOrgDialog, setShowOrgDialog] = useState(false)
   const [showGrowth, setShowGrowth] = useState(false)
-  const [currentOrg, setCurrentOrg] = useState<Organization | null>(null)
   const [showEmotionSidebar, setShowEmotionSidebar] = useState(false)
   const [showEmotionCurve, setShowEmotionCurve] = useState(false)
   const [showExportMenu, setShowExportMenu] = useState(false)
@@ -112,7 +111,6 @@ function App() {
   const [inputValue, setInputValue] = useState('')
   const [sending, setSending] = useState(false)
   const [typingPersona, setTypingPersona] = useState<string | null>(null)
-  const [personaMap, setPersonaMap] = useState<Record<string, PersonaSummary>>({})
   // Streaming content per persona -- isolated from messages array to avoid dedup issues
   const [streamingContent, setStreamingContent] = useState<Record<string, string>>({})
   // Dispatcher transparency: shows why each persona was chosen
@@ -164,32 +162,9 @@ function App() {
     }
   }, [])
 
-  // Load persona map
-  const loadPersonas = () => {
-    fetchPersonas()
-      .then((personas) => {
-        const map: Record<string, PersonaSummary> = {}
-        for (const p of personas) {
-          map[p.id] = p
-        }
-        setPersonaMap(map)
-      })
-      .catch(() => {})
-  }
-
-  const loadOrg = () => {
-    fetchOrganizations()
-      .then((orgs) => {
-        if (orgs.length > 0) setCurrentOrg(orgs[0])
-        else setCurrentOrg(null)
-      })
-      .catch(() => {})
-  }
-
-  useEffect(() => {
-    loadPersonas()
-    loadOrg()
-  }, [])
+  // Aliases for backward compat within this file
+  const loadPersonas = reloadPersonas
+  const loadOrg = reloadOrganizations
 
   const scrollToBottom = () => {
     if (messageListRef.current) {
@@ -1378,6 +1353,14 @@ function App() {
       />
     </div>
     } /></Routes>
+  )
+}
+
+function App() {
+  return (
+    <AppProvider>
+      <AppInner />
+    </AppProvider>
   )
 }
 
