@@ -23,6 +23,7 @@ from starlette.responses import Response, StreamingResponse
 from api.dependencies import (
     get_analysis_service,
     get_analysis_reader_service,
+    get_battle_prep_service,
     get_chatroom_service,
     get_coaching_service,
     get_growth_service,
@@ -34,6 +35,7 @@ from api.dependencies import (
 )
 from application.services.stakeholder.chatroom_service import ChatRoomApplicationService
 from application.services.stakeholder.dto import (
+    BattlePrepGenerateDTO,
     CreateChatRoomDTO,
     CreateOrganizationDTO,
     CreatePersonaDTO,
@@ -41,6 +43,7 @@ from application.services.stakeholder.dto import (
     CreateScenarioDTO,
     CreateTeamDTO,
     SendMessageDTO,
+    StartBattleDTO,
     UpdateOrganizationDTO,
     UpdatePersonaDTO,
     UpdateRelationshipDTO,
@@ -214,7 +217,8 @@ async def export_room(
 
     # Build markdown
     lines: list[str] = []
-    type_label = "群聊" if room.type == "group" else "私聊"
+    _type_labels = {"group": "群聊", "private": "私聊", "battle_prep": "备战"}
+    type_label = _type_labels.get(room.type, room.type)
     persona_names = []
     for pid in room.persona_ids:
         p = loader.get_persona(pid)
@@ -271,7 +275,8 @@ async def export_room_html(
     room = detail.room
     msgs = detail.messages
 
-    type_label = "群聊" if room.type == "group" else "私聊"
+    _type_labels = {"group": "群聊", "private": "私聊", "battle_prep": "备战"}
+    type_label = _type_labels.get(room.type, room.type)
     persona_names = []
     persona_colors: dict[str, str] = {}
     for pid in room.persona_ids:
@@ -414,7 +419,18 @@ async def send_message(
     body: SendMessageDTO,
     background_tasks: BackgroundTasks,
     svc: StakeholderChatService = Depends(get_stakeholder_chat_service),
+    chatroom_svc: ChatRoomApplicationService = Depends(get_chatroom_service),
 ):
+    # Battle prep 12-round limit enforcement
+    detail = await chatroom_svc.get_room_detail(room_id, message_limit=200)
+    if detail.room.type == "battle_prep":
+        user_msg_count = sum(1 for m in detail.messages if m.sender_type == "user")
+        if user_msg_count >= 12:
+            raise HTTPException(
+                status_code=422,
+                detail="备战对话已达到 12 轮上限，请结束备战生成话术纸条",
+            )
+
     msg, room = await svc.send_message(room_id, body.content)
     background_tasks.add_task(svc.generate_replies, room_id, room)
     return success_response(data=msg.model_dump())
@@ -935,6 +951,44 @@ async def delete_relationship(
 
 
 # ---------------------------------------------------------------------------
+# Battle Prep endpoints
+# ---------------------------------------------------------------------------
+
+
+@router.post("/battle-prep/generate", summary="生成备战角色和场景")
+async def generate_battle_prep(
+    body: BattlePrepGenerateDTO,
+    svc=Depends(get_battle_prep_service),
+):
+    try:
+        result = await svc.generate_prep(body.description)
+        return success_response(data=result.model_dump())
+    except ValueError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+
+@router.post("/battle-prep/start", summary="开始备战对话", status_code=201)
+async def start_battle(
+    body: StartBattleDTO,
+    svc=Depends(get_battle_prep_service),
+):
+    room = await svc.start_battle(body)
+    return success_response(data=room.model_dump())
+
+
+@router.post("/rooms/{room_id}/cheatsheet", summary="生成话术纸条")
+async def generate_cheat_sheet(
+    room_id: int,
+    svc=Depends(get_battle_prep_service),
+):
+    try:
+        sheet = await svc.generate_cheat_sheet(room_id)
+        return success_response(data=sheet.model_dump())
+    except ValueError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+
+# ---------------------------------------------------------------------------
 # Growth Dashboard endpoints
 # ---------------------------------------------------------------------------
 
@@ -953,3 +1007,13 @@ async def generate_growth_insight(
 ):
     insight = await svc.generate_insight()
     return success_response(data=insight.model_dump())
+
+
+@router.post("/growth/card", summary="生成沟通力名片")
+async def generate_profile_card(
+    svc=Depends(get_growth_service),
+):
+    result = await svc.generate_profile_card()
+    if result is None:
+        raise HTTPException(status_code=502, detail="名片生成失败，请重试")
+    return success_response(data=result.model_dump())

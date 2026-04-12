@@ -191,6 +191,24 @@ async def get_growth_service(
     return GrowthService(uow_factory=SQLAlchemyUnitOfWork, llm=llm, persona_loader=loader)
 
 
+async def get_battle_prep_service(
+    loader: PersonaLoader = Depends(get_persona_loader),
+    editor: PersonaEditorService = Depends(get_persona_editor_service),
+    llm: LLMPort = Depends(get_stakeholder_llm_port),
+    chatroom_svc: ChatRoomApplicationService = Depends(get_chatroom_service),
+):
+    from application.services.stakeholder.battle_prep_service import BattlePrepService
+
+    return BattlePrepService(
+        uow_factory=SQLAlchemyUnitOfWork,
+        llm=llm,
+        chatroom_service=chatroom_svc,
+        persona_editor=editor,
+        persona_loader=loader,
+        persona_dir=settings.stakeholder.persona_dir,
+    )
+
+
 async def get_chat_service(
     llm: LLMPort = Depends(get_llm_port),
 ) -> ChatApplicationService:
