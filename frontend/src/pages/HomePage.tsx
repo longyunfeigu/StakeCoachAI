@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import {
   Swords,
@@ -9,42 +9,47 @@ import {
   Lock,
   ChevronRight,
 } from 'lucide-react'
+import { useAppContext } from '../contexts/AppContext'
+import { fetchRooms, type ChatRoom } from '../services/api'
 import './HomePage.css'
 
-/* ---------- hardcoded placeholder data ---------- */
+/* ---------- helpers ---------- */
+
+const AVATAR_COLORS = ['#8B5226', '#1E3A5F', '#3D2E5C', '#6B4226', '#2E4A3F', '#4A3060']
+
+function getAvatarColor(id: string | number): string {
+  const hash = String(id).split('').reduce((a, c) => a + c.charCodeAt(0), 0)
+  return AVATAR_COLORS[hash % AVATAR_COLORS.length]
+}
+
+function getInitial(name: string): string {
+  return name.charAt(0)
+}
+
+function timeAgo(dateStr: string | null): string {
+  if (!dateStr) return ''
+  const now = Date.now()
+  const then = new Date(dateStr).getTime()
+  if (isNaN(then)) return ''
+  const diffMs = now - then
+  const minutes = Math.floor(diffMs / 60000)
+  if (minutes < 1) return '刚刚'
+  if (minutes < 60) return `${minutes} 分钟前`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours} 小时前`
+  const days = Math.floor(hours / 24)
+  if (days === 1) return '昨天'
+  if (days < 30) return `${days} 天前`
+  return `${Math.floor(days / 30)} 个月前`
+}
+
+/* ---------- static data ---------- */
 
 const dailyChallenge = {
   title: '向上汇报季度成果',
   progress: 0.35,
   xp: 100,
 }
-
-const recentConversations = [
-  {
-    id: 1,
-    name: '张总监 1:1',
-    surname: '张',
-    color: '#8B5226',
-    timeAgo: '2 小时前',
-    grade: 'A',
-  },
-  {
-    id: 2,
-    name: '李经理项目评审',
-    surname: '李',
-    color: '#1E3A5F',
-    timeAgo: '昨天',
-    grade: 'B+',
-  },
-  {
-    id: 3,
-    name: '王副总沟通',
-    surname: '王',
-    color: '#3D2E5C',
-    timeAgo: '3 天前',
-    grade: 'A-',
-  },
-]
 
 interface SkillNode {
   label: string
@@ -59,15 +64,30 @@ const skillNodes: SkillNode[] = [
   { label: '危机处理', status: 'locked' },
 ]
 
-const personaAvatars = [
-  { surname: '张', color: '#D4A574' },
-  { surname: '李', color: '#6BA3D6' },
-  { surname: '王', color: '#A88EC8' },
-]
-
 /* ---------- component ---------- */
 
 const HomePage: React.FC = () => {
+  const { personaMap, scenarios } = useAppContext()
+  const [rooms, setRooms] = useState<ChatRoom[]>([])
+
+  useEffect(() => {
+    fetchRooms().then((data) => {
+      // Sort by last_message_at descending, filter out battle_prep rooms
+      const sorted = data
+        .filter((r) => r.type !== 'battle_prep')
+        .sort((a, b) => {
+          const ta = a.last_message_at ? new Date(a.last_message_at).getTime() : 0
+          const tb = b.last_message_at ? new Date(b.last_message_at).getTime() : 0
+          return tb - ta
+        })
+      setRooms(sorted)
+    }).catch(() => {})
+  }, [])
+
+  const recentRooms = rooms.slice(0, 3)
+  const personaList = Object.values(personaMap)
+  const personaCount = personaList.length
+  const scenarioCount = scenarios?.length ?? 0
   return (
     <div className="home-page">
       {/* 1. Daily Challenge Banner */}
@@ -155,22 +175,24 @@ const HomePage: React.FC = () => {
               角色库
             </span>
             <span className="home-action-title">管理 AI 对手</span>
-            <span className="home-action-desc">6 个角色 &middot; 3 个场景</span>
+            <span className="home-action-desc">{personaCount} 个角色 &middot; {scenarioCount} 个场景</span>
           </div>
           <div className="home-action-avatars">
-            {personaAvatars.map((a, i) => (
+            {personaList.slice(0, 3).map((p, i) => (
               <span
-                key={i}
+                key={p.id || i}
                 className="home-action-avatar-circle"
                 style={{
-                  backgroundColor: a.color,
-                  zIndex: personaAvatars.length - i,
+                  backgroundColor: p.avatar_color || getAvatarColor(p.id || i),
+                  zIndex: 3 - i,
                 }}
               >
-                {a.surname}
+                {getInitial(p.name)}
               </span>
             ))}
-            <span className="home-action-avatar-more">+3</span>
+            {personaCount > 3 && (
+              <span className="home-action-avatar-more">+{personaCount - 3}</span>
+            )}
           </div>
         </Link>
       </section>
@@ -183,27 +205,41 @@ const HomePage: React.FC = () => {
             查看全部 <ChevronRight size={14} />
           </Link>
         </div>
-        <div className="home-recent-row">
-          {recentConversations.map((c) => (
-            <Link
-              key={c.id}
-              to={`/chat/${c.id}`}
-              className="home-recent-card"
-            >
-              <span
-                className="home-recent-avatar"
-                style={{ backgroundColor: c.color }}
-              >
-                {c.surname}
-              </span>
-              <div className="home-recent-info">
-                <span className="home-recent-name">{c.name}</span>
-                <span className="home-recent-time">{c.timeAgo}</span>
-              </div>
-              <span className="home-recent-grade">{c.grade}</span>
-            </Link>
-          ))}
-        </div>
+        {recentRooms.length === 0 ? (
+          <div className="home-recent-empty">
+            <p>还没有对话记录</p>
+            <Link to="/chat" className="home-recent-empty-cta">开始你的第一次练习</Link>
+          </div>
+        ) : (
+          <div className="home-recent-row">
+            {recentRooms.map((room) => {
+              const firstPersonaId = room.persona_ids?.[0]
+              const persona = firstPersonaId ? personaMap[firstPersonaId] : null
+              const initial = persona ? getInitial(persona.name) : getInitial(room.name)
+              const color = persona
+                ? (persona.avatar_color || getAvatarColor(firstPersonaId))
+                : getAvatarColor(room.id)
+              return (
+                <Link
+                  key={room.id}
+                  to={`/chat/${room.id}`}
+                  className="home-recent-card"
+                >
+                  <span
+                    className="home-recent-avatar"
+                    style={{ backgroundColor: color }}
+                  >
+                    {initial}
+                  </span>
+                  <div className="home-recent-info">
+                    <span className="home-recent-name">{room.name}</span>
+                    <span className="home-recent-time">{timeAgo(room.last_message_at)}</span>
+                  </div>
+                </Link>
+              )
+            })}
+          </div>
+        )}
       </section>
 
       {/* 4. Skill Path Preview */}
