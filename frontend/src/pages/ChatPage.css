@@ -1,0 +1,279 @@
+/* ChatPage — Three-column layout */
+.chat-page {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Left column: room list */
+.chat-page-left {
+  width: 200px;
+  min-width: 200px;
+  background: var(--bg-card, var(--surface, #fff));
+  border-right: 1px solid var(--border, #e5e7eb);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+/* Center column: chat area */
+.chat-page-center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--bg-base, var(--surface-secondary, #f9fafb));
+  height: 100%;
+}
+
+/* Chat header bar */
+.chat-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--border, #e5e7eb);
+  background: var(--bg-card, var(--surface, #fff));
+  height: 56px;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.chat-page-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.chat-page-header-left h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary, #1f2937);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.room-type-badge {
+  font-size: 11px;
+  padding: 1px 8px;
+  border-radius: var(--radius-full, 99px);
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.room-type-badge.private {
+  background: rgba(59, 130, 246, 0.1);
+  color: #2563eb;
+}
+
+.room-type-badge.group {
+  background: rgba(139, 92, 246, 0.1);
+  color: #7c3aed;
+}
+
+.room-type-badge.battle_prep {
+  background: rgba(245, 158, 11, 0.1);
+  color: #b45309;
+}
+
+.chat-page-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+/* Chat body: message list area */
+.chat-page-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* Emotion sidebar within chat area */
+.chat-page-chat-with-sidebar {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.chat-page-chat-column {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* Right column: context panel */
+.chat-page-right {
+  width: 210px;
+  min-width: 210px;
+  background: var(--bg-card, var(--surface, #fff));
+  border-left: 1px solid var(--border, #e5e7eb);
+  overflow-y: auto;
+}
+
+/* Empty state */
+.chat-page-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 40px 20px;
+  background: var(--bg-base, var(--surface-secondary, #f9fafb));
+}
+
+.chat-page-empty-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  background: var(--primary-gradient, linear-gradient(135deg, #2D9C6F, #5B8C5A));
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.chat-page-empty h2 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary, #1f2937);
+  margin: 0 0 8px;
+}
+
+.chat-page-empty p {
+  font-size: 14px;
+  color: var(--text-secondary, #6b7280);
+  margin: 0 0 20px;
+  line-height: 1.6;
+}
+
+.chat-page-empty-cta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 20px;
+  border: none;
+  border-radius: var(--radius-full, 99px);
+  background: var(--primary-gradient, linear-gradient(135deg, #2D9C6F, #5B8C5A));
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.15s;
+}
+
+.chat-page-empty-cta:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+/* Battle prep progress bar */
+.chat-page-battle-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 20px;
+  background: #fffbeb;
+  border-bottom: 1px solid #fde68a;
+  font-size: 13px;
+  color: #b45309;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.chat-page-battle-bar .battle-progress {
+  flex: 1;
+  height: 4px;
+  background: #fde68a;
+  border-radius: 2px;
+  overflow: hidden;
+  margin-left: 4px;
+}
+
+.chat-page-battle-bar .battle-progress-fill {
+  height: 100%;
+  background: #f59e0b;
+  border-radius: 2px;
+  transition: width 0.3s;
+}
+
+.chat-page-battle-bar .end-battle-btn {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border: 1px solid #b45309;
+  border-radius: 6px;
+  background: white;
+  color: #b45309;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.chat-page-battle-bar .end-battle-btn:hover:not(:disabled) {
+  background: #fffbeb;
+}
+
+.chat-page-battle-bar .end-battle-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Left column: room list header + create button */
+.chat-page-left-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 12px 8px;
+}
+
+.chat-page-left-header span {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary, #6b7280);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.chat-page-left-header button {
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: var(--radius-sm, 6px);
+  background: transparent;
+  color: var(--text-secondary, #6b7280);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.chat-page-left-header button:hover {
+  background: var(--surface-hover, #f3f4f6);
+  color: var(--text-primary, #1f2937);
+}
+
+/* Spin animation for loader */
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
