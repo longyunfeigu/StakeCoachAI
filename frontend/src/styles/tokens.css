@@ -33,23 +33,11 @@
   --transition-fast: 0.15s ease;
   --transition-normal: 0.2s ease;
 
-  /* === Backward-compat aliases (old token -> new value) === */
-  --surface: var(--bg-base);
-  --surface-secondary: var(--bg-card);
-  --surface-hover: #EDF5F0;
-  --primary: var(--green);
-  --primary-hover: var(--green-hover);
+  /* Semantic aliases */
   --primary-gradient: linear-gradient(135deg, #2D9C6F, #5B8C5A);
   --border-light: #E8F0EB;
   --success: #16A34A;
   --success-bg: #DCFCE7;
-  --warning: var(--amber);
   --warning-bg: #FEF9C3;
-  --danger: var(--rose);
   --danger-bg: #FEE2E2;
-  --sidebar-bg: var(--bg-card);
-  --sidebar-hover: var(--bg-base);
-  --sidebar-active: var(--green-soft);
-  --sidebar-text: var(--text-secondary);
-  --sidebar-text-bright: var(--text-primary);
 }

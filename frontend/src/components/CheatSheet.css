@@ -21,7 +21,7 @@
   max-height: 90vh;
   display: flex;
   flex-direction: column;
-  background: var(--surface, #fff);
+  background: var(--bg-elevated);
   border-radius: 12px;
   box-shadow: var(--shadow-lg, 0 20px 60px rgba(0, 0, 0, 0.18));
   overflow: hidden;
@@ -88,7 +88,7 @@
 }
 
 .cs-close-btn:hover {
-  background: var(--surface-hover, #f3f4f6);
+  background: var(--bg-base);
   color: var(--text-primary, #111);
 }
 
@@ -127,7 +127,7 @@
 }
 
 .cs-tactic-item {
-  background: var(--surface-hover, #f9fafb);
+  background: var(--bg-card);
   border: 1px solid var(--border, #e5e7eb);
   border-radius: 8px;
   padding: 10px 12px;
@@ -186,7 +186,7 @@
   color: var(--text-primary, #111);
   font-weight: 500;
   line-height: 1.6;
-  background: var(--surface-hover, #f9fafb);
+  background: var(--bg-card);
 }
 
 /* Footer buttons (outside card, not captured) */
@@ -204,7 +204,7 @@
   padding: 9px 16px;
   border: 1.5px solid var(--border, #e5e7eb);
   border-radius: 8px;
-  background: var(--surface, #fff);
+  background: var(--bg-elevated);
   color: var(--text-secondary, #6b7280);
   font-size: 14px;
   font-weight: 500;

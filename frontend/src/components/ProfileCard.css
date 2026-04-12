@@ -174,7 +174,7 @@
   max-height: 90vh;
   display: flex;
   flex-direction: column;
-  background: var(--surface, #fff);
+  background: var(--bg-elevated);
   border-radius: 12px;
   box-shadow: var(--shadow-lg, 0 20px 60px rgba(0, 0, 0, 0.18));
   overflow: hidden;
@@ -213,7 +213,7 @@
 }
 
 .pc-close-btn:hover {
-  background: var(--surface-hover, #f3f4f6);
+  background: var(--bg-base);
   color: var(--text-primary, #111);
 }
 

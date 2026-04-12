@@ -61,7 +61,12 @@ export default function RoomList({ selectedRoomId, onSelectRoom, onCreateRoom, o
         </button>
       </div>
       {regularRooms.length === 0 ? (
-        <div className="room-empty">暂无聊天室</div>
+        <div className="room-empty">
+          <p>还没有对话</p>
+          <button className="create-room-btn" onClick={onCreateRoom} style={{ margin: '8px auto 0', width: 'auto', padding: '6px 14px', height: 'auto', borderRadius: '6px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <Plus size={12} /> 新建聊天室
+          </button>
+        </div>
       ) : (
         regularRooms.map((room) => (
           <Link

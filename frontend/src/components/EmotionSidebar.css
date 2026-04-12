@@ -5,7 +5,7 @@
   border-left: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  background: var(--surface);
+  background: var(--bg-elevated);
   height: 100%;
 }
 
@@ -44,7 +44,7 @@
 }
 
 .es-icon-btn:hover {
-  background: var(--surface-secondary);
+  background: var(--bg-card);
   color: var(--text-primary);
 }
 
@@ -84,7 +84,7 @@
   font-size: 12px;
   padding: 6px 8px;
   border-radius: var(--radius-sm);
-  background: var(--surface-secondary);
+  background: var(--bg-card);
 }
 
 .es-status-dot {
@@ -116,7 +116,7 @@
 }
 
 .es-status-delta.down {
-  color: var(--danger);
+  color: var(--rose);
 }
 
 .es-status-label {
@@ -130,7 +130,7 @@
 
 /* Tooltip */
 .es-tooltip {
-  background: var(--surface);
+  background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   padding: 6px 10px;

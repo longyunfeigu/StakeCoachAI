@@ -10,8 +10,8 @@
 .chat-page-left {
   width: 200px;
   min-width: 200px;
-  background: var(--bg-card, var(--surface, #fff));
-  border-right: 1px solid var(--border, #e5e7eb);
+  background: var(--bg-card);
+  border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   overflow-y: auto;
@@ -23,7 +23,7 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
-  background: var(--bg-base, var(--surface-secondary, #f9fafb));
+  background: var(--bg-base);
   height: 100%;
 }
 
@@ -33,8 +33,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 10px 20px;
-  border-bottom: 1px solid var(--border, #e5e7eb);
-  background: var(--bg-card, var(--surface, #fff));
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-card);
   height: 56px;
   box-sizing: border-box;
   flex-shrink: 0;
@@ -115,7 +115,7 @@
 .chat-page-right {
   width: 210px;
   min-width: 210px;
-  background: var(--bg-card, var(--surface, #fff));
+  background: var(--bg-card);
   border-left: 1px solid var(--border, #e5e7eb);
   overflow-y: auto;
 }
@@ -129,7 +129,7 @@
   justify-content: center;
   text-align: center;
   padding: 40px 20px;
-  background: var(--bg-base, var(--surface-secondary, #f9fafb));
+  background: var(--bg-base);
 }
 
 .chat-page-empty-icon {
@@ -264,7 +264,7 @@
 }
 
 .chat-page-left-header button:hover {
-  background: var(--surface-hover, #f3f4f6);
+  background: var(--bg-base);
   color: var(--text-primary, #1f2937);
 }
 
@@ -376,7 +376,7 @@
   }
 
   .chat-page-back-btn:hover {
-    background: var(--surface-hover, #f3f4f6);
+    background: var(--bg-base);
   }
 
   /* Simplify header on mobile */

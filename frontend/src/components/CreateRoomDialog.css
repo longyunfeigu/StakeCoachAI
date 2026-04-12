@@ -10,7 +10,7 @@
 }
 
 .dialog {
-  background: var(--surface);
+  background: var(--bg-elevated);
   border-radius: var(--radius-lg);
   padding: 0;
   width: 420px;
@@ -60,13 +60,13 @@
   outline: none;
   transition: all var(--transition-fast);
   box-sizing: border-box;
-  background: var(--surface);
+  background: var(--bg-elevated);
   color: var(--text-primary);
 }
 
 .field-label input:focus,
 .field-label select:focus {
-  border-color: var(--primary);
+  border-color: var(--green);
   box-shadow: 0 0 0 3px rgba(45, 156, 111, 0.1);
 }
 
@@ -88,7 +88,7 @@
 }
 
 .persona-select-item:hover {
-  background: var(--surface-hover);
+  background: var(--bg-base);
 }
 
 .persona-select-item.selected {
@@ -115,11 +115,11 @@
 }
 
 .dialog-error {
-  color: var(--danger);
+  color: var(--rose);
   font-size: 13px;
   margin-bottom: 14px;
   padding: 8px 12px;
-  background: var(--danger-bg);
+  background: var(--rose-soft);
   border-radius: var(--radius-sm);
 }
 
@@ -134,7 +134,7 @@
   padding: 8px 18px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  background: var(--surface);
+  background: var(--bg-elevated);
   color: var(--text-secondary);
   font-size: 14px;
   cursor: pointer;
@@ -142,7 +142,7 @@
 }
 
 .btn-cancel:hover {
-  background: var(--surface-hover);
+  background: var(--bg-base);
   color: var(--text-primary);
 }
 

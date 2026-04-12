@@ -40,8 +40,8 @@ function EmotionMiniChart() {
     { value: 0.5, label: '合作' },
   ]
   const intensityColor = (v: number) => {
-    if (v > 0.7) return 'var(--danger, #ef4444)'
-    if (v > 0.5) return 'var(--warning, #f59e0b)'
+    if (v > 0.7) return 'var(--rose)'
+    if (v > 0.5) return 'var(--amber)'
     return 'var(--green, #2D9C6F)'
   }
   return (

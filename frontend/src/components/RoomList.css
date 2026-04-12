@@ -8,14 +8,14 @@
   display: block;
   text-align: center;
   padding: 20px 0;
-  color: var(--sidebar-text);
+  color: var(--text-secondary);
   font-size: 13px;
 }
 
 .room-empty {
   text-align: center;
   padding: 20px 18px;
-  color: var(--sidebar-text);
+  color: var(--text-secondary);
   font-size: 13px;
 }
 
@@ -47,21 +47,21 @@
 }
 
 .room-item:hover {
-  background: var(--sidebar-hover);
+  background: var(--bg-base);
 }
 
 .room-item.active {
-  background: var(--sidebar-active);
+  background: var(--green-soft);
 }
 
 .room-item-icon {
-  color: var(--sidebar-text);
+  color: var(--text-secondary);
   flex-shrink: 0;
   display: flex;
 }
 
 .room-item.active .room-item-icon {
-  color: var(--primary);
+  color: var(--green);
 }
 
 .room-info {
@@ -75,7 +75,7 @@
 .room-name {
   font-size: 13px;
   font-weight: 500;
-  color: var(--sidebar-text-bright);
+  color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -87,7 +87,7 @@
 
 .room-personas {
   font-size: 11px;
-  color: var(--sidebar-text);
+  color: var(--text-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -100,7 +100,7 @@
   border: none;
   border-radius: var(--radius-sm);
   background: transparent;
-  color: var(--sidebar-text);
+  color: var(--text-secondary);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -115,7 +115,7 @@
 
 .room-delete-btn:hover {
   background: rgba(239, 68, 68, 0.15);
-  color: var(--danger);
+  color: var(--rose);
 }
 
 /* Hide old type badge in sidebar — not needed with icons */

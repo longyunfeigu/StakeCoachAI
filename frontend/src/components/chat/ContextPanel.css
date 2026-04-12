@@ -4,7 +4,7 @@
   width: 210px;
   min-width: 210px;
   border-left: 1px solid var(--border, #e5e7eb);
-  background: var(--surface, #fff);
+  background: var(--bg-elevated);
   display: flex;
   flex-direction: column;
   position: relative;
@@ -26,7 +26,7 @@
   height: 24px;
   border: 1px solid var(--border, #e5e7eb);
   border-radius: var(--radius-sm, 6px);
-  background: var(--surface, #fff);
+  background: var(--bg-elevated);
   color: var(--text-muted, #9ca3af);
   cursor: pointer;
   display: flex;
@@ -38,7 +38,7 @@
 
 .ctx-toggle:hover {
   color: var(--text-primary, #1f2937);
-  background: var(--surface-hover, #f3f4f6);
+  background: var(--bg-base);
 }
 
 /* Body content */
@@ -54,7 +54,7 @@
 /* Profile card */
 .ctx-profile-card {
   padding: 10px;
-  background: var(--surface-secondary, #f9fafb);
+  background: var(--bg-card);
   border-radius: var(--radius-md, 8px);
   border: 1px solid var(--border-light, #f3f4f6);
 }

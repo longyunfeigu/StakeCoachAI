@@ -355,9 +355,9 @@
 /* Error */
 .bpp-error {
   font-size: 13px;
-  color: var(--danger, #ef4444);
+  color: var(--rose);
   padding: 8px 12px;
-  background: var(--danger-bg, #fef2f2);
+  background: var(--rose-soft);
   border-radius: 8px;
   border: 1px solid rgba(239, 68, 68, 0.15);
 }

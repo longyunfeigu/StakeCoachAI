@@ -19,7 +19,7 @@
 }
 
 .voice-btn:hover:not(:disabled) {
-  background: var(--primary, #2D9C6F);
+  background: var(--green);
   color: white;
 }
 
@@ -35,7 +35,7 @@
 }
 
 .voice-btn.processing {
-  background: var(--primary, #2D9C6F);
+  background: var(--green);
   color: white;
 }
 

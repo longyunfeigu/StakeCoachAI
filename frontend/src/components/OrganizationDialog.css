@@ -19,11 +19,11 @@
   resize: vertical;
   min-height: 72px;
   color: var(--text-primary);
-  background: var(--surface);
+  background: var(--bg-elevated);
 }
 
 .org-dialog .field-label textarea:focus {
-  border-color: var(--primary);
+  border-color: var(--green);
   box-shadow: 0 0 0 3px rgba(45, 156, 111, 0.1);
 }
 
@@ -35,13 +35,13 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   font-size: 14px;
-  background: var(--surface);
+  background: var(--bg-elevated);
   color: var(--text-primary);
   outline: none;
 }
 
 .org-dialog .org-selector:focus {
-  border-color: var(--primary);
+  border-color: var(--green);
 }
 
 .org-tabs {
@@ -74,8 +74,8 @@
 }
 
 .org-tab.active {
-  color: var(--primary);
-  border-bottom-color: var(--primary);
+  color: var(--green);
+  border-bottom-color: var(--green);
 }
 
 .org-tab-content {
@@ -155,7 +155,7 @@
   align-items: center;
   gap: 4px;
   padding: 3px 8px;
-  background: var(--surface-hover);
+  background: var(--bg-base);
   border-radius: 12px;
   font-size: 12px;
   color: var(--text-primary);
@@ -201,8 +201,8 @@
 }
 
 .team-add-member-select:hover {
-  border-color: var(--primary);
-  color: var(--primary);
+  border-color: var(--green);
+  color: var(--green);
 }
 
 .add-team-form {
@@ -221,13 +221,13 @@
 }
 
 .add-team-form input:focus {
-  border-color: var(--primary);
+  border-color: var(--green);
 }
 
 .add-team-form button {
   padding: 6px 12px;
   border: none;
-  background: var(--primary);
+  background: var(--green);
   color: white;
   border-radius: var(--radius-sm);
   font-size: 13px;
@@ -291,13 +291,13 @@
 
 .add-rel-form select:focus,
 .add-rel-form input:focus {
-  border-color: var(--primary);
+  border-color: var(--green);
 }
 
 .add-rel-form button {
   padding: 6px 12px;
   border: none;
-  background: var(--primary);
+  background: var(--green);
   color: white;
   border-radius: var(--radius-sm);
   font-size: 13px;
@@ -326,7 +326,7 @@
 }
 
 .org-section .sidebar-section-title {
-  color: var(--sidebar-text);
+  color: var(--text-secondary);
 }
 
 .org-badge {
@@ -339,7 +339,7 @@
   cursor: pointer;
   transition: background var(--transition-fast);
   font-size: 13px;
-  color: var(--sidebar-text-bright);
+  color: var(--text-primary);
 }
 
 .org-badge:hover {

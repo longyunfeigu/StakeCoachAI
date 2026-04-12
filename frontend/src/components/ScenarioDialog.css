@@ -20,7 +20,7 @@
 }
 
 .scenario-list-item:hover {
-  background: var(--surface-hover);
+  background: var(--bg-base);
 }
 
 .scenario-list-item.selected {
@@ -73,7 +73,7 @@
 }
 
 .scenario-dialog .field-label textarea:focus {
-  border-color: var(--primary);
+  border-color: var(--green);
   box-shadow: 0 0 0 3px rgba(45, 156, 111, 0.1);
 }
 
@@ -97,12 +97,12 @@
 }
 
 .persona-checkbox-item:hover {
-  background: var(--surface-hover);
+  background: var(--bg-base);
 }
 
 .persona-checkbox-item input[type="checkbox"] {
   margin: 0;
-  accent-color: var(--primary);
+  accent-color: var(--green);
 }
 
 .add-scenario-btn {
@@ -119,6 +119,6 @@
 }
 
 .add-scenario-btn:hover {
-  border-color: var(--primary);
-  color: var(--primary);
+  border-color: var(--green);
+  color: var(--green);
 }

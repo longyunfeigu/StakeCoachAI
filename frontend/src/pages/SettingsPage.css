@@ -161,13 +161,13 @@
 }
 
 .settings-item-btn:hover {
-  background: var(--surface-hover);
+  background: var(--bg-base);
   color: var(--text-primary);
 }
 
 .settings-item-btn.danger:hover {
-  background: var(--danger-bg);
-  color: var(--danger);
+  background: var(--rose-soft);
+  color: var(--rose);
   border-color: rgba(199, 91, 91, 0.3);
 }
 
@@ -296,7 +296,7 @@
   border: 1px solid rgba(199, 91, 91, 0.3);
   border-radius: var(--radius-sm);
   background: var(--bg-card);
-  color: var(--danger);
+  color: var(--rose);
   font-size: 14px;
   cursor: pointer;
   margin-right: auto;
@@ -304,7 +304,7 @@
 }
 
 .settings-form-actions .btn-delete:hover {
-  background: var(--danger-bg);
+  background: var(--rose-soft);
   border-color: rgba(199, 91, 91, 0.5);
 }
 
@@ -320,7 +320,7 @@
 }
 
 .settings-form-actions .btn-cancel:hover {
-  background: var(--surface-hover);
+  background: var(--bg-base);
   color: var(--text-primary);
 }
 
@@ -374,7 +374,7 @@
 }
 
 .settings-checkbox-item:hover {
-  background: var(--surface-hover);
+  background: var(--bg-base);
 }
 
 .settings-checkbox-item input[type="checkbox"] {
@@ -525,8 +525,8 @@
 .settings-error {
   margin-top: 12px;
   padding: 10px 14px;
-  background: var(--danger-bg);
-  color: var(--danger);
+  background: var(--rose-soft);
+  color: var(--rose);
   border-radius: var(--radius-sm);
   font-size: 13px;
 }

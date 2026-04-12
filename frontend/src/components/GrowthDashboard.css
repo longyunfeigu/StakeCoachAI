@@ -45,7 +45,7 @@
 }
 .growth-cta {
   padding: 10px 24px;
-  background: var(--primary, #2D9C6F);
+  background: var(--green);
   color: #fff;
   border: none;
   border-radius: 8px;
@@ -240,7 +240,7 @@
 }
 .detail-suggestion {
   font-size: 12px;
-  color: var(--primary, #2D9C6F);
+  color: var(--green);
   line-height: 1.5;
 }
 
@@ -268,7 +268,7 @@
   align-items: center;
   gap: 6px;
   padding: 6px 14px;
-  background: var(--primary, #2D9C6F);
+  background: var(--green);
   color: #fff;
   border: none;
   border-radius: 6px;
