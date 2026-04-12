@@ -4,6 +4,7 @@ import Layout from './components/layout/Layout'
 import HomePage from './pages/HomePage'
 import ChatPage from './pages/ChatPage'
 import BattlePrepPage from './pages/BattlePrepPage'
+import GrowthPage from './pages/GrowthPage'
 import { AppProvider, useAppContext } from './contexts/AppContext'
 import { MessageCircle, Layers, Plus, Building2, TrendingUp, Zap } from 'lucide-react'
 import './App.css'
@@ -13,7 +14,6 @@ import CreateRoomDialog from './components/CreateRoomDialog'
 import PersonaEditorDialog from './components/PersonaEditorDialog'
 import ScenarioDialog from './components/ScenarioDialog'
 import OrganizationDialog from './components/OrganizationDialog'
-import GrowthDashboard from './components/GrowthDashboard'
 import type { PersonaSummary } from './services/api'
 
 /**
@@ -29,7 +29,6 @@ function AppInner() {
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [showScenarioDialog, setShowScenarioDialog] = useState(false)
   const [showOrgDialog, setShowOrgDialog] = useState(false)
-  const [showGrowth, setShowGrowth] = useState(false)
   const [personaEditorState, setPersonaEditorState] = useState<{
     open: boolean
     persona: PersonaSummary | null
@@ -111,7 +110,6 @@ function AppInner() {
         <RoomList
           selectedRoomId={selectedRoomId}
           onSelectRoom={(room) => {
-            setShowGrowth(false)
             setSelectedRoomId(room.id)
           }}
           onCreateRoom={() => setShowCreateDialog(true)}
@@ -133,35 +131,28 @@ function AppInner() {
 
         {/* Growth tab button */}
         <button
-          className={`growth-btn ${showGrowth ? 'active' : ''}`}
-          onClick={() => {
-            setShowGrowth(true)
-            setSelectedRoomId(null)
-          }}
+          className="growth-btn"
+          onClick={() => navigate('/growth')}
         >
           <TrendingUp size={16} />
           <span>成长轨迹</span>
         </button>
       </aside>
       <main className="main-content">
-        {showGrowth ? (
-          <GrowthDashboard onCreateRoom={() => setShowCreateDialog(true)} />
-        ) : (
-          <div className="welcome-page">
-            <div className="welcome-icon">
-              <MessageCircle size={48} strokeWidth={1.5} />
-            </div>
-            <h2 className="welcome-title">开始一场对话</h2>
-            <p className="welcome-desc">
-              创建聊天室，与 AI 角色进行利益相关者沟通模拟，<br />
-              提升你的沟通策略与应变能力。
-            </p>
-            <button className="welcome-cta" onClick={() => setShowCreateDialog(true)}>
-              <Plus size={18} />
-              新建聊天室
-            </button>
+        <div className="welcome-page">
+          <div className="welcome-icon">
+            <MessageCircle size={48} strokeWidth={1.5} />
           </div>
-        )}
+          <h2 className="welcome-title">开始一场对话</h2>
+          <p className="welcome-desc">
+            创建聊天室，与 AI 角色进行利益相关者沟通模拟，<br />
+            提升你的沟通策略与应变能力。
+          </p>
+          <button className="welcome-cta" onClick={() => setShowCreateDialog(true)}>
+            <Plus size={18} />
+            新建聊天室
+          </button>
+        </div>
       </main>
 
       <CreateRoomDialog
@@ -202,6 +193,7 @@ function App() {
           <Route path="chat" element={<ChatPage />} />
           <Route path="chat/:roomId" element={<ChatPage />} />
           <Route path="battle-prep" element={<BattlePrepPage />} />
+          <Route path="growth" element={<GrowthPage />} />
           <Route path="*" element={<AppInner />} />
         </Route>
       </Routes>

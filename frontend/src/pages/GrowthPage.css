@@ -1,0 +1,624 @@
+/* ================================================
+   GrowthPage — Growth Dashboard Full Page
+   ================================================ */
+
+.growth-page {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ---------- Loading / Empty ---------- */
+
+.gp-loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: center;
+  padding: 100px 0;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.gp-empty {
+  text-align: center;
+  padding: 100px 20px;
+}
+
+.gp-empty-icon {
+  color: var(--text-muted);
+  margin-bottom: 16px;
+}
+
+.gp-empty h2 {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 8px;
+}
+
+.gp-empty p {
+  color: var(--text-secondary);
+  margin: 0 0 24px;
+  line-height: 1.6;
+  font-size: 14px;
+}
+
+.gp-empty-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 24px;
+  background: var(--violet);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: opacity var(--transition-normal);
+}
+
+.gp-empty-btn:hover {
+  opacity: 0.9;
+}
+
+/* ---------- 1. Overall Score Header ---------- */
+
+.gp-score-header {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 24px;
+}
+
+.gp-score-header-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.gp-section-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--violet);
+}
+
+.gp-score-summary {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  margin-bottom: 16px;
+}
+
+.gp-big-score {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 100px;
+}
+
+.gp-big-score-value {
+  font-size: 48px;
+  font-weight: 800;
+  color: var(--violet);
+  line-height: 1;
+}
+
+.gp-big-score-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+.gp-radar-container {
+  flex: 1;
+  min-width: 0;
+}
+
+.gp-radar-legend {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+.gp-radar-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.gp-radar-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.gp-radar-dot.dashed {
+  background: transparent;
+  border: 2px dashed #9ca3af;
+}
+
+/* Dimension change indicators */
+.gp-dimension-changes {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-light, #f3f4f6);
+}
+
+.gp-dim-change {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.gp-dim-change-name {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.gp-dim-change-arrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.gp-dim-change-arrow.up {
+  color: #16a34a;
+}
+
+.gp-dim-change-arrow.down {
+  color: #dc2626;
+}
+
+.gp-dim-change-arrow.same {
+  color: var(--text-muted);
+}
+
+/* ---------- 2. Skill Path Timeline ---------- */
+
+.gp-skill-path {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 24px;
+}
+
+.gp-skill-path-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 20px;
+}
+
+.gp-timeline {
+  position: relative;
+  padding-left: 28px;
+}
+
+/* Vertical connector line */
+.gp-timeline::before {
+  content: '';
+  position: absolute;
+  left: 11px;
+  top: 12px;
+  bottom: 12px;
+  width: 2px;
+  background: var(--border, #e5e7eb);
+}
+
+.gp-timeline-node {
+  position: relative;
+  padding: 12px 0 12px 20px;
+}
+
+.gp-timeline-node:last-child {
+  padding-bottom: 0;
+}
+
+.gp-timeline-node:first-child {
+  padding-top: 0;
+}
+
+/* Circle indicator */
+.gp-timeline-circle {
+  position: absolute;
+  left: -24px;
+  top: 14px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+.gp-timeline-node:first-child .gp-timeline-circle {
+  top: 2px;
+}
+
+.gp-timeline-node:last-child .gp-timeline-circle {
+  top: 2px;
+}
+
+/* Completed */
+.gp-timeline-node--completed .gp-timeline-circle {
+  background: #16a34a;
+  color: #fff;
+}
+
+.gp-timeline-node--completed .gp-timeline-name {
+  color: #16a34a;
+  font-weight: 600;
+}
+
+.gp-timeline-node--completed .gp-timeline-desc {
+  color: var(--text-secondary);
+}
+
+/* Current */
+.gp-timeline-node--current .gp-timeline-circle {
+  background: transparent;
+  border: 3px solid var(--amber, #d97706);
+  box-shadow: 0 0 0 4px rgba(217, 119, 6, 0.15);
+  animation: gp-pulse 2s ease-in-out infinite;
+}
+
+@keyframes gp-pulse {
+  0%, 100% { box-shadow: 0 0 0 4px rgba(217, 119, 6, 0.15); }
+  50% { box-shadow: 0 0 0 8px rgba(217, 119, 6, 0.08); }
+}
+
+.gp-timeline-node--current .gp-timeline-circle-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--amber, #d97706);
+}
+
+.gp-timeline-node--current .gp-timeline-name {
+  color: var(--amber, #d97706);
+  font-weight: 600;
+}
+
+.gp-timeline-node--current .gp-timeline-desc {
+  color: var(--text-secondary);
+}
+
+.gp-timeline-suggestion {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--amber, #d97706);
+  background: var(--amber-soft, rgba(200,148,74,0.12));
+  padding: 4px 10px;
+  border-radius: var(--radius-sm, 4px);
+  font-weight: 500;
+}
+
+/* Locked */
+.gp-timeline-node--locked .gp-timeline-circle {
+  background: var(--bg-card);
+  border: 2px solid var(--border, #e5e7eb);
+  color: var(--text-muted);
+}
+
+.gp-timeline-node--locked .gp-timeline-name {
+  color: var(--text-muted);
+}
+
+.gp-timeline-node--locked .gp-timeline-desc {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.gp-timeline-name {
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 2px;
+}
+
+.gp-timeline-desc {
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.gp-timeline-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  font-weight: 500;
+  margin-top: 4px;
+}
+
+.gp-timeline-status-badge.completed {
+  color: #16a34a;
+}
+
+.gp-timeline-status-badge.locked {
+  color: var(--text-muted);
+}
+
+/* ---------- 3. Evaluation History ---------- */
+
+.gp-eval-history {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 24px;
+}
+
+.gp-eval-history-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 16px;
+}
+
+.gp-eval-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.gp-eval-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: var(--bg-main, #fafafa);
+  border: 1px solid var(--border-light, #f3f4f6);
+  border-radius: var(--radius-sm, 6px);
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color var(--transition-normal), box-shadow var(--transition-normal);
+}
+
+.gp-eval-card:hover {
+  border-color: var(--violet);
+  box-shadow: 0 1px 4px rgba(139, 126, 200, 0.12);
+}
+
+.gp-eval-grade {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm, 6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.gp-eval-grade--high {
+  background: rgba(22, 163, 74, 0.1);
+  color: #16a34a;
+}
+
+.gp-eval-grade--mid {
+  background: rgba(217, 119, 6, 0.1);
+  color: #d97706;
+}
+
+.gp-eval-grade--low {
+  background: rgba(220, 38, 38, 0.1);
+  color: #dc2626;
+}
+
+.gp-eval-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.gp-eval-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gp-eval-meta {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
+  display: block;
+}
+
+.gp-eval-feedback {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.gp-eval-arrow {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+/* ---------- 4. Profile Card Section ---------- */
+
+.gp-profile-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 24px;
+}
+
+.gp-profile-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.gp-profile-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.gp-download-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: var(--radius-sm, 6px);
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  color: white;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity var(--transition-normal);
+}
+
+.gp-download-btn:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.gp-download-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.gp-generate-card-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity var(--transition-normal);
+}
+
+.gp-generate-card-btn:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.gp-generate-card-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.gp-profile-card-wrapper {
+  margin-top: 16px;
+}
+
+.gp-profile-placeholder {
+  text-align: center;
+  padding: 32px 16px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+/* ---------- Gamification Stats Row ---------- */
+
+.gp-gamification-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.gp-gam-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  text-align: center;
+}
+
+.gp-gam-value {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--violet);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.gp-gam-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.gp-level-bar {
+  margin-top: 6px;
+  height: 4px;
+  background: var(--border-light, #f3f4f6);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.gp-level-bar-fill {
+  height: 100%;
+  background: var(--violet);
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+/* ---------- Spin animation ---------- */
+
+@keyframes gp-spin {
+  to { transform: rotate(360deg); }
+}
+
+.gp-spin {
+  animation: gp-spin 1s linear infinite;
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 640px) {
+  .growth-page {
+    padding: 16px;
+  }
+
+  .gp-score-summary {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .gp-dimension-changes {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .gp-gamification-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
