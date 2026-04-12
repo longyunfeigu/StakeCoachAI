@@ -1,0 +1,55 @@
+:root {
+  /* === New Mint Green Light Theme === */
+  --bg-base: #F4F9F6;
+  --bg-card: #FBFDFB;
+  --bg-elevated: #FFFFFF;
+  --border: #DAE8E0;
+  --border-accent: rgba(45,156,111,0.25);
+  --text-primary: #1A2E22;
+  --text-secondary: #7A9A88;
+  --text-muted: #4A6B56;
+  --green: #2D9C6F;
+  --green-hover: #258A60;
+  --green-soft: rgba(45,156,111,0.12);
+  --amber: #C8944A;
+  --amber-soft: rgba(200,148,74,0.12);
+  --violet: #8B7EC8;
+  --violet-soft: rgba(139,126,200,0.12);
+  --rose: #C75B5B;
+  --rose-soft: rgba(199,91,91,0.12);
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(26,46,34,0.06);
+  --shadow-md: 0 4px 12px rgba(26,46,34,0.08);
+  --shadow-lg: 0 8px 24px rgba(26,46,34,0.1);
+
+  /* Radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-full: 9999px;
+
+  /* Transitions */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.2s ease;
+
+  /* === Backward-compat aliases (old token -> new value) === */
+  --surface: var(--bg-base);
+  --surface-secondary: var(--bg-card);
+  --surface-hover: #EDF5F0;
+  --primary: var(--green);
+  --primary-hover: var(--green-hover);
+  --primary-gradient: linear-gradient(135deg, #2D9C6F, #5B8C5A);
+  --border-light: #E8F0EB;
+  --success: #16A34A;
+  --success-bg: #DCFCE7;
+  --warning: var(--amber);
+  --warning-bg: #FEF9C3;
+  --danger: var(--rose);
+  --danger-bg: #FEE2E2;
+  --sidebar-bg: var(--bg-card);
+  --sidebar-hover: var(--bg-base);
+  --sidebar-active: var(--green-soft);
+  --sidebar-text: var(--text-secondary);
+  --sidebar-text-bright: var(--text-primary);
+}

@@ -15,7 +15,7 @@ const DIMENSIONS = Object.keys(DIMENSION_LABELS)
 
 interface Props {
   data: ProfileCardData
-  cardRef?: React.RefObject<HTMLDivElement>
+  cardRef?: React.RefObject<HTMLDivElement | null>
 }
 
 function getBarStyle(score: number): React.CSSProperties {

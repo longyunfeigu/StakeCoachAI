@@ -1,73 +1,15 @@
-/* Design Tokens — Nature Green Theme */
-:root {
-  /* Sidebar */
-  --sidebar-bg: #2C3E2D;
-  --sidebar-hover: #3A4F3B;
-  --sidebar-active: #456347;
-  --sidebar-text: #A3B8A4;
-  --sidebar-text-bright: #E2EBE3;
+@import './styles/tokens.css';
 
-  /* Primary */
-  --primary: #2D9C6F;
-  --primary-hover: #258A60;
-  --primary-gradient: linear-gradient(135deg, #2D9C6F, #5B8C5A);
-
-  /* Surfaces */
-  --surface: #F2F5EF;
-  --surface-secondary: #EDF0E9;
-  --surface-hover: #E5EAE0;
-
-  /* Borders */
-  --border: #DDE5D9;
-  --border-light: #EBF0E7;
-
-  /* Text */
-  --text-primary: #2C3E2D;
-  --text-secondary: #5A6B5A;
-  --text-muted: #8FA38F;
-
-  /* Semantic */
-  --success: #16A34A;
-  --success-bg: #DCFCE7;
-  --warning: #D97706;
-  --warning-bg: #FEF9C3;
-  --danger: #DC2626;
-  --danger-bg: #FEE2E2;
-
-  /* Shadows */
-  --shadow-sm: 0 1px 2px rgba(45, 80, 45, 0.06);
-  --shadow-md: 0 4px 12px rgba(45, 80, 45, 0.08);
-  --shadow-lg: 0 8px 24px rgba(45, 80, 45, 0.1);
-
-  /* Radius */
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-  --radius-full: 9999px;
-
-  /* Transitions */
-  --transition-fast: 0.15s ease;
-  --transition-normal: 0.2s ease;
-}
-
-/* Reset */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-family: -apple-system, 'SF Pro Display', 'Inter', system-ui, sans-serif;
   font-size: 14px;
   line-height: 1.5;
   color: var(--text-primary);
-  background: var(--surface);
+  background: var(--bg-base);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-#root {
-  width: 100%;
-  height: 100vh;
-}
+#root { width: 100%; height: 100vh; }
