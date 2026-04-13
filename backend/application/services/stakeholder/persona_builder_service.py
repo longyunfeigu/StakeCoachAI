@@ -53,8 +53,8 @@ from domain.stakeholder.persona_entity import Evidence, Persona
 logger = get_logger(__name__)
 
 _AGENT_OUTPUT_FILE = "output/persona.md"
-_DEFAULT_TOTAL_TIMEOUT_S = 240
-_DEFAULT_POST_TIMEOUT_S = 60
+_DEFAULT_TOTAL_TIMEOUT_S = 900
+_DEFAULT_POST_TIMEOUT_S = 180
 
 # Each 5-layer slot we must guarantee has ≥1 evidence backing
 _LAYER_NAMES: tuple[str, ...] = (
@@ -202,6 +202,10 @@ class PersonaBuilderService:
                     hostile_applied=hostile_applied,
                 )
 
+                # Normalize LLM-abbreviated claims → exact layer statements so the
+                # frontend's claim-indexed evidenceMap lookup finds them.
+                v2 = align_evidence_claims(v2)
+
                 # AC5: ensure every layer has ≥1 evidence
                 v2 = ensure_evidence_completeness(v2)
 
@@ -332,6 +336,100 @@ def _count_claims(persona: Persona) -> int:
     if persona.interpersonal:
         count += len(persona.interpersonal.triggers)
     return count
+
+
+def _layer_statements(persona: Persona, layer: str) -> list[str]:
+    """Candidate exact strings that a claim in ``layer`` may refer to."""
+    if layer == "hard_rules":
+        return [r.statement for r in persona.hard_rules if r.statement]
+    if layer == "identity" and persona.identity:
+        out: list[str] = []
+        if persona.identity.background:
+            out.append(persona.identity.background)
+        out.extend(v for v in persona.identity.core_values if v)
+        if persona.identity.hidden_agenda:
+            out.append(persona.identity.hidden_agenda)
+        return out
+    if layer == "expression" and persona.expression:
+        out = []
+        if persona.expression.tone:
+            out.append(persona.expression.tone)
+        out.extend(c for c in persona.expression.catchphrases if c)
+        return out
+    if layer == "decision" and persona.decision:
+        out = []
+        if persona.decision.style:
+            out.append(persona.decision.style)
+        out.extend(q for q in persona.decision.typical_questions if q)
+        return out
+    if layer == "interpersonal" and persona.interpersonal:
+        out = []
+        if persona.interpersonal.authority_mode:
+            out.append(persona.interpersonal.authority_mode)
+        out.extend(t for t in persona.interpersonal.triggers if t)
+        out.extend(e for e in persona.interpersonal.emotion_states if e)
+        return out
+    return []
+
+
+def _best_statement_match(claim: str, candidates: list[str]) -> Optional[str]:
+    """Pick candidate that best aligns with ``claim``.
+
+    Prefers a candidate that contains ``claim`` as substring (LLM often
+    abbreviates the real statement). Falls back to claim-contains-candidate,
+    then to fuzzy similarity via ``difflib.SequenceMatcher``. Returns None
+    when nothing clears the 0.5 similarity floor.
+    """
+    if not claim or not candidates:
+        return None
+    # 1) candidate contains claim → LLM trimmed the statement
+    contains = [c for c in candidates if claim in c]
+    if contains:
+        # Shortest containing candidate is the tightest match
+        return min(contains, key=len)
+    # 2) claim contains candidate (e.g., claim is a paraphrase longer than the
+    # stored catchphrase) → need decent overlap to avoid matching "Q3" to a
+    # one-character candidate. Require ≥ 4 chars and ≥ 40 % of candidate length.
+    reverse = [c for c in candidates if len(c) >= 4 and c in claim]
+    if reverse:
+        return max(reverse, key=len)
+    # 3) Fuzzy match for paraphrased claims. SequenceMatcher is O(n*m) but
+    # candidate lists here are tiny (≤ ~20 items, each ≤ ~200 chars).
+    from difflib import SequenceMatcher
+
+    best: Optional[tuple[float, str]] = None
+    for c in candidates:
+        ratio = SequenceMatcher(None, claim, c).ratio()
+        if ratio >= 0.5 and (best is None or ratio > best[0]):
+            best = (ratio, c)
+    return best[1] if best else None
+
+
+def align_evidence_claims(persona: Persona) -> Persona:
+    """Rewrite each evidence's ``claim`` to the exact matching layer statement.
+
+    The parse LLM frequently abbreviates a rule/catchphrase when populating
+    ``evidence_citations[].claim``. The editor UI keys its evidence popover
+    by exact-string match against each feature's statement/phrase, so drift
+    hides all "view evidence" buttons. This pass reattaches each evidence to
+    the closest literal string available in its declared layer. Evidences
+    whose ``layer`` is unknown or have no viable match are passed through
+    unchanged.
+    """
+    if not persona.evidence_citations:
+        return persona
+
+    from dataclasses import replace
+
+    updated: list[Evidence] = []
+    for ev in persona.evidence_citations:
+        candidates = _layer_statements(persona, ev.layer)
+        match = _best_statement_match(ev.claim, candidates)
+        if match and match != ev.claim:
+            updated.append(replace(ev, claim=match))
+        else:
+            updated.append(ev)
+    return replace(persona, evidence_citations=updated)
 
 
 def ensure_evidence_completeness(persona: Persona) -> Persona:

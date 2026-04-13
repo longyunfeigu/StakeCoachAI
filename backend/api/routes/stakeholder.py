@@ -33,6 +33,7 @@ from api.dependencies import (
     get_persona_builder_service,
     get_persona_editor_service,
     get_persona_loader,
+    get_persona_loader_with_v2,
     get_persona_v2_service,
     get_scenario_service,
     get_stakeholder_chat_service,
@@ -76,7 +77,7 @@ router = APIRouter(prefix="/stakeholder", tags=["Stakeholder Chat"])
 
 @router.get("/personas", summary="获取所有角色列表")
 async def list_personas(
-    loader: PersonaLoader = Depends(get_persona_loader),
+    loader: PersonaLoader = Depends(get_persona_loader_with_v2),
 ):
     personas = loader.list_personas()
     return success_response(
@@ -98,7 +99,7 @@ async def list_personas(
 @router.get("/personas/{persona_id}", summary="获取角色详情")
 async def get_persona(
     persona_id: str,
-    loader: PersonaLoader = Depends(get_persona_loader),
+    loader: PersonaLoader = Depends(get_persona_loader_with_v2),
 ):
     persona = loader.get_persona(persona_id)
     if persona is None:

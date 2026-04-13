@@ -119,7 +119,7 @@ class AgentSDKSettings(BaseModel):
     workspace_root: Path = Path("/tmp/daboss/workspaces")  # nosec B108
 
     # Sub-agent 超时 / 清理 / 并发
-    agent_timeout_s: int = 180
+    agent_timeout_s: int = 600
     cleanup_delay_s: int = 300  # 任务结束后多久清理 workspace
     max_concurrent_builds: int = 5  # 进程内 semaphore 限流
 
