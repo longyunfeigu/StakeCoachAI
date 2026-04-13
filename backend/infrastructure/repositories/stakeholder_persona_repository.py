@@ -1,7 +1,7 @@
 # input: SQLAlchemy AsyncSession, StakeholderPersonaModel ORM
 # output: SQLAlchemyStakeholderPersonaRepository - save_structured_persona / get_by_id / get_with_evidence / list_all / save_migration_error
 # owner: wanhua.gu
-# pos: 基础设施层 - 利益相关者画像仓储 SQLAlchemy 实现 (Story 2.2 + Story 2.3 失败回写)；一旦我被更新，务必更新我的开头注释以及所属文件夹的md
+# pos: 基础设施层 - 利益相关者画像仓储 SQLAlchemy 实现 (Story 2.2 + 2.3 失败回写 + 2.7 rejected_features 元数据)；一旦我被更新，务必更新我的开头注释以及所属文件夹的md
 """SQLAlchemy implementation of StakeholderPersonaRepository (Story 2.2 + 2.3)."""
 
 from __future__ import annotations
@@ -30,13 +30,17 @@ def _serialize_structured_profile(persona: Persona) -> Optional[dict]:
     """Serialize 5-layer fields to JSON dict. Returns None for v1 personas."""
     if persona.schema_version < 2:
         return None
-    return {
+    result: dict = {
         "hard_rules": [asdict(r) for r in persona.hard_rules],
         "identity": asdict(persona.identity) if persona.identity else None,
         "expression": asdict(persona.expression) if persona.expression else None,
         "decision": asdict(persona.decision) if persona.decision else None,
         "interpersonal": asdict(persona.interpersonal) if persona.interpersonal else None,
     }
+    # Story 2.7: rejected_features lives in _metadata to avoid DB schema churn.
+    if persona.rejected_features:
+        result["_metadata"] = {"rejected_features": persona.rejected_features}
+    return result
 
 
 def _deserialize_structured_profile(data: Optional[dict]) -> dict:
@@ -80,6 +84,10 @@ class SQLAlchemyStakeholderPersonaRepository(StakeholderPersonaRepository):
 
     def _to_entity(self, model: StakeholderPersonaModel) -> Persona:
         structured = _deserialize_structured_profile(model.structured_profile)
+        # Story 2.7: recover rejected_features from _metadata if present.
+        profile_dict = model.structured_profile or {}
+        metadata = profile_dict.get("_metadata") if isinstance(profile_dict, dict) else None
+        rejected = (metadata or {}).get("rejected_features") or {}
         return Persona(
             id=model.id,
             name=model.name,
@@ -101,6 +109,7 @@ class SQLAlchemyStakeholderPersonaRepository(StakeholderPersonaRepository):
             schema_version=model.schema_version,
             source_materials=list(model.source_materials or []),
             legacy_content=model.legacy_content,
+            rejected_features=dict(rejected),
         )
 
     def _apply_to_model(self, model: StakeholderPersonaModel, persona: Persona) -> None:

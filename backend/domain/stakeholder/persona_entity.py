@@ -1,5 +1,5 @@
 # input: 无外部依赖，纯业务逻辑
-# output: Persona 聚合实体 + 5-layer 子类型 (HardRule, IdentityProfile, ExpressionStyle, DecisionPattern, InterpersonalStyle) + Evidence 证据链
+# output: Persona 聚合实体 + 5-layer 子类型 (HardRule, IdentityProfile, ExpressionStyle, DecisionPattern, InterpersonalStyle) + Evidence 证据链 + rejected_features (Story 2.7)
 # owner: wanhua.gu
 # pos: 领域层 - 利益相关者画像聚合 (5-layer 结构 + v1/v2 schema 兼容)；一旦我被更新，务必更新我的开头注释以及所属文件夹的md
 """Domain entities for the 5-layer structured Persona (Story 2.2)."""
@@ -112,3 +112,6 @@ class Persona:
     schema_version: int = 1
     legacy_content: Optional[str] = None
     source_materials: list[str] = field(default_factory=list)
+    # Story 2.7 — 用户标 "不对" 的特征索引（按 layer 分组）。存到
+    # structured_profile._metadata.rejected_features，不触发 DB schema 迁移。
+    rejected_features: dict[str, list[int]] = field(default_factory=dict)

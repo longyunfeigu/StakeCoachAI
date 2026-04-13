@@ -283,3 +283,42 @@ async def test_list_all_filter_by_schema_version(session_factory) -> None:
 
         all_any = await repo.list_all()
         assert {p.id for p in all_any} == {"a", "old"}
+
+
+# ---------------------------------------------------------------------------
+# Story 2.7: rejected_features round-trip via structured_profile._metadata
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_rejected_features_round_trip(session_factory) -> None:
+    """Story 2.7: rejected_features round-trips via structured_profile._metadata."""
+    async with session_factory() as session:
+        repo = SQLAlchemyStakeholderPersonaRepository(session)
+        persona = _make_v2_persona("cfo-rej")
+        persona.rejected_features = {"hard_rules": [0, 2], "expression": [1]}
+        await repo.save_structured_persona(persona)
+        await session.commit()
+
+    async with session_factory() as session:
+        repo = SQLAlchemyStakeholderPersonaRepository(session)
+        loaded = await repo.get_by_id("cfo-rej")
+        assert loaded is not None
+        assert loaded.rejected_features == {"hard_rules": [0, 2], "expression": [1]}
+
+
+@pytest.mark.asyncio
+async def test_rejected_features_default_empty(session_factory) -> None:
+    """Persona without rejected_features should round-trip with empty dict."""
+    async with session_factory() as session:
+        repo = SQLAlchemyStakeholderPersonaRepository(session)
+        persona = _make_v2_persona("plain")
+        # rejected_features left default
+        await repo.save_structured_persona(persona)
+        await session.commit()
+
+    async with session_factory() as session:
+        repo = SQLAlchemyStakeholderPersonaRepository(session)
+        loaded = await repo.get_by_id("plain")
+        assert loaded is not None
+        assert loaded.rejected_features == {}
