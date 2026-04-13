@@ -339,3 +339,174 @@
   font-weight: 600;
   margin-left: 6px;
 }
+
+
+/* ============================================================ */
+/* Evidence Popover / Bottom Sheet                              */
+/* ============================================================ */
+
+.evidence-popover {
+  width: 320px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: var(--shadow-lg);
+  padding: 18px;
+}
+
+.evidence-popover::before {
+  content: '';
+  position: absolute;
+  left: -8px;
+  top: 50%;
+  transform: translateY(-50%) rotate(45deg);
+  width: 14px;
+  height: 14px;
+  background: white;
+  box-shadow: -2px 2px 6px rgba(0,0,0,0.06);
+}
+
+.pop-title {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 14px;
+  line-height: 1.4;
+  color: var(--text-primary);
+}
+
+.gauge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 0 14px;
+  gap: 14px;
+}
+
+.gauge svg {
+  width: 80px;
+  height: 80px;
+}
+
+.gauge .num {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--green);
+  line-height: 1;
+}
+
+.gauge .lbl {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.pop-cite {
+  display: flex;
+  gap: 8px;
+  padding: 8px 0;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+}
+
+.pop-cite .cite-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: var(--green-soft);
+  color: var(--green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.pop-cite .cite-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.pop-cite .cite-time {
+  font-size: 10px;
+  color: var(--text-secondary);
+  margin-bottom: 2px;
+}
+
+.pop-cite .cite-text {
+  font-style: italic;
+  color: var(--text-primary);
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.pop-empty {
+  padding: 12px 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-style: italic;
+  text-align: center;
+}
+
+/* Bottom sheet variant for narrow viewports */
+.evidence-sheet-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 60;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  animation: sheet-fade 0.2s ease-out;
+}
+
+@keyframes sheet-fade {
+  from { background: rgba(0,0,0,0); }
+  to { background: rgba(0,0,0,0.4); }
+}
+
+.evidence-sheet {
+  width: 100%;
+  max-width: 540px;
+  max-height: 70vh;
+  overflow-y: auto;
+  background: white;
+  border-radius: 16px 16px 0 0;
+  padding: 20px 20px 32px;
+  position: relative;
+  animation: sheet-slide 0.25s ease-out;
+}
+
+@keyframes sheet-slide {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.sheet-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: var(--bg-base);
+  color: var(--text-muted);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.sheet-close:hover {
+  background: var(--rose-soft);
+  color: var(--rose);
+}
+
+/* Hide desktop popover's left triangle inside sheet */
+.evidence-sheet .pop-title {
+  margin-right: 32px;
+}
+
+/* On wide screens, allow popover */
+@media (max-width: 1180px) {
+  .evidence-popover {
+    /* hide if not in sheet — the component already switches to sheet here */
+  }
+}
