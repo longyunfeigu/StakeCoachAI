@@ -7,6 +7,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import {
   fetchPersonaV2,
   patchPersonaV2,
+  startBattleFromPersona,
   type Decision,
   type EvidenceItem,
   type Expression,
@@ -226,17 +227,27 @@ export default function PersonaEditorPage() {
     }
   }
 
+  const doStartBattle = async () => {
+    if (!id) return
+    try {
+      const room = await startBattleFromPersona(id)
+      navigate(`/chat/${room.id}`)
+    } catch (e: unknown) {
+      const msg = (e as Error)?.message || String(e)
+      setSaveError(`开演练失败：${msg}`)
+    }
+  }
+
   const handleStartBattle = () => {
-    // Story 2.8 will wire battle_prep_service.create_room_from_persona
+    // Story 2.8: real chatroom wiring. When there are unsaved edits we ask
+    // the user first — they can discard changes and go, or cancel to save.
     if (hasUnsaved) {
       setLeaveConfirm(() => () => {
-        window.alert('演练接入即将在 Story 2.8 上线（将带上该画像进入聊天室）')
-        navigate('/chat')
+        void doStartBattle()
       })
       return
     }
-    window.alert('演练接入即将在 Story 2.8 上线（将带上该画像进入聊天室）')
-    navigate('/chat')
+    void doStartBattle()
   }
 
   if (loading) return <div className="editor-status">加载中…</div>

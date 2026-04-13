@@ -104,3 +104,30 @@ export async function patchPersonaV2(
   const json: ApiResp<PersonaV2> = await resp.json()
   return json.data
 }
+
+// ---------------------------------------------------------------------------
+// Story 2.8 — Start battle from existing persona
+// ---------------------------------------------------------------------------
+
+export interface StartBattleResponse {
+  id: number
+  name: string
+  type: string
+  persona_ids: string[]
+}
+
+export async function startBattleFromPersona(
+  id: string,
+): Promise<StartBattleResponse> {
+  const resp = await fetch(`${API_BASE}/personas/${id}/start-battle`, {
+    method: 'POST',
+  })
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => null)
+    throw new Error(
+      err?.error?.message || err?.detail || `Failed to start battle: ${resp.status}`,
+    )
+  }
+  const json: ApiResp<StartBattleResponse> = await resp.json()
+  return json.data
+}
