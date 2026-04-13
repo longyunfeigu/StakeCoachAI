@@ -221,9 +221,7 @@ def test_mark_hostile_fallback_records_failure_source_marker():
 def test_mark_hostile_fallback_appends_fallback_evidence():
     persona = _base_persona()
     out = mark_hostile_fallback(persona, "bad json line 1")
-    fallback = [
-        e for e in out.evidence_citations if e.source_material_id == "adversarialize"
-    ]
+    fallback = [e for e in out.evidence_citations if e.source_material_id == "adversarialize"]
     assert len(fallback) == 1
     assert "bad json line 1" in fallback[0].citations[0]
 

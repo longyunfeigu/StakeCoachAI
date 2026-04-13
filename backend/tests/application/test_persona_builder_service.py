@@ -287,9 +287,9 @@ async def test_build_persists_v2_persona_with_evidence_citations(tmp_path):
         layers_with_claims.add("interpersonal")
 
     evidence_layers = {e.layer for e in saved.evidence_citations}
-    assert layers_with_claims.issubset(evidence_layers), (
-        f"layers without evidence: {layers_with_claims - evidence_layers}"
-    )
+    assert layers_with_claims.issubset(
+        evidence_layers
+    ), f"layers without evidence: {layers_with_claims - evidence_layers}"
 
 
 # ---------------------------------------------------------------------------
@@ -389,9 +389,7 @@ async def test_build_total_timeout_raises_BuildTimeoutError_with_error_event(tmp
     agent = _SlowAgent()
     llm = AsyncMock()
     repo = _FakeRepo()
-    service = _make_service(
-        agent=agent, llm=llm, repo=repo, total_timeout_s=1, post_timeout_s=1
-    )
+    service = _make_service(agent=agent, llm=llm, repo=repo, total_timeout_s=1, post_timeout_s=1)
 
     events = []
     with pytest.raises(BuildTimeoutError):
@@ -400,8 +398,7 @@ async def test_build_total_timeout_raises_BuildTimeoutError_with_error_event(tmp
 
     # An error event was yielded before raising
     assert any(
-        e.type == BUILD_ERROR and e.data.get("error_code") == "BUILD_TIMEOUT"
-        for e in events
+        e.type == BUILD_ERROR and e.data.get("error_code") == "BUILD_TIMEOUT" for e in events
     )
     # Cleanup was invoked on the agent (try/finally in generator)
     assert agent.cleanup_invoked

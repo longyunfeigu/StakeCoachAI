@@ -215,7 +215,11 @@ async def invoke_adversarialize_llm(
     ]
     response = await llm.generate(messages, model=model, temperature=0.3)
 
-    data = json.loads(_strip_fence(response.content)) if response.content.strip().startswith("```") else _safe_json(response.content)
+    data = (
+        json.loads(_strip_fence(response.content))
+        if response.content.strip().startswith("```")
+        else _safe_json(response.content)
+    )
 
     required = {
         "pressure_injection",

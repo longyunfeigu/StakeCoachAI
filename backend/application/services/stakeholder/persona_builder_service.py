@@ -130,9 +130,7 @@ class PersonaBuilderService:
 
         try:
             async with asyncio.timeout(self._total_timeout_s):
-                agent_stream = self._agent.build_persona(
-                    user_id=user_id, materials=materials
-                )
+                agent_stream = self._agent.build_persona(user_id=user_id, materials=materials)
 
                 # Phase: workspace_ready + agent_tool_use relay
                 async for agent_ev in agent_stream:
@@ -161,9 +159,7 @@ class PersonaBuilderService:
                 # Phase: parse_done
                 async with asyncio.timeout(self._post_timeout_s):
                     llm_json = await self._parse_markdown_to_json(markdown)
-                persona_id = (
-                    target_persona_id or _synthesize_persona_id(user_id)
-                )
+                persona_id = target_persona_id or _synthesize_persona_id(user_id)
                 v2 = build_persona_v2(
                     _build_v1_shell(
                         persona_id=persona_id,
@@ -193,9 +189,7 @@ class PersonaBuilderService:
                     hostile_applied = False
                     warning_msg = str(exc)
                     v2 = mark_hostile_fallback(v2, warning_msg)
-                    logger.warning(
-                        "persona_build_adversarialize_downgrade", error=warning_msg
-                    )
+                    logger.warning("persona_build_adversarialize_downgrade", error=warning_msg)
                 except asyncio.TimeoutError:
                     # Inner timeout (per-stage 60s). Treat as downgrade, not fatal.
                     hostile_applied = False
@@ -355,14 +349,11 @@ def ensure_evidence_completeness(persona: Persona) -> Persona:
     layer_has_claims = {
         "hard_rules": bool(persona.hard_rules),
         "identity": bool(
-            persona.identity
-            and (persona.identity.core_values or persona.identity.hidden_agenda)
+            persona.identity and (persona.identity.core_values or persona.identity.hidden_agenda)
         ),
         "expression": bool(persona.expression and persona.expression.catchphrases),
         "decision": bool(persona.decision and persona.decision.typical_questions),
-        "interpersonal": bool(
-            persona.interpersonal and persona.interpersonal.triggers
-        ),
+        "interpersonal": bool(persona.interpersonal and persona.interpersonal.triggers),
     }
 
     for layer in _LAYER_NAMES:
