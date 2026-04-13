@@ -115,6 +115,24 @@ def get_persona_loader() -> PersonaLoader:
     return PersonaLoader(persona_dir=settings.stakeholder.persona_dir)
 
 
+async def get_persona_loader_with_v2(
+    loader: PersonaLoader = Depends(get_persona_loader),
+) -> PersonaLoader:
+    """Story 2.8: make v2 DB personas visible to chat / battle flows.
+
+    Merges v2 structured personas into the loader's cache once per request.
+    PersonaLoader itself has a 30 s TTL so repeated calls within a single
+    request are near-free.
+    """
+    async with SQLAlchemyUnitOfWork() as uow:
+        try:
+            await loader.refresh_from_db(uow.stakeholder_persona_repository)
+        except Exception:
+            # Best-effort: a broken DB shouldn't knock out the chat flow entirely.
+            pass
+    return loader
+
+
 def get_persona_editor_service(
     loader: PersonaLoader = Depends(get_persona_loader),
 ) -> PersonaEditorService:
@@ -122,13 +140,13 @@ def get_persona_editor_service(
 
 
 def get_chatroom_service(
-    loader: PersonaLoader = Depends(get_persona_loader),
+    loader: PersonaLoader = Depends(get_persona_loader_with_v2),
 ) -> ChatRoomApplicationService:
     return ChatRoomApplicationService(uow_factory=SQLAlchemyUnitOfWork, persona_loader=loader)
 
 
 async def get_stakeholder_chat_service(
-    loader: PersonaLoader = Depends(get_persona_loader),
+    loader: PersonaLoader = Depends(get_persona_loader_with_v2),
     llm: LLMPort = Depends(get_stakeholder_llm_port),
 ) -> StakeholderChatService:
     from application.services.stakeholder.compression_service import CompressionService
@@ -192,7 +210,7 @@ async def get_growth_service(
 
 
 async def get_battle_prep_service(
-    loader: PersonaLoader = Depends(get_persona_loader),
+    loader: PersonaLoader = Depends(get_persona_loader_with_v2),
     editor: PersonaEditorService = Depends(get_persona_editor_service),
     llm: LLMPort = Depends(get_stakeholder_llm_port),
     chatroom_svc: ChatRoomApplicationService = Depends(get_chatroom_service),
