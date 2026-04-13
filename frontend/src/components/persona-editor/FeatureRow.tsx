@@ -18,20 +18,20 @@ interface Props {
 
 export default function FeatureRow(props: Props) {
   const [editing, setEditing] = useState(false)
-  const [draft, setDraft] = useState(props.text)
+  // Draft is seeded from props.text only when entering edit mode; during edit
+  // it's fully controlled by the input's onChange.
+  const [draft, setDraft] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
   const rowRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    setDraft(props.text)
-  }, [props.text])
 
   useEffect(() => {
     if (editing) inputRef.current?.focus()
   }, [editing])
 
   const startEdit = () => {
-    if (props.onChange) setEditing(true)
+    if (!props.onChange) return
+    setDraft(props.text)
+    setEditing(true)
   }
   const commit = () => {
     setEditing(false)
@@ -39,7 +39,6 @@ export default function FeatureRow(props: Props) {
   }
   const cancel = () => {
     setEditing(false)
-    setDraft(props.text)
   }
 
   const classes = [

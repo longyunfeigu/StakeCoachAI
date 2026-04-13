@@ -6,7 +6,7 @@ import BattlePrepPage from './pages/BattlePrepPage'
 import GrowthPage from './pages/GrowthPage'
 import SettingsPage from './pages/SettingsPage'
 import PersonaBuilderPage from './pages/PersonaBuilderPage'
-import PersonaPlaceholderPage from './pages/PersonaPlaceholderPage'
+import PersonaEditorPage from './pages/PersonaEditorPage'
 import { AppProvider } from './contexts/AppContext'
 
 function App() {
@@ -21,7 +21,7 @@ function App() {
           <Route path="growth" element={<GrowthPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="persona/new" element={<PersonaBuilderPage />} />
-          <Route path="persona/:id/edit" element={<PersonaPlaceholderPage />} />
+          <Route path="persona/:id/edit" element={<PersonaEditorPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>
