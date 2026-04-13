@@ -40,6 +40,9 @@ from infrastructure.repositories.organization_repository import (
 from infrastructure.repositories.competency_repository import (
     SQLAlchemyCompetencyEvaluationRepository,
 )
+from infrastructure.repositories.stakeholder_persona_repository import (
+    SQLAlchemyStakeholderPersonaRepository,
+)
 
 
 class SQLAlchemyUnitOfWork(AbstractUnitOfWork):
@@ -99,6 +102,12 @@ class SQLAlchemyUnitOfWork(AbstractUnitOfWork):
         self.register_repository(
             "competency_evaluation_repository", self.competency_evaluation_repository
         )
+        self.stakeholder_persona_repository = SQLAlchemyStakeholderPersonaRepository(
+            self.session
+        )
+        self.register_repository(
+            "stakeholder_persona_repository", self.stakeholder_persona_repository
+        )
         # 仅在非只读模式下显式开启事务
         if not self._readonly:
             self._transaction = await self.session.begin()
@@ -134,6 +143,7 @@ class SQLAlchemyUnitOfWork(AbstractUnitOfWork):
             self.team_repository = None  # type: ignore[assignment]
             self.persona_relationship_repository = None  # type: ignore[assignment]
             self.competency_evaluation_repository = None  # type: ignore[assignment]
+            self.stakeholder_persona_repository = None  # type: ignore[assignment]
             self._repositories.clear()
 
     async def commit(self) -> None:
