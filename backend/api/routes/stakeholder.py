@@ -1,5 +1,5 @@
 # input: PersonaLoader, PersonaEditorService, ChatRoomApplicationService, StakeholderChatService, ScenarioApplicationService, AnalysisService, GrowthService, PersonaBuilderService (via dependencies)
-# output: stakeholder API 路由 (personas CRUD + rooms + messages + scenarios CRUD + analysis reports + growth dashboard + Story 2.5 SSE persona/build)
+# output: stakeholder API 路由 (personas CRUD + rooms + messages + scenarios CRUD + analysis reports + growth dashboard + Story 2.5 SSE persona/build + Story 2.7 v2 GET/PATCH)
 # owner: wanhua.gu
 # pos: 表示层 - 利益相关者聊天 API 路由（角色 + 聊天室 + 消息 + 场景 + persona 构建 SSE）；一旦我被更新，务必更新我的开头注释以及所属文件夹的md
 """Stakeholder chat API routes."""
@@ -33,6 +33,7 @@ from api.dependencies import (
     get_persona_builder_service,
     get_persona_editor_service,
     get_persona_loader,
+    get_persona_v2_service,
     get_scenario_service,
     get_stakeholder_chat_service,
 )
@@ -46,6 +47,7 @@ from application.services.stakeholder.dto import (
     CreateScenarioDTO,
     CreateTeamDTO,
     PersonaBuildRequestDTO,
+    PersonaPatchV2DTO,
     SendMessageDTO,
     StartBattleDTO,
     UpdateOrganizationDTO,
@@ -157,6 +159,50 @@ async def delete_persona_endpoint(
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
     return success_response(data={"id": persona_id})
+
+
+# ---------------------------------------------------------------------------
+# Persona V2 endpoints (Story 2.7 — 5-layer editor)
+# ---------------------------------------------------------------------------
+
+
+@router.get("/personas/{persona_id}/v2", summary="获取 v2 5-layer 画像 + 证据 (Story 2.7)")
+async def get_persona_v2_endpoint(
+    persona_id: str,
+    svc=Depends(get_persona_v2_service),
+):
+    from application.services.stakeholder.persona_v2_service import (
+        PersonaNotFoundError,
+    )
+
+    try:
+        dto = await svc.get_v2(persona_id)
+    except PersonaNotFoundError:
+        raise HTTPException(status_code=404, detail="Persona not found")
+    return success_response(data=dto.model_dump(mode="json"))
+
+
+@router.patch("/personas/{persona_id}/v2", summary="部分更新 v2 5-layer 画像 (Story 2.7)")
+async def patch_persona_v2_endpoint(
+    persona_id: str,
+    body: PersonaPatchV2DTO,
+    svc=Depends(get_persona_v2_service),
+):
+    from application.services.stakeholder.persona_v2_service import (
+        PersonaNotFoundError,
+        PersonaNotV2Error,
+    )
+
+    try:
+        dto = await svc.patch_v2(persona_id, body)
+    except PersonaNotFoundError:
+        raise HTTPException(status_code=404, detail="Persona not found")
+    except PersonaNotV2Error:
+        raise HTTPException(
+            status_code=409,
+            detail={"code": "NOT_V2", "message": "Persona is legacy v1 — migrate first"},
+        )
+    return success_response(data=dto.model_dump(mode="json"))
 
 
 # ---------------------------------------------------------------------------

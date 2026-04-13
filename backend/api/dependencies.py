@@ -272,3 +272,19 @@ async def get_persona_builder_service(
         adversarialize_prompt=_load_stakeholder_prompt("adversarialize.md"),
         parse_prompt=_load_stakeholder_prompt("persona_markdown_to_json.md"),
     )
+
+
+# ---------------------------------------------------------------------------
+# Persona V2 editor dependencies (Story 2.7)
+# ---------------------------------------------------------------------------
+
+
+def get_persona_v2_service():
+    """Construct a PersonaV2Service for one request (Story 2.7).
+
+    Takes the SQLAlchemy UoW class as its own factory so the service can open
+    and close a session per call.
+    """
+    from application.services.stakeholder.persona_v2_service import PersonaV2Service
+
+    return PersonaV2Service(uow_factory=SQLAlchemyUnitOfWork)
