@@ -30,7 +30,10 @@ from application.services.stakeholder.adversarializer import (
 from application.services.stakeholder.build_events import (
     BUILD_ADVERSARIALIZE_DONE,
     BUILD_ADVERSARIALIZE_START,
+    BUILD_AGENT_MESSAGE,
     BUILD_AGENT_TOOL_USE,
+    BUILD_ENHANCEMENT_MERGE,
+    BUILD_ENHANCEMENT_START,
     BUILD_ERROR,
     BUILD_PARSE_DONE,
     BUILD_PERSIST_DONE,
@@ -55,6 +58,88 @@ logger = get_logger(__name__)
 _AGENT_OUTPUT_FILE = "output/persona.md"
 _DEFAULT_TOTAL_TIMEOUT_S = 900
 _DEFAULT_POST_TIMEOUT_S = 180
+
+# Map known prompt file stems to user-facing phase descriptions.
+_PROMPT_PHASE_MAP: dict[str, str] = {
+    "intake": "收集基础信息",
+    "work_analyzer": "分析工作模式",
+    "persona_analyzer": "分析性格特征",
+    "work_builder": "构建工作画像",
+    "persona_builder": "构建人格画像",
+    "merger": "合并画像",
+    "correction_handler": "校正与修正",
+}
+
+
+def _infer_phase(tool_uses: list[dict]) -> Optional[str]:
+    """Extract a human-readable phase name from tool_use inputs.
+
+    Checks Read/Write file paths for known prompt stems or material patterns.
+    Returns None when no recognizable pattern is found.
+    """
+    for tu in tool_uses:
+        name = tu.get("name", "")
+        inp = tu.get("input") or {}
+        path = inp.get("file_path", "") or inp.get("path", "")
+
+        if name == "Read" and "materials/" in path:
+            return "读取素材"
+        if name == "Write" and "output/" in path:
+            return "写出最终画像"
+        if name == "Skill":
+            skill = inp.get("skill", "")
+            return f"启动 {skill} 技能" if skill else "启动技能"
+
+        # Match prompt file names
+        for stem, label in _PROMPT_PHASE_MAP.items():
+            if stem in path:
+                return label
+    return None
+
+
+def _summarize_text(text: str, max_len: int = 80) -> str:
+    """Extract the first meaningful line from agent text as a short summary."""
+    for line in text.splitlines():
+        line = line.strip()
+        if line and not line.startswith(("#", "---", "```", ">")):
+            return line[:max_len] + ("…" if len(line) > max_len else "")
+    return text[:max_len]
+
+
+def _serialize_existing_for_merge(persona: Persona) -> str:
+    """Serialize existing persona to JSON for merge context."""
+    from dataclasses import asdict
+    import json
+
+    payload = {
+        "name": persona.name,
+        "role": persona.role,
+        "hard_rules": [asdict(r) for r in persona.hard_rules],
+        "identity": asdict(persona.identity) if persona.identity else None,
+        "expression": asdict(persona.expression) if persona.expression else None,
+        "decision": asdict(persona.decision) if persona.decision else None,
+        "interpersonal": asdict(persona.interpersonal) if persona.interpersonal else None,
+        "evidence_citations": [asdict(e) for e in persona.evidence_citations],
+    }
+    return json.dumps(payload, ensure_ascii=False, indent=2)
+
+
+def _merge_evidence(new_persona: Persona, existing: Persona) -> Persona:
+    """Merge existing evidence into new persona, deduplicating by claim."""
+    from dataclasses import replace
+
+    existing_claims = {e.claim for e in new_persona.evidence_citations}
+    merged = list(new_persona.evidence_citations)
+    for e in existing.evidence_citations:
+        if e.claim not in existing_claims:
+            merged.append(e)
+            existing_claims.add(e.claim)
+    merged_sources = list(new_persona.source_materials)
+    for s in existing.source_materials:
+        if s not in merged_sources:
+            merged_sources.append(s)
+    return replace(new_persona, evidence_citations=merged, source_materials=merged_sources)
+
 
 # Each 5-layer slot we must guarantee has ≥1 evidence backing
 _LAYER_NAMES: tuple[str, ...] = (
@@ -113,7 +198,7 @@ class PersonaBuilderService:
             return BuildEvent(seq=seq, type=type_, ts=time.time(), data=data)
 
         # AC7: idempotent cache check (BEFORE any LLM call)
-        cache_key = build_cache_key(user_id, materials)
+        cache_key = build_cache_key(user_id, materials, persona_id=target_persona_id)
         cached_pid = await self._cache.get(cache_key)
         if cached_pid:
             logger.info("persona_build_cache_hit", user_id=user_id, persona_id=cached_pid)
@@ -125,12 +210,32 @@ class PersonaBuilderService:
             )
             return
 
+        # Enhancement mode: load existing persona if target_persona_id is provided
+        existing_persona: Optional[Persona] = None
+        if target_persona_id:
+            existing_persona = await self._repo.get_by_id(target_persona_id)
+
         t0 = time.perf_counter()
         workspace_path: Optional[Path] = None
 
         try:
             async with asyncio.timeout(self._total_timeout_s):
-                agent_stream = self._agent.build_persona(user_id=user_id, materials=materials)
+                existing_profile_str = (
+                    _serialize_existing_for_merge(existing_persona)
+                    if existing_persona
+                    else None
+                )
+                agent_stream = self._agent.build_persona(
+                    user_id=user_id,
+                    materials=materials,
+                    target_name=name,
+                    target_role=role,
+                    existing_profile=existing_profile_str,
+                )
+
+                # Enhancement mode: emit start event before agent stream
+                if existing_persona:
+                    yield _emit(BUILD_ENHANCEMENT_START, persona_id=target_persona_id)
 
                 # Phase: workspace_ready + agent_tool_use relay
                 async for agent_ev in agent_stream:
@@ -147,24 +252,42 @@ class PersonaBuilderService:
                             workspace_path=str(workspace_path) if workspace_path else None,
                         )
                     elif ev_type == "tool_use":
+                        tool_uses = payload.get("tool_uses") or []
                         yield _emit(
                             BUILD_AGENT_TOOL_USE,
-                            tool_uses=payload.get("tool_uses") or [],
+                            tool_uses=tool_uses,
+                            phase=_infer_phase(tool_uses),
                         )
-                    # system / assistant_text / tool_result / result → suppress (AC2: only tool_use 子流)
+                    elif ev_type == "assistant_text":
+                        text = (payload.get("text") or "").strip()
+                        if text:
+                            yield _emit(
+                                BUILD_AGENT_MESSAGE,
+                                text=text,
+                                summary=_summarize_text(text),
+                            )
+                    # system / tool_result / result → suppress
 
                 # Agent finished: read its output
                 markdown = self._read_agent_output(workspace_path)
 
                 # Phase: parse_done
                 async with asyncio.timeout(self._post_timeout_s):
-                    llm_json = await self._parse_markdown_to_json(markdown)
-                persona_id = target_persona_id or _synthesize_persona_id(user_id)
+                    llm_json = await self._parse_markdown_to_json(
+                        markdown, existing_persona=existing_persona
+                    )
+
+                # Back-fill name/role from LLM extraction when user left them blank
+                resolved_name = name or llm_json.get("name") or None
+                resolved_role = role or llm_json.get("role") or None
+                persona_id = target_persona_id or _synthesize_persona_id(
+                    resolved_name or user_id
+                )
                 v2 = build_persona_v2(
                     _build_v1_shell(
                         persona_id=persona_id,
-                        name=name,
-                        role=role,
+                        name=resolved_name,
+                        role=resolved_role,
                         markdown=markdown,
                     ),
                     llm_json,
@@ -208,6 +331,14 @@ class PersonaBuilderService:
 
                 # AC5: ensure every layer has ≥1 evidence
                 v2 = ensure_evidence_completeness(v2)
+
+                # Enhancement mode: merge evidence from existing persona
+                if existing_persona:
+                    v2 = _merge_evidence(v2, existing_persona)
+                    yield _emit(
+                        BUILD_ENHANCEMENT_MERGE,
+                        merged_evidence_count=len(v2.evidence_citations),
+                    )
 
                 # AC4: stash hostile_applied + warning in structured_profile._metadata
                 # This mutation survives save_structured_persona's serialization
@@ -273,11 +404,34 @@ class PersonaBuilderService:
                 error_code="AGENT_OUTPUT_READ_FAILED",
             ) from exc
 
-    async def _parse_markdown_to_json(self, markdown: str) -> dict[str, Any]:
-        """Call LLM with parse_prompt + markdown and return parsed 5-layer JSON."""
+    async def _parse_markdown_to_json(
+        self,
+        markdown: str,
+        *,
+        existing_persona: Optional[Persona] = None,
+    ) -> dict[str, Any]:
+        """Call LLM with parse_prompt + markdown and return parsed 5-layer JSON.
+
+        When ``existing_persona`` is provided (enhancement mode), the user message
+        includes the existing profile JSON with merge instructions so the LLM
+        preserves existing traits while incorporating new material.
+        """
+        if existing_persona:
+            existing_json = _serialize_existing_for_merge(existing_persona)
+            user_content = (
+                f"# Existing Profile (KEEP and ENHANCE)\n\n```json\n{existing_json}\n```\n\n"
+                f"# New Agent Output (MERGE into above)\n\n{markdown}\n\n"
+                f"# Merge Rules\n"
+                f"- Keep ALL existing evidence_citations and ADD new ones from new material\n"
+                f"- For conflicting traits: NEW overrides OLD\n"
+                f"- Accumulate lists (hard_rules, catchphrases, triggers) — deduplicate\n"
+                f"- Keep existing values for fields where new material adds nothing\n"
+            )
+        else:
+            user_content = markdown
         messages = [
             LLMMessage(role="system", content=self._parse_prompt),
-            LLMMessage(role="user", content=markdown),
+            LLMMessage(role="user", content=user_content),
         ]
         try:
             response = await self._llm.generate(messages, temperature=0.2)
@@ -307,20 +461,26 @@ def _build_v1_shell(
     role: Optional[str],
     markdown: str,
 ) -> Persona:
-    """Create a minimal v1 Persona to feed into build_persona_v2."""
+    """Create a minimal Persona shell to feed into build_persona_v2."""
     return Persona(
         id=persona_id,
         name=name or persona_id,
         role=role or "",
-        full_content=markdown,
         profile_summary="",
-        schema_version=1,
     )
 
 
-def _synthesize_persona_id(user_id: str) -> str:
-    """Generate a fresh persona_id when the caller did not supply one."""
-    return f"{user_id}-{uuid.uuid4().hex[:8]}"
+def _synthesize_persona_id(hint: str) -> str:
+    """Generate a fresh persona_id from a name or user_id hint.
+
+    Produces e.g. ``lu-jianfeng-a1b2c3d4`` for a Chinese name or
+    ``anonymous-a1b2c3d4`` for a bare user_id.
+    """
+    import re
+
+    slug = re.sub(r"[^\w\s-]", "", hint.lower().strip())
+    slug = re.sub(r"[\s_]+", "-", slug)[:30].strip("-") or "persona"
+    return f"{slug}-{uuid.uuid4().hex[:8]}"
 
 
 def _count_claims(persona: Persona) -> int:

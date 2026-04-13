@@ -52,7 +52,6 @@ def _make_v2_persona(persona_id: str = "cfo") -> Persona:
         role="首席财务官",
         avatar_color="#123456",
         profile_summary="数字至上",
-        full_content="",
         hard_rules=[HardRule(statement="预算超支必报", severity="critical")],
         identity=IdentityProfile(background="会计师", core_values=["成本"], hidden_agenda="裁员"),
         expression=ExpressionStyle(
@@ -78,8 +77,6 @@ def _make_v2_persona(persona_id: str = "cfo") -> Persona:
                 layer="decision",
             ),
         ],
-        schema_version=2,
-        legacy_content="# 旧 markdown",
         source_materials=["mat-1"],
     )
 
@@ -91,7 +88,7 @@ def _make_v2_persona(persona_id: str = "cfo") -> Persona:
 
 @pytest.mark.asyncio
 async def test_schema_columns_exist(engine) -> None:
-    """AC4: 所有要求的列存在。"""
+    """AC4: all required columns exist."""
 
     def _inspect(sync_conn):
         insp = inspect(sync_conn)
@@ -107,12 +104,13 @@ async def test_schema_columns_exist(engine) -> None:
         "role",
         "structured_profile",
         "evidence_citations",
-        "schema_version",
         "source_materials",
-        "legacy_content",
-        "full_content",
     ]:
         assert required in cols, f"missing column: {required}"
+
+    # These columns should have been dropped
+    for dropped in ["schema_version", "legacy_content", "full_content"]:
+        assert dropped not in cols, f"column should be dropped: {dropped}"
 
 
 # ---------------------------------------------------------------------------
@@ -130,7 +128,6 @@ async def test_save_then_get_with_evidence(session_factory) -> None:
         await session.commit()
 
         assert saved.id == "cfo"
-        assert saved.schema_version == 2
         assert len(saved.evidence_citations) == 2
 
     # Re-query in a fresh session
@@ -140,7 +137,6 @@ async def test_save_then_get_with_evidence(session_factory) -> None:
         assert result is not None
         loaded, evidences = result
         assert loaded.id == "cfo"
-        assert loaded.schema_version == 2
         assert loaded.identity is not None
         assert loaded.identity.background == "会计师"
         assert len(evidences) == 2
@@ -175,114 +171,16 @@ async def test_save_is_upsert(session_factory) -> None:
         assert loaded.name == "Updated Name"
 
 
-# ---------------------------------------------------------------------------
-# Story 2.3 AC4: save_migration_error
-# ---------------------------------------------------------------------------
-
-
 @pytest.mark.asyncio
-async def test_save_migration_error_creates_stub_when_missing(session_factory) -> None:
-    """No existing record → insert v1 stub with structured_profile._error."""
-    async with session_factory() as session:
-        repo = SQLAlchemyStakeholderPersonaRepository(session)
-        await repo.save_migration_error(
-            "missing",
-            "LLMParseError: bad json",
-            legacy_markdown="# original markdown",
-            name="缺失",
-            role="角色",
-        )
-        await session.commit()
-
-    async with session_factory() as session:
-        repo = SQLAlchemyStakeholderPersonaRepository(session)
-        loaded = await repo.get_by_id("missing")
-        assert loaded is not None
-        assert loaded.schema_version == 1
-        assert loaded.legacy_content == "# original markdown"
-        assert loaded.full_content == "# original markdown"
-        assert loaded.name == "缺失"
-        assert loaded.role == "角色"
-
-
-@pytest.mark.asyncio
-async def test_save_migration_error_preserves_existing_v1_full_content(
-    session_factory,
-) -> None:
-    """Existing v1 record → only structured_profile updated; full_content unchanged."""
-    async with session_factory() as session:
-        repo = SQLAlchemyStakeholderPersonaRepository(session)
-        v1 = Persona(
-            id="boss",
-            name="剑锋",
-            role="上级",
-            full_content="# real markdown\n\nimportant body",
-            schema_version=1,
-        )
-        await repo.save_structured_persona(v1)
-        await session.commit()
-
-    async with session_factory() as session:
-        repo = SQLAlchemyStakeholderPersonaRepository(session)
-        await repo.save_migration_error("boss", "LLM timeout")
-        await session.commit()
-
-    async with session_factory() as session:
-        repo = SQLAlchemyStakeholderPersonaRepository(session)
-        loaded = await repo.get_by_id("boss")
-        assert loaded is not None
-        assert loaded.schema_version == 1  # not bumped to 2
-        assert loaded.full_content == "# real markdown\n\nimportant body"
-
-    # Also check structured_profile via raw model query
-    async with session_factory() as session:
-        from infrastructure.models.stakeholder_persona import StakeholderPersonaModel
-
-        model = await session.get(StakeholderPersonaModel, "boss")
-        assert model is not None
-        assert isinstance(model.structured_profile, dict)
-        assert "_error" in model.structured_profile
-        assert "_attempted_at" in model.structured_profile
-
-
-@pytest.mark.asyncio
-async def test_save_migration_error_is_noop_for_v2_records(session_factory) -> None:
-    """Already-migrated v2 records must NOT be regressed by accidental error write."""
-    async with session_factory() as session:
-        repo = SQLAlchemyStakeholderPersonaRepository(session)
-        await repo.save_structured_persona(_make_v2_persona("done"))
-        await session.commit()
-
-    async with session_factory() as session:
-        repo = SQLAlchemyStakeholderPersonaRepository(session)
-        await repo.save_migration_error("done", "should be ignored")
-        await session.commit()
-
-    async with session_factory() as session:
-        repo = SQLAlchemyStakeholderPersonaRepository(session)
-        loaded = await repo.get_by_id("done")
-        assert loaded is not None
-        assert loaded.schema_version == 2
-        # structured_profile should still contain the original 5-layer JSON, not the error
-        assert loaded.identity is not None
-        assert loaded.identity.background == "会计师"
-
-
-@pytest.mark.asyncio
-async def test_list_all_filter_by_schema_version(session_factory) -> None:
+async def test_list_all_returns_all_personas(session_factory) -> None:
     async with session_factory() as session:
         repo = SQLAlchemyStakeholderPersonaRepository(session)
         await repo.save_structured_persona(_make_v2_persona("a"))
-        # Insert v1-only persona via direct model
-        v1 = Persona(id="old", name="Legacy", role="x", full_content="# md", schema_version=1)
-        await repo.save_structured_persona(v1)
+        await repo.save_structured_persona(_make_v2_persona("b"))
         await session.commit()
 
-        all_v2 = await repo.list_all(schema_version=2)
-        assert {p.id for p in all_v2} == {"a"}
-
-        all_any = await repo.list_all()
-        assert {p.id for p in all_any} == {"a", "old"}
+        all_personas = await repo.list_all()
+        assert {p.id for p in all_personas} == {"a", "b"}
 
 
 # ---------------------------------------------------------------------------

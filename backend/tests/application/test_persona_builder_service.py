@@ -165,7 +165,7 @@ class _FakeAgentClient:
         finally:
             self.cleanup_invoked = True
 
-    def build_persona(self, *, user_id: str, materials: list[str]):
+    def build_persona(self, *, user_id: str, materials: list[str], **kwargs):
         return self._generator(user_id=user_id, materials=materials)
 
 
@@ -273,7 +273,7 @@ async def test_build_persists_v2_persona_with_evidence_citations(tmp_path):
 
     assert len(repo.saved) == 1
     saved = repo.saved[0]
-    assert saved.schema_version == 2
+    assert saved.hard_rules  # v2 structured data present
 
     # Every layer that has claims must have at least one evidence backing it
     layers_with_claims = set()
@@ -383,7 +383,7 @@ async def test_build_total_timeout_raises_BuildTimeoutError_with_error_event(tmp
         def __init__(self):
             self.cleanup_invoked = False
 
-        def build_persona(self, *, user_id, materials):
+        def build_persona(self, *, user_id, materials, **kwargs):
             return self._gen(user_id=user_id, materials=materials)
 
     agent = _SlowAgent()
@@ -471,7 +471,6 @@ def test_ensure_evidence_completeness_adds_synthetic_evidences_for_missing_layer
                 layer="hard_rules",
             ),
         ],
-        schema_version=2,
     )
     out = ensure_evidence_completeness(p)
     layers = {e.layer for e in out.evidence_citations}

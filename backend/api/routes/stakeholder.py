@@ -36,6 +36,7 @@ from api.dependencies import (
     get_persona_loader_with_v2,
     get_persona_v2_service,
     get_scenario_service,
+    get_speaker_detection_service,
     get_stakeholder_chat_service,
 )
 from application.services.stakeholder.chatroom_service import ChatRoomApplicationService
@@ -47,6 +48,7 @@ from application.services.stakeholder.dto import (
     CreateRelationshipDTO,
     CreateScenarioDTO,
     CreateTeamDTO,
+    DetectSpeakersRequestDTO,
     PersonaBuildRequestDTO,
     PersonaPatchV2DTO,
     SendMessageDTO,
@@ -104,7 +106,6 @@ async def get_persona(
     persona = loader.get_persona(persona_id)
     if persona is None:
         raise HTTPException(status_code=404, detail="Persona not found")
-    body = loader._strip_frontmatter(persona.full_content)
     return success_response(
         data={
             "id": persona.id,
@@ -114,7 +115,6 @@ async def get_persona(
             "organization_id": persona.organization_id,
             "team_id": persona.team_id,
             "profile_summary": persona.profile_summary,
-            "content": body,
             "parse_status": persona.parse_status,
         }
     )
@@ -189,20 +189,12 @@ async def patch_persona_v2_endpoint(
     body: PersonaPatchV2DTO,
     svc=Depends(get_persona_v2_service),
 ):
-    from application.services.stakeholder.persona_v2_service import (
-        PersonaNotFoundError,
-        PersonaNotV2Error,
-    )
+    from application.services.stakeholder.persona_v2_service import PersonaNotFoundError
 
     try:
         dto = await svc.patch_v2(persona_id, body)
     except PersonaNotFoundError:
         raise HTTPException(status_code=404, detail="Persona not found")
-    except PersonaNotV2Error:
-        raise HTTPException(
-            status_code=409,
-            detail={"code": "NOT_V2", "message": "Persona is legacy v1 — migrate first"},
-        )
     return success_response(data=dto.model_dump(mode="json"))
 
 
@@ -1084,6 +1076,43 @@ async def generate_profile_card(
     if result is None:
         raise HTTPException(status_code=502, detail="名片生成失败，请重试")
     return success_response(data=result.model_dump())
+
+
+# ---------------------------------------------------------------------------
+# Speaker Detection endpoint
+# ---------------------------------------------------------------------------
+
+_DETECT_SPEAKERS_CHAR_LIMIT = 400_000
+
+
+@router.post("/persona/detect-speakers", summary="检测素材中的说话人")
+async def detect_speakers(
+    body: DetectSpeakersRequestDTO,
+    svc=Depends(get_speaker_detection_service),
+):
+    """Detect distinct speakers from meeting transcript materials."""
+    cleaned = [m for m in body.materials if m and m.strip()]
+    if not cleaned:
+        raise HTTPException(
+            status_code=400,
+            detail={"code": "MATERIAL_EMPTY", "message": "materials must not be empty"},
+        )
+
+    total_chars = sum(len(m) for m in cleaned)
+    if total_chars > _DETECT_SPEAKERS_CHAR_LIMIT:
+        raise HTTPException(
+            status_code=413,
+            detail={
+                "code": "MATERIAL_TOO_LARGE",
+                "message": (
+                    f"materials too large: {total_chars} chars "
+                    f"(limit ≈ {_DETECT_SPEAKERS_CHAR_LIMIT} chars / 200k tokens)"
+                ),
+            },
+        )
+
+    speakers = await svc.detect(cleaned)
+    return success_response(data=[s.model_dump() for s in speakers])
 
 
 # ---------------------------------------------------------------------------

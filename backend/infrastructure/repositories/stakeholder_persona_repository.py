@@ -1,5 +1,5 @@
 # input: SQLAlchemy AsyncSession, StakeholderPersonaModel ORM
-# output: SQLAlchemyStakeholderPersonaRepository - save_structured_persona / get_by_id / get_with_evidence / list_all / save_migration_error
+# output: SQLAlchemyStakeholderPersonaRepository - save_structured_persona / get_by_id / get_with_evidence / list_all
 # owner: wanhua.gu
 # pos: 基础设施层 - 利益相关者画像仓储 SQLAlchemy 实现 (Story 2.2 + 2.3 失败回写 + 2.7 rejected_features 元数据)；一旦我被更新，务必更新我的开头注释以及所属文件夹的md
 """SQLAlchemy implementation of StakeholderPersonaRepository (Story 2.2 + 2.3)."""
@@ -7,7 +7,6 @@
 from __future__ import annotations
 
 from dataclasses import asdict
-from datetime import datetime, timezone
 from typing import Optional
 
 from sqlalchemy import select
@@ -27,9 +26,7 @@ from infrastructure.models.stakeholder_persona import StakeholderPersonaModel
 
 
 def _serialize_structured_profile(persona: Persona) -> Optional[dict]:
-    """Serialize 5-layer fields to JSON dict. Returns None for v1 personas."""
-    if persona.schema_version < 2:
-        return None
+    """Serialize 5-layer fields to JSON dict."""
     result: dict = {
         "hard_rules": [asdict(r) for r in persona.hard_rules],
         "identity": asdict(persona.identity) if persona.identity else None,
@@ -96,7 +93,6 @@ class SQLAlchemyStakeholderPersonaRepository(StakeholderPersonaRepository):
             organization_id=model.organization_id,
             team_id=model.team_id,
             profile_summary=model.profile_summary or "",
-            full_content=model.full_content or "",
             voice_id=model.voice_id,
             voice_speed=model.voice_speed if model.voice_speed is not None else 1.0,
             voice_style=model.voice_style,
@@ -106,9 +102,7 @@ class SQLAlchemyStakeholderPersonaRepository(StakeholderPersonaRepository):
             decision=structured["decision"],
             interpersonal=structured["interpersonal"],
             evidence_citations=_deserialize_evidences(model.evidence_citations),
-            schema_version=model.schema_version,
             source_materials=list(model.source_materials or []),
-            legacy_content=model.legacy_content,
             rejected_features=dict(rejected),
         )
 
@@ -119,17 +113,14 @@ class SQLAlchemyStakeholderPersonaRepository(StakeholderPersonaRepository):
         model.organization_id = persona.organization_id
         model.team_id = persona.team_id
         model.profile_summary = persona.profile_summary or ""
-        model.full_content = persona.full_content or ""
         model.voice_id = persona.voice_id
         model.voice_speed = persona.voice_speed
         model.voice_style = persona.voice_style
         model.structured_profile = _serialize_structured_profile(persona)
         model.evidence_citations = _serialize_evidences(persona)
-        model.schema_version = persona.schema_version
         model.source_materials = (
             list(persona.source_materials) if persona.source_materials else None
         )
-        model.legacy_content = persona.legacy_content
 
     async def save_structured_persona(self, persona: Persona) -> Persona:
         existing = await self.session.get(StakeholderPersonaModel, persona.id)
@@ -154,52 +145,8 @@ class SQLAlchemyStakeholderPersonaRepository(StakeholderPersonaRepository):
             return None
         return persona, list(persona.evidence_citations)
 
-    async def list_all(self, *, schema_version: Optional[int] = None) -> list[Persona]:
+    async def list_all(self) -> list[Persona]:
         query = select(StakeholderPersonaModel)
-        if schema_version is not None:
-            query = query.where(StakeholderPersonaModel.schema_version == schema_version)
         query = query.order_by(StakeholderPersonaModel.id.asc())
         result = await self.session.execute(query)
         return [self._to_entity(m) for m in result.scalars().all()]
-
-    async def save_migration_error(
-        self,
-        persona_id: str,
-        error: str,
-        *,
-        legacy_markdown: Optional[str] = None,
-        name: str = "",
-        role: str = "",
-    ) -> None:
-        """Story 2.3 AC4: record a v1→v2 migration failure without touching schema_version.
-
-        - 不存在 → 插入 schema_version=1 stub（full_content=legacy_markdown）
-        - 已存在且 schema_version=2 → no-op（不会回退已迁移记录）
-        - 已存在且 schema_version=1 → 仅更新 structured_profile._error，不动 full_content
-        """
-        existing = await self.session.get(StakeholderPersonaModel, persona_id)
-        error_payload = {
-            "_error": error,
-            "_attempted_at": datetime.now(timezone.utc).isoformat(),
-        }
-
-        if existing is None:
-            stub = StakeholderPersonaModel(
-                id=persona_id,
-                name=name or persona_id,
-                role=role or "",
-                full_content=legacy_markdown or "",
-                legacy_content=legacy_markdown,
-                schema_version=1,
-                structured_profile=error_payload,
-            )
-            self.session.add(stub)
-        else:
-            if existing.schema_version >= 2:
-                # already migrated successfully — do not regress
-                return
-            existing.structured_profile = error_payload
-            if legacy_markdown is not None and not existing.legacy_content:
-                existing.legacy_content = legacy_markdown
-
-        await self.session.flush()

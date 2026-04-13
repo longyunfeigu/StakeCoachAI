@@ -2,11 +2,14 @@
 // output: 输入素材（1-5 段，类型 tag）+ SSE 流式进度面板 + 失败重试 + 完成 2s 自动跳转
 // owner: wanhua.gu
 // pos: 表示层 - persona builder 入口页 (Story 2.6 AC1-10)；一旦我被更新，务必更新我的开头注释以及所属文件夹的md
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Sparkles, RotateCcw, X, ArrowRight } from 'lucide-react'
+import { Plus, Sparkles, RotateCcw, X, ArrowRight, Users, Loader2 } from 'lucide-react'
 import { usePersonaBuild } from '../hooks/usePersonaBuild'
+import { useSpeakerDetection } from '../hooks/useSpeakerDetection'
 import PersonaBuildProgress from '../components/PersonaBuildProgress'
+import SpeakerSelector from '../components/SpeakerSelector'
+import type { DetectedSpeaker } from '../services/api'
 import './PersonaBuilderPage.css'
 
 type SegmentType = 'chat' | 'email' | 'meeting' | 'other'
@@ -43,13 +46,21 @@ function placeholderFor(type: SegmentType): string {
   }
 }
 
+type Phase = 'input' | 'speaker-select' | 'building'
+
 export default function PersonaBuilderPage() {
   const navigate = useNavigate()
   const [segments, setSegments] = useState<Segment[]>([newSegment()])
   const [name, setName] = useState('')
   const [role, setRole] = useState('')
+  const [phase, setPhase] = useState<Phase>('input')
+  const [selectedSpeakers, setSelectedSpeakers] = useState<Set<string>>(new Set())
+  const [buildQueue, setBuildQueue] = useState<DetectedSpeaker[]>([])
+  const [buildIndex, setBuildIndex] = useState(0)
+  const buildQueueRef = useRef<DetectedSpeaker[]>([])
 
   const { status, events, personaId, error, start, reset } = usePersonaBuild()
+  const detection = useSpeakerDetection()
 
   const totalChars = useMemo(
     () => segments.reduce((sum, s) => sum + s.text.length, 0),
@@ -95,8 +106,79 @@ export default function PersonaBuilderPage() {
     setSegments((prev) => prev.map((s) => (s.id === id ? { ...s, ...patch } : s)))
   }
 
+  // Direct build (skip detection)
   const handleStart = () => {
     if (!canSubmit) return
+    setPhase('building')
+    start({
+      materials: cleanedMaterials,
+      name: name.trim() || undefined,
+      role: role.trim() || undefined,
+    })
+  }
+
+  // Speaker detection flow
+  const handleDetect = () => {
+    if (!canSubmit) return
+    detection.detect(cleanedMaterials)
+  }
+
+  // When detection finishes with exactly 1 speaker, auto-select and build
+  useEffect(() => {
+    if (detection.status === 'done' && detection.speakers.length > 0) {
+      if (detection.speakers.length === 1) {
+        // Single speaker — auto-build directly
+        const sp = detection.speakers[0]
+        setPhase('building')
+        start({ materials: cleanedMaterials, name: sp.name, role: sp.role })
+      } else {
+        setPhase('speaker-select')
+        setSelectedSpeakers(new Set([detection.speakers[0].name]))
+      }
+    }
+  }, [detection.status, detection.speakers]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const toggleSpeaker = useCallback((name: string) => {
+    setSelectedSpeakers((prev) => {
+      const next = new Set(prev)
+      if (next.has(name)) next.delete(name)
+      else next.add(name)
+      return next
+    })
+  }, [])
+
+  // Start sequential builds for selected speakers
+  const handleConfirmSpeakers = () => {
+    const queue = detection.speakers.filter((s) => selectedSpeakers.has(s.name))
+    setBuildQueue(queue)
+    buildQueueRef.current = queue
+    setBuildIndex(0)
+    setPhase('building')
+    if (queue.length > 0) {
+      start({ materials: cleanedMaterials, name: queue[0].name, role: queue[0].role })
+    }
+  }
+
+  // Sequential build: when one finishes, start the next
+  useEffect(() => {
+    const queue = buildQueueRef.current
+    if (phase !== 'building' || queue.length <= 1) return
+    if (status === 'done' && buildIndex < queue.length - 1) {
+      const nextIdx = buildIndex + 1
+      setBuildIndex(nextIdx)
+      reset()
+      setTimeout(() => {
+        start({
+          materials: cleanedMaterials,
+          name: queue[nextIdx].name,
+          role: queue[nextIdx].role,
+        })
+      }, 500)
+    }
+  }, [status, phase, buildIndex]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleSkipDetection = () => {
+    setPhase('building')
     start({
       materials: cleanedMaterials,
       name: name.trim() || undefined,
@@ -111,6 +193,14 @@ export default function PersonaBuilderPage() {
 
   const handleManualGoto = () => {
     if (personaId) navigate(`/persona/${personaId}/edit`)
+  }
+
+  const handleBackToInput = () => {
+    setPhase('input')
+    detection.reset()
+    setSelectedSpeakers(new Set())
+    setBuildQueue([])
+    setBuildIndex(0)
   }
 
   return (
@@ -198,6 +288,18 @@ export default function PersonaBuilderPage() {
             添加素材（{segments.length} / {MAX_SEGMENTS}）
           </button>
 
+          {/* Speaker selector (shown after detection) */}
+          {phase === 'speaker-select' && detection.speakers.length > 1 && (
+            <SpeakerSelector
+              speakers={detection.speakers}
+              selected={selectedSpeakers}
+              onToggle={toggleSpeaker}
+              onConfirm={handleConfirmSpeakers}
+              onSkip={handleSkipDetection}
+              disabled={status === 'running'}
+            />
+          )}
+
           <div className="builder-footer">
             <span className={`char-count ${totalChars > CHAR_LIMIT ? 'over' : ''}`}>
               {totalChars.toLocaleString()} / {CHAR_LIMIT.toLocaleString()} 字符
@@ -214,15 +316,41 @@ export default function PersonaBuilderPage() {
                 <ArrowRight size={14} />
               </button>
             )}
-            <button
-              type="button"
-              className="btn-start"
-              onClick={handleStart}
-              disabled={!canSubmit}
-            >
-              <Sparkles size={14} />
-              {status === 'running' ? '分析中…' : '开始分析'}
-            </button>
+            {phase === 'speaker-select' && (
+              <button type="button" className="btn-ghost" onClick={handleBackToInput}>
+                返回修改素材
+              </button>
+            )}
+            {phase === 'building' && buildQueue.length > 1 && (
+              <span className="build-progress-label">
+                正在构建 {buildIndex + 1}/{buildQueue.length}: {buildQueue[buildIndex]?.name}
+              </span>
+            )}
+            {phase === 'input' && (
+              <>
+                <button
+                  type="button"
+                  className="btn-detect"
+                  onClick={handleDetect}
+                  disabled={!canSubmit || detection.status === 'detecting'}
+                >
+                  {detection.status === 'detecting' ? (
+                    <><Loader2 size={14} className="spin" /> 检测中…</>
+                  ) : (
+                    <><Users size={14} /> 检测人物</>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  className="btn-start"
+                  onClick={handleStart}
+                  disabled={!canSubmit}
+                >
+                  <Sparkles size={14} />
+                  {status === 'running' ? '分析中…' : '开始分析'}
+                </button>
+              </>
+            )}
           </div>
         </section>
 

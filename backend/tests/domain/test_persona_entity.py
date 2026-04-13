@@ -116,23 +116,21 @@ def test_evidence_all_valid_layers(layer: str) -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_persona_v1_defaults() -> None:
-    """v1 persona：只提供最小字段，5 层默认为空/None，schema_version=1。"""
+def test_persona_minimal_defaults() -> None:
+    """Minimal persona: only required fields, 5 layers default to empty/None."""
     p = Persona(id="boss", name="老板", role="CEO")
     assert p.id == "boss"
     assert p.name == "老板"
-    assert p.schema_version == 1
     assert p.hard_rules == []
     assert p.evidence_citations == []
     assert p.identity is None
     assert p.expression is None
     assert p.decision is None
     assert p.interpersonal is None
-    assert p.legacy_content is None
 
 
 def test_persona_v2_has_all_fields() -> None:
-    """v2 persona：5 层 + evidence + schema_version=2 + legacy_content。"""
+    """v2 persona: 5 layers + evidence."""
     p = Persona(
         id="cfo",
         name="CFO",
@@ -157,10 +155,7 @@ def test_persona_v2_has_all_fields() -> None:
                 layer="expression",
             )
         ],
-        schema_version=2,
-        legacy_content="# 老 markdown 内容",
     )
-    assert p.schema_version == 2
     assert p.hard_rules[0].severity == "critical"
     assert p.identity is not None
     assert p.identity.background == "会计师出身"
@@ -169,21 +164,18 @@ def test_persona_v2_has_all_fields() -> None:
     assert p.interpersonal.authority_mode == "正式"
     assert len(p.evidence_citations) == 1
     assert p.evidence_citations[0].layer == "expression"
-    assert p.legacy_content == "# 老 markdown 内容"
 
 
-def test_persona_backward_compat_v1_fields() -> None:
-    """v1 字段（full_content, avatar_color, voice_*）仍然保留。"""
+def test_persona_optional_fields() -> None:
+    """Optional fields (avatar_color, voice_*) still work."""
     p = Persona(
         id="pm",
         name="PM",
         role="产品经理",
         avatar_color="#FF0000",
-        full_content="# 全 markdown",
         voice_id="v1",
         voice_speed=1.2,
     )
     assert p.avatar_color == "#FF0000"
-    assert p.full_content == "# 全 markdown"
     assert p.voice_id == "v1"
     assert p.voice_speed == 1.2

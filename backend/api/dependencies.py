@@ -234,6 +234,19 @@ async def get_chat_service(
 
 
 # ---------------------------------------------------------------------------
+# Speaker Detection dependency
+# ---------------------------------------------------------------------------
+
+
+async def get_speaker_detection_service(
+    llm: LLMPort = Depends(get_stakeholder_llm_port),
+):
+    from application.services.stakeholder.speaker_detection_service import SpeakerDetectionService
+
+    return SpeakerDetectionService(llm=llm)
+
+
+# ---------------------------------------------------------------------------
 # Persona Builder dependencies (Story 2.4 / 2.5)
 # ---------------------------------------------------------------------------
 
@@ -250,6 +263,10 @@ class _UoWBoundStakeholderPersonaRepo:
         async with self._uow_factory() as uow:
             await uow.stakeholder_persona_repository.save_structured_persona(persona)
             await uow.commit()
+
+    async def get_by_id(self, persona_id: str):
+        async with self._uow_factory() as uow:
+            return await uow.stakeholder_persona_repository.get_by_id(persona_id)
 
 
 def _load_stakeholder_prompt(name: str) -> str:

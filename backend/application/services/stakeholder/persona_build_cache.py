@@ -27,15 +27,22 @@ _CACHE_PREFIX = "persona_build"
 _DEFAULT_TTL_S = 900  # 15 minutes
 
 
-def build_cache_key(user_id: str, materials: list[str]) -> str:
+def build_cache_key(user_id: str, materials: list[str], *, persona_id: str | None = None) -> str:
     """Compute a deterministic, order-insensitive cache key for (user_id, materials).
 
     Sorting materials means two requests with the same set of texts (regardless
     of order) hit the same cache entry — desirable for UX (users tend to
     re-submit the same pasted content in different orderings while tinkering).
+
+    When ``persona_id`` is provided (enhancement mode), it is included in the
+    hash so that enhancing an existing persona produces a different cache key
+    from a fresh build with the same materials.
     """
     h = hashlib.sha256()
     h.update(user_id.encode("utf-8"))
+    if persona_id is not None:
+        h.update(b"\x00")
+        h.update(persona_id.encode("utf-8"))
     for mat in sorted(materials):
         h.update(b"\x00")
         h.update(mat.encode("utf-8"))

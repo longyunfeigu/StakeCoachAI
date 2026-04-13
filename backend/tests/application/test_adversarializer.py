@@ -66,7 +66,6 @@ def _base_persona() -> Persona:
                 layer="decision",
             )
         ],
-        schema_version=2,
     )
 
 

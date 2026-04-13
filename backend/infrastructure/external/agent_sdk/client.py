@@ -102,22 +102,68 @@ class AgentSkillClient:
 
         await loop.run_in_executor(None, _do)
 
-    def _build_prompt(self, materials: list[str]) -> str:
+    def _build_prompt(
+        self,
+        materials: list[str],
+        *,
+        target_name: Optional[str] = None,
+        target_role: Optional[str] = None,
+        existing_profile: Optional[str] = None,
+    ) -> str:
         """Build the prompt sent to the sub-agent.
 
         The skill itself contains the heavy instructions; this prompt just tells
         the agent to invoke it on the materials we placed in cwd/materials/.
+
+        When ``existing_profile`` is provided (enhancement/merge mode), the agent
+        is instructed to treat the existing profile as baseline context and merge
+        new materials into it.
         """
         n = len(materials)
-        return (
+        parts = [
             "You have access to the `create-colleague` skill in this workspace's "
             "`.claude/skills/` directory. Use it to build a 5-layer persona from the "
             f"{n} material file(s) located in `materials/0.txt` through "
             f"`materials/{n - 1}.txt`. Read all materials first, then run the skill's "
             "7-step pipeline (intake → work_analyzer → persona_analyzer → "
             "work_builder → persona_builder → merger → correction_handler). "
-            "Write the final markdown persona to `output/persona.md`."
+            "Write the final markdown persona to `output/persona.md`.",
+        ]
+
+        if target_name:
+            parts.append(
+                f"\nIMPORTANT: The target person to model is 「{target_name}」"
+                + (f" (role: {target_role})" if target_role else "")
+                + ". Focus ONLY on this person's behavior, speech patterns, and "
+                "decision style. Ignore other speakers' characteristics."
+            )
+        else:
+            parts.append(
+                "\nThe materials contain a multi-speaker transcript. Identify the "
+                "most dominant and authoritative speaker — the one who gives orders, "
+                "interrupts others, asks the toughest questions, and sets deadlines. "
+                "Build the persona around THAT person. Include their real name in "
+                "the persona frontmatter (name: field)."
+            )
+
+        if existing_profile:
+            parts.append(
+                "\n## ENHANCEMENT MODE — MERGE RUN\n"
+                "This is an incremental enhancement of an existing persona profile. "
+                "The existing profile JSON is provided below as context. Your task:\n"
+                "- KEEP all existing traits, evidence, and rules as baseline\n"
+                "- ADD new insights discovered from the new materials\n"
+                "- For conflicting traits, let the NEW materials override\n"
+                "- Accumulate lists (hard_rules, catchphrases, triggers) — deduplicate\n"
+                "- Preserve existing evidence citations and add new ones\n\n"
+                f"### Existing Profile\n```json\n{existing_profile}\n```"
+            )
+
+        parts.append(
+            "\nUse Chinese for the persona output. 用中文输出画像。"
         )
+
+        return "\n".join(parts)
 
     async def build_persona(
         self,
@@ -125,6 +171,9 @@ class AgentSkillClient:
         user_id: str,
         materials: list[str],
         session_id: Optional[str] = None,
+        target_name: Optional[str] = None,
+        target_role: Optional[str] = None,
+        existing_profile: Optional[str] = None,
     ) -> AsyncIterator[AgentEvent]:
         """Run the colleague-skill pipeline against ``materials``, yielding events.
 
@@ -148,7 +197,12 @@ class AgentSkillClient:
 
             try:
                 await self._write_materials(ws, materials)
-                prompt = self._build_prompt(materials)
+                prompt = self._build_prompt(
+                    materials,
+                    target_name=target_name,
+                    target_role=target_role,
+                    existing_profile=existing_profile,
+                )
 
                 # Emit a synthesized workspace_ready event so downstream consumers
                 # (e.g. PersonaBuilderService) can locate the cwd for reading

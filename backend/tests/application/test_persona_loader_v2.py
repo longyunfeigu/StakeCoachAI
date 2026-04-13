@@ -68,7 +68,6 @@ async def _seed_v2_persona(session_factory, persona_id: str = "cfo") -> None:
                     layer="expression",
                 )
             ],
-            schema_version=2,
         )
         await repo.save_structured_persona(p)
         await session.commit()
@@ -95,18 +94,16 @@ avatar_color: "#FF0000"
 
 
 # ---------------------------------------------------------------------------
-# AC5: v1 persona.full_content 非空; v2 persona.structured_profile 非空
+# AC5: v1 persona from markdown; v2 persona from DB structured_profile
 # ---------------------------------------------------------------------------
 
 
-def test_v1_persona_returns_full_content(v1_markdown_dir: Path) -> None:
-    """v1 persona 走 markdown parser，full_content 非空。"""
+def test_v1_persona_from_markdown(v1_markdown_dir: Path) -> None:
+    """v1 persona parsed from markdown has basic fields."""
     loader = PersonaLoader(persona_dir=str(v1_markdown_dir))
     persona = loader.get_persona("boss")
     assert persona is not None
-    assert persona.schema_version == 1
-    assert persona.full_content != ""
-    assert "老板" in persona.full_content
+    assert persona.name == "老板"
 
 
 @pytest.mark.asyncio
@@ -122,7 +119,6 @@ async def test_v2_persona_returns_structured_profile(session_factory, tmp_path: 
 
     persona = loader.get_persona("cfo")
     assert persona is not None
-    assert persona.schema_version == 2
     assert persona.identity is not None
     assert persona.identity.background == "CPA"
     assert persona.expression is not None
@@ -130,7 +126,7 @@ async def test_v2_persona_returns_structured_profile(session_factory, tmp_path: 
 
 
 # ---------------------------------------------------------------------------
-# AC7: PersonaLoader 在 schema_version=2 时跳过 markdown 扫描走 DB
+# AC7: PersonaLoader DB personas skip markdown scan
 # ---------------------------------------------------------------------------
 
 
@@ -151,12 +147,11 @@ async def test_v2_only_skips_markdown_scan(session_factory, tmp_path: Path) -> N
     personas = loader.list_personas()
     assert len(personas) == 1
     assert personas[0].id == "boss"
-    assert personas[0].schema_version == 2
 
 
 @pytest.mark.asyncio
 async def test_v1_v2_merge_v2_wins_on_conflict(session_factory, v1_markdown_dir: Path) -> None:
-    """v1 markdown + v2 DB 合并时，同 id 冲突 v2 优先。"""
+    """v1 markdown + v2 DB 合并时，同 id 冲突 DB 优先。"""
     # v1 markdown 目录里有 boss.md
     # DB 里也有 id=boss 的 v2 persona
     await _seed_v2_persona(session_factory, "boss")
@@ -168,8 +163,7 @@ async def test_v1_v2_merge_v2_wins_on_conflict(session_factory, v1_markdown_dir:
 
     persona = loader.get_persona("boss")
     assert persona is not None
-    assert persona.schema_version == 2  # v2 wins
-    assert persona.identity is not None  # v2 结构化字段存在
+    assert persona.identity is not None  # DB structured fields present
 
 
 def test_v1_only_still_works_without_repo(v1_markdown_dir: Path) -> None:
@@ -178,4 +172,3 @@ def test_v1_only_still_works_without_repo(v1_markdown_dir: Path) -> None:
     personas = loader.list_personas()
     assert len(personas) == 1
     assert personas[0].id == "boss"
-    assert personas[0].schema_version == 1

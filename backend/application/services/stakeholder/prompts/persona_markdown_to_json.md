@@ -10,6 +10,8 @@ Output ONLY a single valid JSON object matching this schema. NO markdown code fe
 
 ```
 {
+  "name": "string — the person's real name extracted from the markdown (e.g. '陆建峰')",
+  "role": "string — their organizational role (e.g. 'VP of Engineering', '公司总经理')",
   "hard_rules": [{"statement": "string", "severity": "low|medium|high|critical"}],
   "identity": {"background": "string", "core_values": ["string"], "hidden_agenda": "string|null"},
   "expression": {"tone": "string", "catchphrases": ["string"], "interruption_tendency": "low|medium|high"},

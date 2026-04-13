@@ -26,9 +26,7 @@ from application.ports.llm import LLMMessage
 from application.services.stakeholder.dto import MessageDTO
 from application.services.stakeholder.prompt_builder import (
     build_compressed_group_llm_messages,
-    build_compressed_group_llm_messages_v2,
     build_compressed_llm_messages,
-    build_compressed_llm_messages_v2,
     build_org_context,
 )
 from core.config import settings
@@ -280,53 +278,26 @@ class StakeholderChatService:
                 window_size = settings.stakeholder.context_window_size
                 summary = room.context_summary if room else None
 
-                # Story 2.8: branch on schema_version. v2 personas use the
-                # 5-layer structured builder; v1 (markdown) keep the legacy path.
-                is_v2 = getattr(persona, "schema_version", 1) >= 2
                 if group_mode:
-                    if is_v2:
-                        system_prompt, llm_messages = build_compressed_group_llm_messages_v2(
-                            persona=persona,
-                            persona_id=persona_id,
-                            history=history,
-                            context_summary=summary,
-                            context_window_size=window_size,
-                            is_mentioned=is_mentioned,
-                            scenario_context=scenario_context,
-                            org_context=org_ctx,
-                        )
-                    else:
-                        system_prompt, llm_messages = build_compressed_group_llm_messages(
-                            persona_full_content=persona.full_content,
-                            persona_name=persona.name,
-                            persona_id=persona_id,
-                            history=history,
-                            context_summary=summary,
-                            context_window_size=window_size,
-                            is_mentioned=is_mentioned,
-                            scenario_context=scenario_context,
-                            org_context=org_ctx,
-                        )
+                    system_prompt, llm_messages = build_compressed_group_llm_messages(
+                        persona=persona,
+                        persona_id=persona_id,
+                        history=history,
+                        context_summary=summary,
+                        context_window_size=window_size,
+                        is_mentioned=is_mentioned,
+                        scenario_context=scenario_context,
+                        org_context=org_ctx,
+                    )
                 else:
-                    if is_v2:
-                        system_prompt, llm_messages = build_compressed_llm_messages_v2(
-                            persona=persona,
-                            history=history,
-                            context_summary=summary,
-                            context_window_size=window_size,
-                            scenario_context=scenario_context,
-                            org_context=org_ctx,
-                        )
-                    else:
-                        system_prompt, llm_messages = build_compressed_llm_messages(
-                            persona_full_content=persona.full_content,
-                            persona_name=persona.name,
-                            history=history,
-                            context_summary=summary,
-                            context_window_size=window_size,
-                            scenario_context=scenario_context,
-                            org_context=org_ctx,
-                        )
+                    system_prompt, llm_messages = build_compressed_llm_messages(
+                        persona=persona,
+                        history=history,
+                        context_summary=summary,
+                        context_window_size=window_size,
+                        scenario_context=scenario_context,
+                        org_context=org_ctx,
+                    )
 
                 # Stream LLM response, pushing incremental deltas via SSE
                 reply_content = None

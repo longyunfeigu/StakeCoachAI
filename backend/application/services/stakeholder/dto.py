@@ -493,6 +493,27 @@ class PersonaBuildRequestDTO(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# Speaker Detection DTOs
+# ---------------------------------------------------------------------------
+
+
+class DetectSpeakersRequestDTO(BaseModel):
+    """Input DTO for POST /persona/detect-speakers."""
+
+    materials: list[str] = Field(..., min_length=1)
+
+
+class DetectedSpeakerDTO(BaseModel):
+    """A single detected speaker from transcript materials."""
+
+    name: str
+    role: str = ""
+    speaking_turns: int = 0
+    dominance_level: str = "medium"
+    sample_quote: str = ""
+
+
+# ---------------------------------------------------------------------------
 # Story 2.7 — 5-layer Persona editor DTOs
 # ---------------------------------------------------------------------------
 
@@ -541,7 +562,6 @@ class PersonaV2DTO(BaseModel):
     name: str
     role: str
     avatar_color: Optional[str] = None
-    schema_version: int
     hard_rules: list[HardRuleDTO] = Field(default_factory=list)
     identity: Optional[IdentityDTO] = None
     expression: Optional[ExpressionDTO] = None

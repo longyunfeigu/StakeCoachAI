@@ -4,7 +4,7 @@
 # pos: 测试层 - Story 2.3 旧 persona 迁移 migrator 与 CLI 脚本测试；一旦我被更新，务必更新我的开头注释以及所属文件夹的md
 """Tests for Story 2.3: persona migrator pure functions + CLI orchestration.
 
-Covers AC1 (idempotent), AC2 (LLM→5-layer JSON), AC3 (legacy_content preserved),
+Covers AC1 (idempotent), AC2 (LLM→5-layer JSON),
 AC4 (failure isolation), AC5 (--dry-run), AC6 (summary report).
 """
 
@@ -79,12 +79,10 @@ def _canonical_v1_persona(persona_id: str = "boss") -> Persona:
         name="剑锋",
         role="直属上级 / Lu Jianfeng",
         avatar_color="#cc3300",
-        full_content="---\nname: 剑锋\n---\n\n## 信息偏好\n- 粒度：只要结论\n",
         profile_summary="销售导向",
         voice_id="male-qn-qingse",
         voice_speed=1.0,
         voice_style="Speak with authority",
-        schema_version=1,
     )
 
 
@@ -161,13 +159,6 @@ def test_build_persona_v2_preserves_v1_fields():
     assert v2.voice_style == v1.voice_style
 
 
-def test_build_persona_v2_sets_schema_version_2():
-    from application.services.stakeholder.persona_migrator import build_persona_v2
-
-    v2 = build_persona_v2(_canonical_v1_persona(), _canonical_llm_json())
-    assert v2.schema_version == 2
-
-
 def test_build_persona_v2_populates_all_five_layers():
     from application.services.stakeholder.persona_migrator import build_persona_v2
 
@@ -178,16 +169,6 @@ def test_build_persona_v2_populates_all_five_layers():
     assert v2.decision is not None
     assert v2.interpersonal is not None
     assert len(v2.evidence_citations) == 2
-
-
-def test_build_persona_v2_preserves_markdown_in_legacy_content_and_full_content_unchanged():
-    """AC3: legacy_content == 原 markdown; full_content 不变."""
-    from application.services.stakeholder.persona_migrator import build_persona_v2
-
-    v1 = _canonical_v1_persona()
-    v2 = build_persona_v2(v1, _canonical_llm_json())
-    assert v2.legacy_content == v1.full_content
-    assert v2.full_content == v1.full_content
 
 
 def test_build_persona_v2_rejects_invalid_evidence_layer():
@@ -235,7 +216,7 @@ async def test_migrate_one_success_returns_v2_persona():
 
     assert result.status == "migrated"
     assert result.persona is not None
-    assert result.persona.schema_version == 2
+    assert result.persona.hard_rules  # v2 has structured data
     llm.generate.assert_awaited_once()
 
 
@@ -284,42 +265,17 @@ class _FakeRepo:
     def __init__(self, initial: Optional[list[Persona]] = None) -> None:
         self._by_id: dict[str, Persona] = {p.id: p for p in (initial or [])}
         self.save_calls: list[_SaveCall] = []
-        self.error_calls: list[tuple[str, str]] = []
 
     async def save_structured_persona(self, persona: Persona) -> Persona:
         self._by_id[persona.id] = persona
         self.save_calls.append(_SaveCall(persona=persona))
         return persona
 
-    async def save_migration_error(
-        self,
-        persona_id: str,
-        error: str,
-        *,
-        legacy_markdown: Optional[str] = None,
-        name: str = "",
-        role: str = "",
-    ) -> None:
-        self.error_calls.append((persona_id, error))
-        existing = self._by_id.get(persona_id)
-        if existing is None:
-            self._by_id[persona_id] = Persona(
-                id=persona_id,
-                name=name or persona_id,
-                role=role or "",
-                full_content=legacy_markdown or "",
-                legacy_content=legacy_markdown,
-                schema_version=1,
-            )
-        # marker: structured_profile._error (we only assert via error_calls in tests)
-
     async def get_by_id(self, persona_id: str) -> Optional[Persona]:
         return self._by_id.get(persona_id)
 
-    async def list_all(self, *, schema_version: Optional[int] = None) -> list[Persona]:
-        if schema_version is None:
-            return list(self._by_id.values())
-        return [p for p in self._by_id.values() if p.schema_version == schema_version]
+    async def list_all(self) -> list[Persona]:
+        return list(self._by_id.values())
 
     # conform to ABC
     async def get_with_evidence(self, persona_id: str):  # pragma: no cover - unused
@@ -328,16 +284,13 @@ class _FakeRepo:
 
 
 @pytest.mark.asyncio
-async def test_script_idempotent_skips_v2():
-    """AC1: schema_version=2 personas are skipped; LLM not called for them."""
-    from application.services.stakeholder.persona_migrator import run_migration
+async def test_script_idempotent_skips_already_structured():
+    """AC1: already-structured personas are skipped; LLM not called for them."""
+    from application.services.stakeholder.persona_migrator import build_persona_v2, run_migration
 
-    v2_already = Persona(
-        id="done",
-        name="已迁移",
-        role="x",
-        full_content="# md",
-        schema_version=2,
+    v2_already = build_persona_v2(
+        _canonical_v1_persona("done"),
+        _canonical_llm_json("done"),
     )
     v1 = _canonical_v1_persona("fresh")
     repo = _FakeRepo(initial=[v2_already, v1])
@@ -359,7 +312,7 @@ async def test_script_idempotent_skips_v2():
     assert report.skipped == 1
     assert report.migrated == 1
     assert report.failed == 0
-    # LLM called once for v1 "fresh", zero times for v2 "done"
+    # LLM called once for v1 "fresh", zero times for already-structured "done"
     assert llm.generate.await_count == 1
 
 
@@ -417,8 +370,6 @@ async def test_script_one_failure_does_not_block_others():
     assert report.migrated == 4
     assert report.failed == 1
     assert report.skipped == 0
-    # The failed one had its error recorded
-    assert any(pid == "p1" for pid, _err in repo.error_calls)
     # Other 4 were saved as v2
     saved_ids = {call.persona.id for call in repo.save_calls}
     assert saved_ids == {"p0", "p2", "p3", "p4"}
@@ -473,5 +424,4 @@ async def test_script_migrates_five_personas():
     saved_ids = {call.persona.id for call in repo.save_calls}
     assert saved_ids == set(ids)
     for call in repo.save_calls:
-        assert call.persona.schema_version == 2
-        assert call.persona.legacy_content is not None
+        assert call.persona.hard_rules  # structured v2 data present

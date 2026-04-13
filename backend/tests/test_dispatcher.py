@@ -26,7 +26,7 @@ class FakePersona:
     name: str = "剑锋"
     role: str = "CTO"
     avatar_color: str = "#f00"
-    full_content: str = "# 剑锋\n\nA seasoned CTO."
+    profile_summary: str = "CTO with strong opinions"
     profile_summary: str = "CTO with strong opinions"
     parse_status: str = "ok"
 
@@ -78,7 +78,6 @@ _PERSONAS = {
         name="剑锋",
         role="CTO",
         profile_summary="CTO with strong opinions",
-        full_content="# 剑锋\n\nA seasoned CTO.",
     ),
     "mingzhu": FakePersona(
         id="mingzhu",
@@ -86,7 +85,6 @@ _PERSONAS = {
         role="CFO",
         avatar_color="#0f0",
         profile_summary="CFO focused on budget",
-        full_content="# 明珠\n\nA cautious CFO.",
     ),
     "liqiang": FakePersona(
         id="liqiang",
@@ -94,7 +92,6 @@ _PERSONAS = {
         role="PM",
         avatar_color="#00f",
         profile_summary="PM balancing stakeholder needs",
-        full_content="# 力强\n\nA pragmatic PM.",
     ),
 }
 

@@ -54,6 +54,28 @@
   <img src="docs/assets/homepage.png" alt="首页仪表盘" width="80%"/>
 </div>
 
+### 从素材一键生成对手 (Persona Builder)
+
+粘贴一段真实聊天记录 / 邮件 / 会议纪要，AI 在 3 分钟内分析出一个有压迫感、可追溯证据的 5 层对手画像，直接进入演练——零手动填表。
+
+1. **粘贴素材** — 最多 5 段，支持标记类型（聊天 / 邮件 / 纪要 / 其他）
+2. **AI 流式分析** — Claude Code 风格实时进度，看 Agent 逐步读素材、提炼特征
+3. **5-layer 结构化画像** — Hard Rules / Identity / Expression / Decision / Interpersonal，每条特征可溯源
+4. **证据链** — 每条规则都能点开查看原文引用 + 置信度仪表盘
+5. **一键开练** — 点击"开始演练"直接进入聊天室，AI 立刻以该对手身份回复
+
+<div align="center">
+  <img src="docs/assets/persona-builder.png" alt="素材分析入口" width="80%"/>
+</div>
+
+<div align="center">
+  <img src="docs/assets/persona-editor.png" alt="5-layer 结构化画像编辑器" width="80%"/>
+</div>
+
+<div align="center">
+  <img src="docs/assets/persona-evidence.png" alt="证据链 Popover" width="80%"/>
+</div>
+
 ### 沉浸式对话演练
 
 三栏布局：左侧房间列表，中间实时对话，右侧智能上下文面板（对手画像、情绪走势、实时评分）。AI 角色会根据角色设定做出真实反应——质疑、施压、带着隐藏议程博弈。
@@ -129,6 +151,8 @@
 | 路由 | 页面 | 说明 |
 |:---|:---|:---|
 | `/` | 首页仪表盘 | 每日挑战、快捷入口、最近对话、技能路径 |
+| `/persona/new` | 素材生成对手 | 粘贴素材 → AI 流式分析 → 生成 5-layer 画像 |
+| `/persona/:id/edit` | 画像编辑器 | 5 层结构化编辑 + 证据链 + 一键开练 |
 | `/chat/:roomId` | 沉浸式对话 | 三栏布局：房间列表 + 对话 + 上下文面板 |
 | `/battle-prep` | 紧急备战 | 三步向导：描述会议 → 生成对手 → 实战演练 |
 | `/growth` | 成长中心 | 雷达图、等级经验、技能路径、评价历史、名片 |
@@ -173,17 +197,18 @@ cd frontend && npm install && npm run dev
 | **图表** | Recharts (六维雷达图) |
 | **实时通信** | Server-Sent Events (SSE) |
 | **后端** | FastAPI + SQLAlchemy + Alembic |
-| **AI** | Claude (Anthropic SDK)，支持多 LLM 扩展 |
+| **AI** | Claude (Anthropic SDK) + Claude Agent SDK (Persona Builder) |
 | **语音** | MiniMax/ElevenLabs TTS + OpenAI Whisper STT |
 
 ### 前端架构
 
 ```
 frontend/src/
-├── pages/           # 5 个路由页面 (Home, Chat, BattlePrep, Growth, Settings)
+├── pages/           # 7 个路由页面 (Home, Chat, BattlePrep, Growth, Settings, PersonaNew, PersonaEditor)
 ├── components/
 │   ├── layout/      # TopBar, NavRail, BottomTabBar, CommandPalette, ConfirmDialog
-│   └── chat/        # MessageList, ChatInput, ContextPanel, CoachingPanel, AnalysisPanel
+│   ├── chat/        # MessageList, ChatInput, ContextPanel, CoachingPanel, AnalysisPanel
+│   └── persona-editor/  # LayerCard, FeatureRow, EvidencePopover, HeroCard
 ├── hooks/           # useChat, useVoice, useCoaching, useAnalysis, useGrowth, useRooms
 ├── contexts/        # AppContext (全局状态), ChatContext (对话状态)
 ├── services/        # API 客户端, 音频播放
@@ -197,6 +222,7 @@ frontend/src/
 | | DaBoss | 其他方案 |
 |:---|:---|:---|
 | **真实性** | AI有情绪、有隐藏议程、有组织关系 | 静态脚本，过于理想化 |
+| **一键建模** | 粘贴素材 → AI 自动生成 5 层对手画像 + 证据链 | 手动填表或无角色定制 |
 | **即时反馈** | 对话中可求助教练，实时获得建议 | 只有事后总结 |
 | **科学评估** | LLM-as-Judge六维度评估 | 无评估或主观打分 |
 | **成长追踪** | 等级经验值 + 技能路径 + 雷达图趋势 | 无历史追踪 |
@@ -215,6 +241,9 @@ frontend/src/
 - [x] 沟通力名片（6维评分社交分享卡片）
 - [x] 语音对话支持（MiniMax / ElevenLabs TTS + OpenAI Whisper STT）
 - [x] 移动端底部导航栏适配
+- [x] **Persona Builder** — 粘贴素材一键生成 5 层结构化对手画像（Claude Agent SDK + SSE 流式 + 证据链）
+- [x] **5-layer 画像编辑器** — Hard Rules / Identity / Expression / Decision / Interpersonal + 证据 Popover
+- [x] **对抗化后处理** — AI 自动注入隐藏议程、打断倾向、情绪状态机，让对手更真实
 - [ ] 更多评估维度（跨文化沟通、谈判技巧等）
 - [ ] 角色市场（预设的经典角色包）
 - [ ] 团队协作模式（多人实时演练）

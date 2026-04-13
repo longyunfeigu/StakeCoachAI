@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import {
   Plus,
   Pencil,
@@ -12,10 +12,8 @@ import {
 import { useNavigate } from 'react-router-dom'
 import { useAppContext } from '../contexts/AppContext'
 import Avatar from '../components/Avatar'
+import PersonaEditorDialog from '../components/PersonaEditorDialog'
 import {
-  fetchPersonaDetail,
-  fetchTeams,
-  createPersona,
   updatePersona,
   deletePersona,
   fetchScenarios,
@@ -83,128 +81,26 @@ function PersonasTab() {
   const personas = Object.values(personaMap)
   const dialog = useConfirmDialog()
 
+  const [dialogOpen, setDialogOpen] = useState(false)
   const [editing, setEditing] = useState<PersonaSummary | null>(null)
-  const [isNew, setIsNew] = useState(false)
-
-  // Form state
-  const [id, setId] = useState('')
-  const [name, setName] = useState('')
-  const [role, setRole] = useState('')
-  const [avatarColor, setAvatarColor] = useState('#888888')
-  const [content, setContent] = useState('')
-  const [teamId, setTeamId] = useState<number | null>(null)
-  const [teams, setTeams] = useState<Team[]>([])
-  const [error, setError] = useState<string | null>(null)
-  const [submitting, setSubmitting] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const formRef = useRef<HTMLDivElement>(null)
-
-  const showForm = isNew || editing !== null
-
-  // Auto-scroll to form when it appears
-  useEffect(() => {
-    if (showForm && formRef.current) {
-      formRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    }
-  }, [showForm, editing])
-
-  // Load teams when org changes
-  useEffect(() => {
-    if (currentOrg) {
-      fetchTeams(currentOrg.id).then(setTeams).catch(() => setTeams([]))
-    } else {
-      setTeams([])
-    }
-  }, [currentOrg])
 
   const startCreate = () => {
     setEditing(null)
-    setIsNew(true)
-    setId('')
-    setName('')
-    setRole('')
-    setAvatarColor('#888888')
-    setContent('')
-    setTeamId(null)
-    setError(null)
+    setDialogOpen(true)
   }
 
   const startEdit = (persona: PersonaSummary) => {
     setEditing(persona)
-    setIsNew(false)
-    setId(persona.id)
-    setName(persona.name)
-    setRole(persona.role)
-    setAvatarColor(persona.avatar_color || '#888888')
-    setTeamId(persona.team_id)
-    setError(null)
-    setLoading(true)
-    fetchPersonaDetail(persona.id)
-      .then((detail) => setContent(detail.content || ''))
-      .catch(() => setContent(''))
-      .finally(() => setLoading(false))
+    setDialogOpen(true)
   }
 
-  const handleCancel = () => {
+  const handleDialogClose = () => {
+    setDialogOpen(false)
     setEditing(null)
-    setIsNew(false)
-    setError(null)
   }
 
-  const handleSave = async () => {
-    setSubmitting(true)
-    setError(null)
-    try {
-      const orgFields = {
-        organization_id: currentOrg?.id ?? null,
-        team_id: teamId,
-      }
-      if (editing) {
-        await updatePersona(editing.id, {
-          name,
-          role,
-          avatar_color: avatarColor,
-          content,
-          ...orgFields,
-        })
-      } else {
-        if (!id.trim()) {
-          setError('ID 不能为空')
-          setSubmitting(false)
-          return
-        }
-        await createPersona({
-          id: id.trim(),
-          name,
-          role,
-          avatar_color: avatarColor,
-          content,
-          ...orgFields,
-        })
-      }
-      reloadPersonas()
-      handleCancel()
-    } catch (e: any) {
-      setError(e.message)
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
-  const handleDelete = () => {
-    if (!editing) return
-    dialog.ask('删除角色', `确定删除角色「${editing.name}」？此操作无法撤销。`, async () => {
-      setSubmitting(true)
-      try {
-        await deletePersona(editing.id)
-        reloadPersonas()
-        handleCancel()
-      } catch (e: any) {
-        setError(e.message)
-      } finally {
-        setSubmitting(false)
-      }
-    })
+  const handleSaved = () => {
+    reloadPersonas()
   }
 
   return (
@@ -228,7 +124,7 @@ function PersonasTab() {
       </div>
 
       <div className="settings-list">
-        {personas.length === 0 && !showForm && (
+        {personas.length === 0 && (
           <div className="settings-empty">
             <div className="settings-empty-icon">
               <Users size={36} />
@@ -262,7 +158,7 @@ function PersonasTab() {
                 onClick={(e) => {
                   e.stopPropagation()
                   dialog.ask('删除角色', `确定删除角色「${p.name}」？此操作无法撤销。`, () => {
-                    deletePersona(p.id).then(() => { reloadPersonas(); handleCancel() })
+                    deletePersona(p.id).then(() => reloadPersonas())
                   })
                 }}
                 title="删除"
@@ -274,103 +170,13 @@ function PersonasTab() {
         ))}
       </div>
 
-      {showForm && (
-        <div className="settings-form-panel" ref={formRef}>
-          <h4>{isNew ? '新建角色' : '编辑角色'}</h4>
-
-          <div className="settings-avatar-preview">
-            <Avatar name={name || '?'} color={avatarColor} size={48} />
-          </div>
-
-          {isNew && (
-            <label className="field-label">
-              ID
-              <input
-                type="text"
-                value={id}
-                onChange={(e) => setId(e.target.value)}
-                placeholder="英文标识符，如 ceo"
-                autoFocus
-              />
-            </label>
-          )}
-
-          <label className="field-label">
-            名称
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="角色显示名称"
-            />
-          </label>
-
-          <label className="field-label">
-            角色
-            <input
-              type="text"
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-              placeholder="如：CEO、产品经理"
-            />
-          </label>
-
-          <label className="field-label">
-            头像颜色
-            <div className="color-field">
-              <input
-                type="color"
-                value={avatarColor}
-                onChange={(e) => setAvatarColor(e.target.value)}
-              />
-              <span className="color-value">{avatarColor}</span>
-            </div>
-          </label>
-
-          {teams.length > 0 && (
-            <label className="field-label">
-              所属团队
-              <select
-                value={teamId ?? ''}
-                onChange={(e) => setTeamId(e.target.value ? Number(e.target.value) : null)}
-              >
-                <option value="">不指定</option>
-                {teams.map((t) => (
-                  <option key={t.id} value={t.id}>{t.name}</option>
-                ))}
-              </select>
-            </label>
-          )}
-
-          <label className="field-label">
-            内容（Markdown）
-            <textarea
-              value={loading ? '加载中...' : content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="角色画像的详细内容..."
-              disabled={loading}
-            />
-          </label>
-
-          {error && <div className="settings-error">{error}</div>}
-
-          <div className="settings-form-actions">
-            {editing && (
-              <button className="btn-delete" onClick={handleDelete} disabled={submitting}>
-                删除
-              </button>
-            )}
-            <button className="btn-cancel" onClick={handleCancel}>取消</button>
-            <button
-              className="btn-submit"
-              onClick={handleSave}
-              disabled={submitting || loading}
-            >
-              {submitting ? '保存中...' : '保存'}
-            </button>
-          </div>
-        </div>
-      )}
+      <PersonaEditorDialog
+        open={dialogOpen}
+        onClose={handleDialogClose}
+        onSaved={handleSaved}
+        editingPersona={editing}
+        currentOrg={currentOrg}
+      />
       <ConfirmDialog open={dialog.open} title={dialog.title} message={dialog.message} confirmLabel="删除" danger onConfirm={dialog.confirm} onCancel={dialog.close} />
     </>
   )

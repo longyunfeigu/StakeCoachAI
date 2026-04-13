@@ -49,13 +49,13 @@ class PersonaLoader:
         self._cache_time = 0.0
 
     async def refresh_from_db(self, repository: StakeholderPersonaRepository) -> None:
-        """Pull v2 personas (schema_version=2) from DB into cache.
+        """Pull personas from DB into cache.
 
         Story 2.2 AC5/AC7:
-        - v2 persona 在后续 ``get_persona``/``list_personas`` 中优先于 v1
+        - DB personas 在后续 ``get_persona``/``list_personas`` 中优先于 v1 markdown
         - 调用方（API dependency）可在每个请求前刷新
         """
-        v2_list = await repository.list_all(schema_version=2)
+        v2_list = await repository.list_all()
         self._v2_by_id = {p.id: p for p in v2_list}
         # Invalidate derived caches so next list/get sees merged view
         self._cached_personas = None
@@ -158,12 +158,10 @@ class PersonaLoader:
             organization_id=organization_id,
             team_id=team_id,
             profile_summary=profile_summary,
-            full_content=content,
             parse_status=parse_status,
             voice_id=voice_id,
             voice_speed=voice_speed,
             voice_style=voice_style,
-            schema_version=1,
         )
 
     def _extract_frontmatter(self, content: str) -> dict:

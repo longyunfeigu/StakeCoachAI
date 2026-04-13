@@ -56,24 +56,27 @@ function buildRows(events: BuildEvent[], status: BuildStatus): RenderRow[] {
         })
         break
       case 'agent_tool_use': {
+        const phase = (ev.data as { phase?: string })?.phase
         const tools = (ev.data?.tool_uses as Array<{ name: string }>) || []
-        const desc = tools.map((t) => TOOL_LABELS[t.name] || t.name).join(' · ')
+        const toolDesc = tools.map((t) => TOOL_LABELS[t.name] || t.name).join(' · ')
         rows.push({
           key: `${ev.seq}`,
           state: 'done',
           icon: <FileSearch size={14} />,
-          label: `Agent 工具调用：${desc || '(unknown)'}`,
+          label: phase || `Agent 工具调用：${toolDesc || '(unknown)'}`,
         })
         break
       }
-      case 'agent_message':
+      case 'agent_message': {
+        const summary = (ev.data as { summary?: string })?.summary || 'Agent 思考'
         rows.push({
           key: `${ev.seq}`,
           state: 'done',
           icon: <MessageSquare size={14} />,
-          label: 'Agent 思考',
+          label: summary,
         })
         break
+      }
       case 'parse_done':
         rows.push({
           key: `${ev.seq}`,
@@ -107,6 +110,22 @@ function buildRows(events: BuildEvent[], status: BuildStatus): RenderRow[] {
         })
         break
       }
+      case 'enhancement_start':
+        rows.push({
+          key: `${ev.seq}`,
+          state: 'done',
+          icon: <Sparkles size={14} />,
+          label: '加载已有画像',
+        })
+        break
+      case 'enhancement_merge':
+        rows.push({
+          key: `${ev.seq}`,
+          state: 'done',
+          icon: <Database size={14} />,
+          label: `合并新旧证据 (${(ev.data as { merged_evidence_count?: number })?.merged_evidence_count || '?'} 条)`,
+        })
+        break
       case 'persist_done':
         rows.push({
           key: `${ev.seq}`,

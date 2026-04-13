@@ -657,6 +657,35 @@ export async function generateProfileCard(): Promise<ProfileCard> {
 }
 
 // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Speaker Detection
+// ---------------------------------------------------------------------------
+
+export interface DetectedSpeaker {
+  name: string
+  role: string
+  speaking_turns: number
+  dominance_level: 'low' | 'medium' | 'high'
+  sample_quote: string
+}
+
+export async function detectSpeakers(
+  materials: string[],
+): Promise<DetectedSpeaker[]> {
+  const resp = await fetch(`${API_BASE}/persona/detect-speakers`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ materials }),
+  })
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({ message: resp.statusText }))
+    throw new Error(err.detail?.message || err.message || `HTTP ${resp.status}`)
+  }
+  const json = await resp.json()
+  return json.data
+}
+
+// ---------------------------------------------------------------------------
 // Story 2.5 / 2.6 — Persona Build SSE
 // ---------------------------------------------------------------------------
 
@@ -670,6 +699,8 @@ export type BuildEventType =
   | 'persist_done'
   | 'heartbeat'
   | 'error'
+  | 'enhancement_start'
+  | 'enhancement_merge'
 
 export interface BuildEvent {
   seq: number

@@ -2,7 +2,7 @@
 // output: 完整编辑器 (Hero + 5 LayerCards + EvidencePopover + FloatingCTA + 未保存离开确认)
 // owner: wanhua.gu
 // pos: 表示层 - 5-layer persona 编辑器主页 (Story 2.7)；一旦我被更新，务必更新我的开头注释以及所属文件夹的md
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
   fetchPersonaV2,
@@ -16,6 +16,8 @@ import {
   type PersonaPatchV2,
   type PersonaV2,
 } from '../services/personaV2'
+import { usePersonaBuild } from '../hooks/usePersonaBuild'
+import PersonaBuildProgress from '../components/PersonaBuildProgress'
 import PersonaHero from '../components/persona-editor/PersonaHero'
 import LayerCard, { type LayerColor } from '../components/persona-editor/LayerCard'
 import FeatureRow from '../components/persona-editor/FeatureRow'
@@ -199,6 +201,36 @@ export default function PersonaEditorPage() {
       return { ...d, interpersonal: { ...d.interpersonal, emotion_states } }
     })
   }
+
+  // --- Enhancement mode ---
+  const [showEnhance, setShowEnhance] = useState(false)
+  const [enhanceText, setEnhanceText] = useState('')
+  const enhance = usePersonaBuild()
+  const enhanceTextRef = useRef('')
+
+  const handleStartEnhance = () => {
+    const text = enhanceText.trim()
+    if (!text || !id) return
+    enhanceTextRef.current = text
+    enhance.start({
+      materials: [text],
+      target_persona_id: id,
+    })
+  }
+
+  // When enhancement finishes, refetch persona
+  useEffect(() => {
+    if (enhance.status !== 'done' || !id) return
+    fetchPersonaV2(id)
+      .then((p) => {
+        setPersona(p)
+        setDraft(p)
+        setShowEnhance(false)
+        setEnhanceText('')
+        enhance.reset()
+      })
+      .catch(() => {})
+  }, [enhance.status, id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSave = async () => {
     if (!draft || !id) return
@@ -502,11 +534,49 @@ export default function PersonaEditorPage() {
         onClose={closePopover}
       />
 
+      {/* Enhancement panel */}
+      {showEnhance && (
+        <div className="enhance-panel">
+          <h3>追加素材增强画像</h3>
+          <textarea
+            className="enhance-textarea"
+            value={enhanceText}
+            onChange={(e) => setEnhanceText(e.target.value)}
+            placeholder="粘贴新的聊天记录 / 邮件 / 会议纪要，AI 会将新发现的特征合并到现有画像中…"
+            rows={6}
+            disabled={enhance.status === 'running'}
+          />
+          {enhance.status === 'running' && (
+            <PersonaBuildProgress events={enhance.events} status={enhance.status} error={enhance.error} />
+          )}
+          <div className="enhance-actions">
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={handleStartEnhance}
+              disabled={!enhanceText.trim() || enhance.status === 'running'}
+            >
+              {enhance.status === 'running' ? '增强中…' : '开始增强'}
+            </button>
+            <button
+              type="button"
+              className="btn-ghost"
+              onClick={() => { setShowEnhance(false); setEnhanceText(''); enhance.reset() }}
+              disabled={enhance.status === 'running'}
+            >
+              取消
+            </button>
+          </div>
+        </div>
+      )}
+
       <FloatingCTA
         hasUnsaved={hasUnsaved}
         saving={saving}
         onSave={handleSave}
         onStartBattle={handleStartBattle}
+        onEnhance={() => setShowEnhance(true)}
+        showEnhance={!showEnhance}
       />
 
       <ConfirmDialog

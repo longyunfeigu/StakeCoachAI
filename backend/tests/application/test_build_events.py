@@ -40,7 +40,7 @@ def test_auxiliary_event_types_exist():
 def test_build_event_types_tuple_covers_all():
     assert BUILD_WORKSPACE_READY in BUILD_EVENT_TYPES
     assert BUILD_ERROR in BUILD_EVENT_TYPES
-    assert len(BUILD_EVENT_TYPES) == 8
+    assert len(BUILD_EVENT_TYPES) == 11
 
 
 def test_build_event_dataclass_has_required_fields():

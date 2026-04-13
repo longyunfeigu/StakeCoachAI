@@ -7,7 +7,6 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
 from typing import Optional
 
 import pytest
@@ -15,6 +14,14 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
 from application.ports.llm import LLMMessage, LLMResponse
+from domain.stakeholder.persona_entity import (
+    DecisionPattern,
+    ExpressionStyle,
+    HardRule,
+    IdentityProfile,
+    InterpersonalStyle,
+    Persona,
+)
 from infrastructure.models.base import Base
 from infrastructure.unit_of_work import SQLAlchemyUnitOfWork
 
@@ -24,50 +31,29 @@ from infrastructure.unit_of_work import SQLAlchemyUnitOfWork
 # ---------------------------------------------------------------------------
 
 
-@dataclass
-class FakePersona:
-    id: str = "jianfeng"
-    name: str = "剑锋"
-    role: str = "CTO"
-    avatar_color: str = "#f00"
-    full_content: str = "# 剑锋\n\nA seasoned CTO."
-    profile_summary: str = "CTO with strong opinions"
-    parse_status: str = "ok"
+def _make_persona(id: str, name: str, role: str) -> Persona:
+    return Persona(
+        id=id, name=name, role=role,
+        hard_rules=[HardRule(statement="test rule", severity="medium")],
+        identity=IdentityProfile(background="bg", core_values=["v1"], hidden_agenda=None),
+        expression=ExpressionStyle(tone="formal", catchphrases=["test"], interruption_tendency="low"),
+        decision=DecisionPattern(style="analytical", risk_tolerance="medium", typical_questions=["why?"]),
+        interpersonal=InterpersonalStyle(authority_mode="direct", triggers=["delay"], emotion_states=["neutral"]),
+    )
 
 
 PERSONAS = {
-    "jianfeng": FakePersona(
-        id="jianfeng",
-        name="剑锋",
-        role="CTO",
-        avatar_color="#f00",
-        profile_summary="CTO with strong opinions",
-        full_content="# 剑锋\n\nA seasoned CTO.",
-    ),
-    "mingzhu": FakePersona(
-        id="mingzhu",
-        name="明珠",
-        role="CFO",
-        avatar_color="#0f0",
-        profile_summary="CFO focused on budget",
-        full_content="# 明珠\n\nA cautious CFO.",
-    ),
-    "liqiang": FakePersona(
-        id="liqiang",
-        name="力强",
-        role="PM",
-        avatar_color="#00f",
-        profile_summary="PM balancing stakeholder needs",
-        full_content="# 力强\n\nA pragmatic PM.",
-    ),
+    "jianfeng": _make_persona("jianfeng", "剑锋", "CTO"),
+    "mingzhu": _make_persona("mingzhu", "明珠", "CFO"),
+    "liqiang": _make_persona("liqiang", "力强", "PM"),
 }
 
 
 class FakePersonaLoader:
-    def __init__(self, personas: dict[str, FakePersona] | None = None):
+    def __init__(self, personas: dict[str, Persona] | None = None):
         self._personas = personas or PERSONAS
 
-    def get_persona(self, pid: str) -> Optional[FakePersona]:
+    def get_persona(self, pid: str) -> Optional[Persona]:
         return self._personas.get(pid)
 
 
@@ -194,82 +180,6 @@ async def _send_and_reply(svc, room_id, content):
     msg, room = await svc.send_message(room_id, content)
     await svc.generate_replies(room_id, room)
     return msg
-
-
-# ---------------------------------------------------------------------------
-# prompt_builder: build_group_llm_messages
-# ---------------------------------------------------------------------------
-
-
-class TestBuildGroupLlmMessages:
-    """Tests for build_group_llm_messages in prompt_builder."""
-
-    def test_current_persona_mapped_to_assistant(self):
-        from application.services.stakeholder.prompt_builder import build_group_llm_messages
-
-        history = [
-            {"sender_type": "user", "sender_id": "user", "content": "Hello"},
-            {"sender_type": "persona", "sender_id": "jianfeng", "content": "Hi from CTO"},
-        ]
-        system, messages = build_group_llm_messages(
-            persona_full_content="# CTO Profile",
-            persona_name="剑锋",
-            persona_id="jianfeng",
-            history=history,
-        )
-        assert "剑锋" in system
-        assert messages[1]["role"] == "assistant"
-        assert messages[1]["content"] == "Hi from CTO"
-
-    def test_other_persona_mapped_to_user_with_prefix(self):
-        from application.services.stakeholder.prompt_builder import build_group_llm_messages
-
-        history = [
-            {"sender_type": "user", "sender_id": "user", "content": "Hello"},
-            {"sender_type": "persona", "sender_id": "mingzhu", "content": "Budget concern"},
-        ]
-        _, messages = build_group_llm_messages(
-            persona_full_content="# CTO Profile",
-            persona_name="剑锋",
-            persona_id="jianfeng",
-            history=history,
-        )
-        assert messages[1]["role"] == "user"
-        assert "mingzhu" in messages[1]["content"]
-        assert "Budget concern" in messages[1]["content"]
-
-    def test_system_messages_excluded(self):
-        from application.services.stakeholder.prompt_builder import build_group_llm_messages
-
-        history = [
-            {"sender_type": "user", "sender_id": "user", "content": "Hello"},
-            {"sender_type": "system", "sender_id": "system", "content": "System msg"},
-            {"sender_type": "persona", "sender_id": "jianfeng", "content": "Reply"},
-        ]
-        _, messages = build_group_llm_messages(
-            persona_full_content="# CTO Profile",
-            persona_name="剑锋",
-            persona_id="jianfeng",
-            history=history,
-        )
-        assert len(messages) == 2
-        contents = [m["content"] for m in messages]
-        assert "System msg" not in contents
-
-    def test_user_messages_remain_user_role(self):
-        from application.services.stakeholder.prompt_builder import build_group_llm_messages
-
-        history = [
-            {"sender_type": "user", "sender_id": "user", "content": "Question?"},
-        ]
-        _, messages = build_group_llm_messages(
-            persona_full_content="# CTO",
-            persona_name="剑锋",
-            persona_id="jianfeng",
-            history=history,
-        )
-        assert messages[0]["role"] == "user"
-        assert messages[0]["content"] == "（用户发言）Question?"
 
 
 # ---------------------------------------------------------------------------

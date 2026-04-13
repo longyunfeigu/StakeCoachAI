@@ -18,10 +18,15 @@ from typing import Any
 # 6 canonical happy-path event types (order matters)
 BUILD_WORKSPACE_READY = "workspace_ready"
 BUILD_AGENT_TOOL_USE = "agent_tool_use"
+BUILD_AGENT_MESSAGE = "agent_message"
 BUILD_PARSE_DONE = "parse_done"
 BUILD_ADVERSARIALIZE_START = "adversarialize_start"
 BUILD_ADVERSARIALIZE_DONE = "adversarialize_done"
 BUILD_PERSIST_DONE = "persist_done"
+
+# Enhancement mode types (incremental persona enhancement)
+BUILD_ENHANCEMENT_START = "enhancement_start"
+BUILD_ENHANCEMENT_MERGE = "enhancement_merge"
 
 # Auxiliary types (emitted by Story 2.5 API layer; listed here for single source of truth)
 BUILD_HEARTBEAT = "heartbeat"
@@ -30,10 +35,13 @@ BUILD_ERROR = "error"
 BUILD_EVENT_TYPES: tuple[str, ...] = (
     BUILD_WORKSPACE_READY,
     BUILD_AGENT_TOOL_USE,
+    BUILD_AGENT_MESSAGE,
     BUILD_PARSE_DONE,
     BUILD_ADVERSARIALIZE_START,
     BUILD_ADVERSARIALIZE_DONE,
     BUILD_PERSIST_DONE,
+    BUILD_ENHANCEMENT_START,
+    BUILD_ENHANCEMENT_MERGE,
     BUILD_HEARTBEAT,
     BUILD_ERROR,
 )
@@ -50,7 +58,8 @@ class BuildEvent:
         ts: unix timestamp in seconds (float).
         data: event-specific payload; fields depend on ``type``:
             - workspace_ready: {"user_id", "workspace_path"}
-            - agent_tool_use: {"tool_uses": [...]}
+            - agent_tool_use: {"tool_uses": [...], "phase": str|null}
+            - agent_message: {"text": str, "summary": str}
             - parse_done: {"persona_id", "claims"}
             - adversarialize_start: {}
             - adversarialize_done: {"hostile_applied": bool}
@@ -68,7 +77,10 @@ class BuildEvent:
 __all__ = [
     "BUILD_ADVERSARIALIZE_DONE",
     "BUILD_ADVERSARIALIZE_START",
+    "BUILD_AGENT_MESSAGE",
     "BUILD_AGENT_TOOL_USE",
+    "BUILD_ENHANCEMENT_MERGE",
+    "BUILD_ENHANCEMENT_START",
     "BUILD_ERROR",
     "BUILD_EVENT_TYPES",
     "BUILD_HEARTBEAT",

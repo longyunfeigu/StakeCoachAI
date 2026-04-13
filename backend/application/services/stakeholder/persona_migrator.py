@@ -9,9 +9,8 @@
 - 异步编排 (`migrate_one`, `run_migration`): 调度 LLM + Repository，供 CLI 脚本使用
 
 AC 映射:
-- AC1 幂等: run_migration 里 schema_version=2 直接 skip
+- AC1 幂等: run_migration skip already-migrated personas
 - AC2 LLM → 5-layer JSON: migrate_one + parse_llm_json + build_persona_v2
-- AC3 legacy_content: build_persona_v2 赋值，full_content 保持不变
 - AC4 失败不阻塞: run_migration try/except 每条独立
 - AC5 --dry-run: migrate_one + run_migration 双层拦截
 - AC6 汇总: MigrationReport + print_report
@@ -130,7 +129,6 @@ def parse_llm_json(raw: str) -> dict:
 def build_persona_v2(v1: Persona, llm_data: dict) -> Persona:
     """Compose a v2 Persona by merging v1 identity fields with LLM-extracted 5-layer JSON.
 
-    Preserves v1.full_content unchanged; copies it into legacy_content.
     Raises DomainValidationException (from Evidence.__post_init__) if layer is invalid.
     """
     hard_rules = [HardRule(**r) for r in llm_data.get("hard_rules") or []]
@@ -173,7 +171,6 @@ def build_persona_v2(v1: Persona, llm_data: dict) -> Persona:
         organization_id=v1.organization_id,
         team_id=v1.team_id,
         profile_summary=v1.profile_summary,
-        full_content=v1.full_content,  # unchanged per AC3
         parse_status=v1.parse_status,
         voice_id=v1.voice_id,
         voice_speed=v1.voice_speed,
@@ -184,8 +181,6 @@ def build_persona_v2(v1: Persona, llm_data: dict) -> Persona:
         decision=decision,
         interpersonal=interpersonal,
         evidence_citations=evidence_citations,
-        schema_version=2,
-        legacy_content=v1.full_content,  # AC3: preserve markdown
         source_materials=[f"{v1.id}-markdown"],
     )
 
@@ -216,7 +211,7 @@ async def migrate_one(
     - On LLM exception / parse error: raise MigrationError
     """
     if dry_run:
-        logger.info("migrate_one_dry_run", persona_id=v1.id, bytes=len(v1.full_content))
+        logger.info("migrate_one_dry_run", persona_id=v1.id)
         return MigrationOutcome(status="dry_run")
 
     messages = [
@@ -228,7 +223,7 @@ async def migrate_one(
                 f"name: {v1.name}\n"
                 f"role: {v1.role}\n\n"
                 "---\n"
-                f"{v1.full_content}"
+                f"{v1.profile_summary}"
             ),
         ),
     ]
@@ -254,9 +249,9 @@ async def run_migration(
     """Orchestrate migration across DB v1 records + disk markdown personas.
 
     Strategy:
-    - Scan DB for v1 + v2 records
-    - Build merged map by persona_id (DB takes priority for v1; disk fills gaps)
-    - Skip records already at schema_version=2
+    - Scan DB for existing records
+    - Build merged map by persona_id (DB takes priority; disk fills gaps)
+    - Skip records already with structured_profile
     - For each remaining, call migrate_one; persist v2 on success; record error on failure
     """
     report = MigrationReport()
@@ -265,21 +260,17 @@ async def run_migration(
     all_db = await repo.list_all()
     db_by_id: dict[str, Persona] = {p.id: p for p in all_db}
 
-    # Build to-process list: DB v1 wins over disk; disk fills gaps; v2 is skipped outright
+    # Build to-process list: DB wins over disk; disk fills gaps; already-structured skipped
     to_process_by_id: dict[str, Persona] = {}
     for p in disk_personas:
         if p.id not in db_by_id:
             to_process_by_id[p.id] = p
     for p in all_db:
-        if p.schema_version == 1:
-            to_process_by_id[p.id] = p  # DB v1 takes priority over disk if same id
-        # schema_version=2 → skipped (counted below)
-
-    # Count already-v2 skips (neither called LLM nor saved)
-    for p in all_db:
-        if p.schema_version == 2:
+        if not p.hard_rules and p.identity is None:
+            to_process_by_id[p.id] = p  # not yet structured
+        else:
             report.skipped += 1
-            logger.info("migrate_skip_v2", persona_id=p.id)
+            logger.info("migrate_skip_structured", persona_id=p.id)
 
     # Process in stable order (by id)
     for persona_id in sorted(to_process_by_id.keys()):
@@ -288,7 +279,6 @@ async def run_migration(
             outcome = await migrate_one(v1, llm, prompt=prompt, dry_run=dry_run)
         except MigrationError as exc:
             logger.warning("migrate_failed", persona_id=persona_id, error=str(exc))
-            await _record_failure(repo, v1, str(exc))
             report.failed += 1
             continue
         except Exception as exc:  # e.g. DomainValidationException
@@ -297,15 +287,13 @@ async def run_migration(
                 persona_id=persona_id,
                 error=f"{type(exc).__name__}: {exc}",
             )
-            await _record_failure(repo, v1, f"{type(exc).__name__}: {exc}")
             report.failed += 1
             continue
 
         if outcome.status == "dry_run":
             report.skipped += 1
             print(
-                f"[DRY-RUN] will migrate: persona_id={persona_id} "
-                f"markdown_bytes={len(v1.full_content)}"
+                f"[DRY-RUN] will migrate: persona_id={persona_id}"
             )
             continue
 
@@ -315,20 +303,6 @@ async def run_migration(
         logger.info("migrate_success", persona_id=persona_id)
 
     return report
-
-
-async def _record_failure(repo, v1: Persona, error: str) -> None:
-    """Best-effort: record migration error without raising."""
-    try:
-        await repo.save_migration_error(
-            v1.id,
-            error,
-            legacy_markdown=v1.full_content,
-            name=v1.name,
-            role=v1.role,
-        )
-    except Exception as exc:  # pragma: no cover - defensive
-        logger.error("migrate_save_error_failed", persona_id=v1.id, error=str(exc))
 
 
 def print_report(report: MigrationReport) -> None:

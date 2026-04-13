@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import asyncio
 import json
-from dataclasses import dataclass
 
 import pytest
 
@@ -63,21 +62,31 @@ def test_format_sse():
 # ---------------------------------------------------------------------------
 
 
-@dataclass
-class FakePersona:
-    id: str = "jianfeng"
-    name: str = "剑锋"
-    role: str = "CTO"
-    avatar_color: str = "#f00"
-    full_content: str = "# 剑锋\nCTO."
-    profile_summary: str = "CTO"
-    parse_status: str = "ok"
+from domain.stakeholder.persona_entity import (
+    DecisionPattern,
+    ExpressionStyle,
+    HardRule,
+    IdentityProfile,
+    InterpersonalStyle,
+    Persona,
+)
+
+
+def _make_persona(id: str, name: str, role: str = "CTO") -> Persona:
+    return Persona(
+        id=id, name=name, role=role,
+        hard_rules=[HardRule(statement="test rule", severity="medium")],
+        identity=IdentityProfile(background="bg", core_values=["v1"], hidden_agenda=None),
+        expression=ExpressionStyle(tone="formal", catchphrases=["test"], interruption_tendency="low"),
+        decision=DecisionPattern(style="analytical", risk_tolerance="medium", typical_questions=["why?"]),
+        interpersonal=InterpersonalStyle(authority_mode="direct", triggers=["delay"], emotion_states=["neutral"]),
+    )
 
 
 class FakePersonaLoader:
     def get_persona(self, pid):
         if pid == "jianfeng":
-            return FakePersona()
+            return _make_persona("jianfeng", "剑锋")
         return None
 
 

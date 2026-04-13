@@ -29,14 +29,6 @@ class PersonaNotFoundError(Exception):
     """Raised when the target persona id does not exist in the v2 repo."""
 
 
-class PersonaNotV2Error(Exception):
-    """Raised when the target persona is still schema_version=1 (legacy markdown).
-
-    The v2 editor cannot patch v1 personas — callers must either migrate first
-    (scripts/migrate_personas_to_v2.py) or regenerate via PersonaBuilderService.
-    """
-
-
 class PersonaV2Service:
     """Application service for the 5-layer persona editor."""
 
@@ -63,8 +55,6 @@ class PersonaV2Service:
             if result is None:
                 raise PersonaNotFoundError(persona_id)
             persona, evidence = result
-            if persona.schema_version < 2:
-                raise PersonaNotV2Error(persona_id)
             _apply_patch(persona, patch)
             saved = await uow.stakeholder_persona_repository.save_structured_persona(
                 persona
@@ -114,7 +104,6 @@ def _to_dto(persona: Persona, evidence: list) -> PersonaV2DTO:
         name=persona.name,
         role=persona.role,
         avatar_color=persona.avatar_color,
-        schema_version=persona.schema_version,
         hard_rules=[asdict(r) for r in persona.hard_rules],
         identity=asdict(persona.identity) if persona.identity else None,
         expression=asdict(persona.expression) if persona.expression else None,

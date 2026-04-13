@@ -15,7 +15,6 @@ from application.services.stakeholder.dto import (
 )
 from application.services.stakeholder.persona_v2_service import (
     PersonaNotFoundError,
-    PersonaNotV2Error,
     PersonaV2Service,
 )
 from domain.stakeholder.persona_entity import (
@@ -49,7 +48,6 @@ def _make_v2_persona() -> Persona:
                 layer="expression",
             )
         ],
-        schema_version=2,
         source_materials=["mat-1"],
     )
 
@@ -102,7 +100,6 @@ async def test_get_v2_returns_full_dto() -> None:
     dto = await svc.get_v2("cfo")
 
     assert dto.id == "cfo"
-    assert dto.schema_version == 2
     assert dto.identity is not None and dto.identity.background == "会计师"
     assert len(dto.hard_rules) == 1
     assert dto.hard_rules[0].statement == "预算超支必报"
@@ -140,15 +137,6 @@ async def test_patch_v2_partial_update() -> None:
     assert len(dto.evidence) == 1
     # Save was called
     assert len(repo.saved) == 1
-
-
-@pytest.mark.asyncio
-async def test_patch_v2_rejects_v1_persona() -> None:
-    v1 = Persona(id="old", name="Legacy", role="x", full_content="# md", schema_version=1)
-    factory, _ = _uow_factory_for(v1)
-    svc = PersonaV2Service(factory)
-    with pytest.raises(PersonaNotV2Error):
-        await svc.patch_v2("old", PersonaPatchV2DTO(name="x"))
 
 
 @pytest.mark.asyncio

@@ -6,8 +6,6 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-
 import pytest
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
@@ -19,6 +17,14 @@ from api.routes.stakeholder import router
 from application.ports.llm import LLMResponse
 from application.services.stakeholder.chatroom_service import ChatRoomApplicationService
 from core.exceptions import register_exception_handlers
+from domain.stakeholder.persona_entity import (
+    DecisionPattern,
+    ExpressionStyle,
+    HardRule,
+    IdentityProfile,
+    InterpersonalStyle,
+    Persona,
+)
 from infrastructure.models.base import Base
 from infrastructure.unit_of_work import SQLAlchemyUnitOfWork
 
@@ -28,19 +34,19 @@ from infrastructure.unit_of_work import SQLAlchemyUnitOfWork
 # ---------------------------------------------------------------------------
 
 
-@dataclass
-class _FakePersona:
-    id: str = "jianfeng"
-    name: str = "剑锋"
-    role: str = "CTO"
-    avatar_color: str = "#f00"
-    full_content: str = "# 剑锋\nCTO persona."
-    profile_summary: str = "CTO"
-    parse_status: str = "ok"
+def _make_persona(id: str, name: str, role: str = "CTO") -> Persona:
+    return Persona(
+        id=id, name=name, role=role,
+        hard_rules=[HardRule(statement="test rule", severity="medium")],
+        identity=IdentityProfile(background="bg", core_values=["v1"], hidden_agenda=None),
+        expression=ExpressionStyle(tone="formal", catchphrases=["test"], interruption_tendency="low"),
+        decision=DecisionPattern(style="analytical", risk_tolerance="medium", typical_questions=["why?"]),
+        interpersonal=InterpersonalStyle(authority_mode="direct", triggers=["delay"], emotion_states=["neutral"]),
+    )
 
 
 class _StubPersonaLoader:
-    _personas = {"jianfeng": _FakePersona(), "robin": _FakePersona(id="robin", name="Robin")}
+    _personas = {"jianfeng": _make_persona("jianfeng", "剑锋"), "robin": _make_persona("robin", "Robin")}
 
     def get_persona(self, pid):
         return self._personas.get(pid)

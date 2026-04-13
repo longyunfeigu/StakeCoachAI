@@ -84,20 +84,16 @@ class Evidence:
 class Persona:
     """Stakeholder persona (聚合根)。
 
-    兼容 v1 (legacy markdown) 与 v2 (5-layer structured)：
-    - schema_version=1 时 full_content 存 markdown 全文，5 层字段为空/None
-    - schema_version=2 时 5 层字段结构化，legacy_content 可选保留原 markdown
+    v2 5-layer structured persona. All personas use the structured format.
     """
 
     id: str
     name: str
     role: str
-    # v1 fields (legacy markdown path)
     avatar_color: Optional[str] = None
     organization_id: Optional[int] = None
     team_id: Optional[int] = None
     profile_summary: str = ""
-    full_content: str = ""
     parse_status: str = "ok"  # ok | partial
     voice_id: Optional[str] = None
     voice_speed: float = 1.0
@@ -109,8 +105,6 @@ class Persona:
     decision: Optional[DecisionPattern] = None
     interpersonal: Optional[InterpersonalStyle] = None
     evidence_citations: list[Evidence] = field(default_factory=list)
-    schema_version: int = 1
-    legacy_content: Optional[str] = None
     source_materials: list[str] = field(default_factory=list)
     # Story 2.7 — 用户标 "不对" 的特征索引（按 layer 分组）。存到
     # structured_profile._metadata.rejected_features，不触发 DB schema 迁移。

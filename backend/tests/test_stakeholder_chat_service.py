@@ -6,13 +6,19 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
 from application.ports.llm import LLMChunk, LLMMessage, LLMResponse
+from domain.stakeholder.persona_entity import (
+    DecisionPattern,
+    ExpressionStyle,
+    HardRule,
+    IdentityProfile,
+    InterpersonalStyle,
+    Persona,
+)
 from infrastructure.models.base import Base
 from infrastructure.unit_of_work import SQLAlchemyUnitOfWork
 
@@ -22,20 +28,20 @@ from infrastructure.unit_of_work import SQLAlchemyUnitOfWork
 # ---------------------------------------------------------------------------
 
 
-@dataclass
-class FakePersona:
-    id: str = "jianfeng"
-    name: str = "剑锋"
-    role: str = "CTO"
-    avatar_color: str = "#f00"
-    full_content: str = "# 剑锋\n\nA seasoned CTO with strong opinions."
-    profile_summary: str = "CTO"
-    parse_status: str = "ok"
+def _make_persona(id: str = "jianfeng", name: str = "剑锋", role: str = "CTO") -> Persona:
+    return Persona(
+        id=id, name=name, role=role,
+        hard_rules=[HardRule(statement="test rule", severity="medium")],
+        identity=IdentityProfile(background="bg", core_values=["v1"], hidden_agenda=None),
+        expression=ExpressionStyle(tone="formal", catchphrases=["test"], interruption_tendency="low"),
+        decision=DecisionPattern(style="analytical", risk_tolerance="medium", typical_questions=["why?"]),
+        interpersonal=InterpersonalStyle(authority_mode="direct", triggers=["delay"], emotion_states=["neutral"]),
+    )
 
 
 class FakePersonaLoader:
-    def __init__(self, personas: dict[str, FakePersona] | None = None):
-        self._personas = personas or {"jianfeng": FakePersona()}
+    def __init__(self, personas: dict[str, Persona] | None = None):
+        self._personas = personas or {"jianfeng": _make_persona()}
 
     def get_persona(self, pid: str):
         return self._personas.get(pid)
@@ -261,7 +267,7 @@ async def test_send_message_room_not_found(session_factory):
 
 
 # ---------------------------------------------------------------------------
-# Story 2.8: v2 persona branches to build_system_prompt_v2 — catchphrase in prompt
+# Story 2.8: v2 persona branches to build_system_prompt — catchphrase in prompt
 # ---------------------------------------------------------------------------
 
 
@@ -285,7 +291,7 @@ class _CapturingLLM:
 @pytest.mark.asyncio
 async def test_v2_persona_prompts_use_5_layer_builder(session_factory):
     """Story 2.8 AC5/AC6: a v2 persona's system prompt must include Expression
-    catchphrases (proves build_system_prompt_v2 was chosen over markdown path)."""
+    catchphrases (proves build_system_prompt was chosen over markdown path)."""
     from application.services.stakeholder.stakeholder_chat_service import (
         StakeholderChatService,
     )
@@ -300,7 +306,6 @@ async def test_v2_persona_prompts_use_5_layer_builder(session_factory):
         id="cfo",
         name="CFO",
         role="首席财务官",
-        schema_version=2,
         hard_rules=[HardRule(statement="预算超支必报", severity="critical")],
         identity=IdentityProfile(background="20 年会计", hidden_agenda="裁员 15%"),
         expression=ExpressionStyle(

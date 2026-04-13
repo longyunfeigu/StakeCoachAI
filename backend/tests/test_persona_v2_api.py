@@ -22,7 +22,6 @@ from application.services.stakeholder.dto import (
 )
 from application.services.stakeholder.persona_v2_service import (
     PersonaNotFoundError,
-    PersonaNotV2Error,
 )
 from core.exceptions import register_exception_handlers
 
@@ -35,7 +34,6 @@ class _StubV2Service:
                 name="CFO",
                 role="首席财务官",
                 avatar_color="#123",
-                schema_version=2,
                 hard_rules=[HardRuleDTO(statement="预算超支必报", severity="critical")],
                 identity=IdentityDTO(background="会计师", core_values=["成本"]),
                 expression=ExpressionDTO(tone="严谨", catchphrases=["数字会说话"]),
@@ -54,7 +52,6 @@ class _StubV2Service:
                 source_materials=["m1"],
             ),
         }
-        self._v1_ids = {"legacy"}
 
     async def get_v2(self, persona_id: str) -> PersonaV2DTO:
         if persona_id not in self._store:
@@ -62,8 +59,6 @@ class _StubV2Service:
         return self._store[persona_id]
 
     async def patch_v2(self, persona_id: str, patch: PersonaPatchV2DTO) -> PersonaV2DTO:
-        if persona_id in self._v1_ids:
-            raise PersonaNotV2Error(persona_id)
         if persona_id not in self._store:
             raise PersonaNotFoundError(persona_id)
         existing = self._store[persona_id]
@@ -107,7 +102,6 @@ async def test_get_v2_happy(client) -> None:
         assert resp.status_code == 200
         body = resp.json()
         assert body["data"]["id"] == "cfo"
-        assert body["data"]["schema_version"] == 2
         assert len(body["data"]["hard_rules"]) == 1
         assert len(body["data"]["evidence"]) == 1
 
@@ -139,14 +133,3 @@ async def test_patch_v2_partial(client) -> None:
         assert body["data"]["role"] == "首席财务官"
 
 
-@pytest.mark.asyncio
-async def test_patch_v2_rejects_v1(client) -> None:
-    ac, _ = client
-    async with ac as c:
-        resp = await c.patch(
-            "/api/v1/stakeholder/personas/legacy/v2",
-            json={"name": "x"},
-        )
-        # Project's exception handler reshapes detail, but status code is
-        # what clients act on. 409 is the v1-reject contract.
-        assert resp.status_code == 409

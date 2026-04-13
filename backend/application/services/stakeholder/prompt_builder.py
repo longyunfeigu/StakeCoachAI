@@ -1,8 +1,8 @@
-# input: persona full_content, 对话历史, is_mentioned 标记, scenario_context 场景上下文, context_summary 压缩摘要
-# output: build_llm_messages() 私聊 prompt, build_group_llm_messages() 群聊 prompt, build_compressed_llm_messages() / build_compressed_group_llm_messages() 三区压缩 prompt, build_system_prompt_v2() + build_compressed_llm_messages_v2() + build_compressed_group_llm_messages_v2() (Story 2.8)
+# input: Persona (5-layer structured), 对话历史, is_mentioned 标记, scenario_context, context_summary
+# output: build_system_prompt / build_compressed_llm_messages / build_compressed_group_llm_messages
 # owner: wanhua.gu
-# pos: 应用层 - 利益相关者对话 prompt 构建器（私聊 + 群聊 + 三区压缩）；一旦我被更新，务必更新我的开头注释以及所属文件夹的md
-"""Build LLM messages from persona profile and conversation history."""
+# pos: 应用层 - 利益相关者对话 prompt 构建器（5-layer 结构化）
+"""Build LLM messages from 5-layer structured personas and conversation history."""
 
 from __future__ import annotations
 
@@ -121,110 +121,6 @@ def _append_emotion_instruction(system: str) -> str:
     return system + _EMOTION_INSTRUCTION
 
 
-def build_llm_messages(
-    *,
-    persona_full_content: str,
-    persona_name: str,
-    history: list[dict],
-    scenario_context: str | None = None,
-    org_context: str | None = None,
-) -> tuple[str, list[dict]]:
-    """Build system prompt and message list for LLM call.
-
-    Args:
-        persona_full_content: Full markdown content of the persona file.
-        persona_name: Display name of the persona.
-        history: List of dicts with 'sender_type' and 'content' keys.
-        org_context: Pre-built organization context block.
-
-    Returns:
-        (system_prompt, messages) where messages use 'role'/'content' format.
-        sender_type 'persona' maps to 'assistant', 'system' messages are excluded.
-    """
-    system = _SYSTEM_TEMPLATE.format(
-        name=persona_name,
-        persona_content=persona_full_content,
-    )
-    system = _append_org_context(system, org_context)
-    system += _ROLE_BEHAVIOR_INSTRUCTION
-    system = _append_scenario_context(system, scenario_context)
-    system = _append_emotion_instruction(system)
-
-    messages = []
-    for msg in history:
-        sender = msg["sender_type"]
-        if sender == "system":
-            continue
-        role = "assistant" if sender == "persona" else "user"
-        messages.append({"role": role, "content": msg["content"]})
-
-    return system, messages
-
-
-def build_group_llm_messages(
-    *,
-    persona_full_content: str,
-    persona_name: str,
-    persona_id: str,
-    history: list[dict],
-    is_mentioned: bool = False,
-    scenario_context: str | None = None,
-    org_context: str | None = None,
-) -> tuple[str, list[dict]]:
-    """Build prompt for a persona in a group chat context.
-
-    Unlike the private-chat variant, this distinguishes between the current
-    persona's own messages (→ assistant) and other personas' messages
-    (→ user with a ``[sender_id]: ...`` prefix so the model knows who spoke).
-
-    Args:
-        persona_full_content: Full markdown content of the persona file.
-        persona_name: Display name of the persona.
-        persona_id: ID of the current persona being prompted.
-        history: List of dicts with 'sender_type', 'sender_id', and 'content'.
-        is_mentioned: Whether the user @mentioned this persona directly.
-        org_context: Pre-built organization context block.
-
-    Returns:
-        (system_prompt, messages) where messages use 'role'/'content' format.
-    """
-    system = _GROUP_SYSTEM_TEMPLATE.format(
-        name=persona_name,
-        persona_content=persona_full_content,
-    )
-    system = _append_org_context(system, org_context)
-    system += _ROLE_BEHAVIOR_INSTRUCTION
-    system = _append_scenario_context(system, scenario_context)
-    system = _append_emotion_instruction(system)
-
-    if is_mentioned:
-        system += (
-            "\n\n注意：用户在群聊中直接 @了你，表示特别想听你的观点。"
-            "请优先、具体地回应用户的问题。"
-        )
-
-    messages = []
-    for msg in history:
-        sender_type = msg["sender_type"]
-        if sender_type == "system":
-            continue
-
-        sender_id = msg.get("sender_id", "")
-        content = msg["content"]
-
-        if sender_type == "persona" and sender_id == persona_id:
-            # Current persona's own messages → assistant
-            messages.append({"role": "assistant", "content": content})
-        elif sender_type == "persona":
-            # Other persona's messages → user with clear label
-            messages.append({"role": "user", "content": f"（其他角色 {sender_id} 发言）{content}"})
-        else:
-            # User messages → user with label to distinguish from persona messages
-            messages.append({"role": "user", "content": f"（用户发言）{content}"})
-
-    return system, messages
-
-
 def _inject_summary(messages: list[dict], context_summary: str | None) -> None:
     """Insert compressed history as a user/assistant pair at the start of messages.
 
@@ -248,101 +144,9 @@ def _inject_summary(messages: list[dict], context_summary: str | None) -> None:
         )
 
 
-def build_compressed_llm_messages(
-    *,
-    persona_full_content: str,
-    persona_name: str,
-    history: list[dict],
-    context_summary: str | None = None,
-    context_window_size: int = 20,
-    scenario_context: str | None = None,
-    org_context: str | None = None,
-) -> tuple[str, list[dict]]:
-    """Build three-zone prompt: stable system + compressed history + recent window.
-
-    Zone 1 (system prompt) is identical to build_llm_messages — stable for caching.
-    Zone 2 inserts context_summary as a user/assistant pair.
-    Zone 3 uses only the last context_window_size messages.
-    """
-    system = _SYSTEM_TEMPLATE.format(
-        name=persona_name,
-        persona_content=persona_full_content,
-    )
-    system = _append_org_context(system, org_context)
-    system += _ROLE_BEHAVIOR_INSTRUCTION
-    system = _append_scenario_context(system, scenario_context)
-    system = _append_emotion_instruction(system)
-
-    # Zone 3: recent window only
-    recent = history[-context_window_size:] if len(history) > context_window_size else history
-    messages = []
-    for msg in recent:
-        sender = msg["sender_type"]
-        if sender == "system":
-            continue
-        role = "assistant" if sender == "persona" else "user"
-        messages.append({"role": role, "content": msg["content"]})
-
-    # Zone 2: prepend compressed summary
-    _inject_summary(messages, context_summary)
-
-    return system, messages
-
-
-def build_compressed_group_llm_messages(
-    *,
-    persona_full_content: str,
-    persona_name: str,
-    persona_id: str,
-    history: list[dict],
-    context_summary: str | None = None,
-    context_window_size: int = 20,
-    is_mentioned: bool = False,
-    scenario_context: str | None = None,
-    org_context: str | None = None,
-) -> tuple[str, list[dict]]:
-    """Build three-zone group-chat prompt with compressed history."""
-    system = _GROUP_SYSTEM_TEMPLATE.format(
-        name=persona_name,
-        persona_content=persona_full_content,
-    )
-    system = _append_org_context(system, org_context)
-    system += _ROLE_BEHAVIOR_INSTRUCTION
-    system = _append_scenario_context(system, scenario_context)
-    system = _append_emotion_instruction(system)
-
-    if is_mentioned:
-        system += (
-            "\n\n注意：用户在群聊中直接 @了你，表示特别想听你的观点。"
-            "请优先、具体地回应用户的问题。"
-        )
-
-    # Zone 3: recent window only
-    recent = history[-context_window_size:] if len(history) > context_window_size else history
-    messages = []
-    for msg in recent:
-        sender_type = msg["sender_type"]
-        if sender_type == "system":
-            continue
-
-        sender_id = msg.get("sender_id", "")
-        content = msg["content"]
-
-        if sender_type == "persona" and sender_id == persona_id:
-            messages.append({"role": "assistant", "content": content})
-        elif sender_type == "persona":
-            messages.append({"role": "user", "content": f"（其他角色 {sender_id} 发言）{content}"})
-        else:
-            messages.append({"role": "user", "content": f"（用户发言）{content}"})
-
-    # Zone 2: prepend compressed summary
-    _inject_summary(messages, context_summary)
-
-    return system, messages
-
 
 # ---------------------------------------------------------------------------
-# Story 2.8 — v2 5-layer system prompt builder
+# 5-layer system prompt builder + compressed message builders
 # ---------------------------------------------------------------------------
 
 
@@ -438,7 +242,7 @@ def _format_hostile(persona) -> str:
     return "\n".join(lines)
 
 
-def build_system_prompt_v2(
+def build_system_prompt(
     persona,
     *,
     scenario_context: str | None = None,
@@ -478,7 +282,7 @@ def build_system_prompt_v2(
     return system
 
 
-def build_compressed_llm_messages_v2(
+def build_compressed_llm_messages(
     *,
     persona,
     history: list[dict],
@@ -488,7 +292,7 @@ def build_compressed_llm_messages_v2(
     org_context: str | None = None,
 ) -> tuple[str, list[dict]]:
     """v2 variant of build_compressed_llm_messages (Story 2.8)."""
-    system = build_system_prompt_v2(
+    system = build_system_prompt(
         persona,
         scenario_context=scenario_context,
         org_context=org_context,
@@ -508,7 +312,7 @@ def build_compressed_llm_messages_v2(
     return system, messages
 
 
-def build_compressed_group_llm_messages_v2(
+def build_compressed_group_llm_messages(
     *,
     persona,
     persona_id: str,
@@ -520,7 +324,7 @@ def build_compressed_group_llm_messages_v2(
     org_context: str | None = None,
 ) -> tuple[str, list[dict]]:
     """v2 variant of build_compressed_group_llm_messages (Story 2.8)."""
-    system = build_system_prompt_v2(
+    system = build_system_prompt(
         persona,
         scenario_context=scenario_context,
         org_context=org_context,

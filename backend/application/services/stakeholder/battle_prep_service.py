@@ -267,16 +267,8 @@ class BattlePrepService:
         persona = self._persona_loader.get_persona(persona_id)
         scenario_context = ""
         training_points = ""
-        if persona and persona.full_content:
-            content = persona.full_content
-            if "## 对话场景" in content:
-                sc_section = content.split("## 对话场景")[1].split("##")[0]
-                scenario_context = sc_section.strip()
-            if "## 训练重点" in content:
-                tp_section = content.split("## 训练重点")[1].split("##")[0]
-                training_points = tp_section.strip()
-            if not scenario_context:
-                scenario_context = f"与 {persona.name}（{persona.role}）的备战对话"
+        if persona:
+            scenario_context = f"与 {persona.name}（{persona.role}）的备战对话"
 
         prompt = _CHEAT_SHEET_PROMPT.format(
             scenario_context=scenario_context,
