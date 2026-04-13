@@ -1,5 +1,5 @@
 # input: persona full_content, 对话历史, is_mentioned 标记, scenario_context 场景上下文, context_summary 压缩摘要
-# output: build_llm_messages() 私聊 prompt, build_group_llm_messages() 群聊 prompt, build_compressed_llm_messages() / build_compressed_group_llm_messages() 三区压缩 prompt
+# output: build_llm_messages() 私聊 prompt, build_group_llm_messages() 群聊 prompt, build_compressed_llm_messages() / build_compressed_group_llm_messages() 三区压缩 prompt, build_system_prompt_v2() + build_compressed_llm_messages_v2() + build_compressed_group_llm_messages_v2() (Story 2.8)
 # owner: wanhua.gu
 # pos: 应用层 - 利益相关者对话 prompt 构建器（私聊 + 群聊 + 三区压缩）；一旦我被更新，务必更新我的开头注释以及所属文件夹的md
 """Build LLM messages from persona profile and conversation history."""
@@ -338,4 +338,210 @@ def build_compressed_group_llm_messages(
     # Zone 2: prepend compressed summary
     _inject_summary(messages, context_summary)
 
+    return system, messages
+
+
+# ---------------------------------------------------------------------------
+# Story 2.8 — v2 5-layer system prompt builder
+# ---------------------------------------------------------------------------
+
+
+def _format_hard_rules(persona) -> str:
+    if not persona.hard_rules:
+        return ""
+    lines = []
+    for r in persona.hard_rules:
+        sev = f" [severity: {r.severity}]" if r.severity else ""
+        lines.append(f"- {r.statement}{sev}")
+    return "## Hard Rules（底线，绝不退让）\n" + "\n".join(lines)
+
+
+def _format_identity(persona) -> str:
+    idn = persona.identity
+    if idn is None:
+        return ""
+    parts = ["## Identity（身份背景）"]
+    if idn.background:
+        parts.append(f"背景：{idn.background}")
+    if idn.core_values:
+        parts.append("核心价值：" + "、".join(idn.core_values))
+    return "\n".join(parts) if len(parts) > 1 else ""
+
+
+def _format_expression(persona) -> str:
+    ex = persona.expression
+    if ex is None:
+        return ""
+    parts = ["## Expression（表达风格）"]
+    if ex.tone:
+        parts.append(f"语气：{ex.tone}")
+    if ex.catchphrases:
+        parts.append("常用口头禅（请在对话里自然使用这些表达）：")
+        for cp in ex.catchphrases:
+            parts.append(f"- 「{cp}」")
+    if ex.interruption_tendency:
+        parts.append(f"打断倾向：{ex.interruption_tendency}")
+    return "\n".join(parts) if len(parts) > 1 else ""
+
+
+def _format_decision(persona) -> str:
+    dc = persona.decision
+    if dc is None:
+        return ""
+    parts = ["## Decision（决策模式）"]
+    if dc.style:
+        parts.append(f"决策风格：{dc.style}")
+    if dc.risk_tolerance:
+        parts.append(f"风险容忍度：{dc.risk_tolerance}")
+    if dc.typical_questions:
+        parts.append("典型追问：")
+        for q in dc.typical_questions:
+            parts.append(f"- {q}")
+    return "\n".join(parts) if len(parts) > 1 else ""
+
+
+def _format_interpersonal(persona) -> str:
+    ip = persona.interpersonal
+    if ip is None:
+        return ""
+    parts = ["## Interpersonal（人际互动）"]
+    if ip.authority_mode:
+        parts.append(f"权威模式：{ip.authority_mode}")
+    if ip.triggers:
+        parts.append("触发器（遇到这些会强烈反应）：" + "、".join(ip.triggers))
+    if ip.emotion_states:
+        parts.append("情绪状态：" + "、".join(ip.emotion_states))
+    return "\n".join(parts) if len(parts) > 1 else ""
+
+
+def _format_hostile(persona) -> str:
+    """Assemble adversarialized fields that must NOT be exposed directly.
+
+    Sources:
+    - identity.hidden_agenda
+    - hard_rules with severity == "critical"
+    """
+    hidden_agenda = persona.identity.hidden_agenda if persona.identity else None
+    critical_rules = [
+        r for r in (persona.hard_rules or []) if (r.severity or "").lower() == "critical"
+    ]
+    if not hidden_agenda and not critical_rules:
+        return ""
+    lines = [
+        "## 对抗化字段（不轻易暴露）",
+        "以下是你的内在驱动，不要在对话里直接说出来，但所有判断和决策都要围绕它们。",
+    ]
+    if hidden_agenda:
+        lines.append(f"- 【隐藏议程】{hidden_agenda}")
+    for r in critical_rules:
+        lines.append(f"- 【critical 底线】{r.statement}")
+    return "\n".join(lines)
+
+
+def build_system_prompt_v2(
+    persona,
+    *,
+    scenario_context: str | None = None,
+    org_context: str | None = None,
+    group_mode: bool = False,
+    is_mentioned: bool = False,
+) -> str:
+    """Build a 5-layer system prompt from a v2 Persona (Story 2.8).
+
+    Layers appear in order: Hard Rules → Identity → Expression → Decision →
+    Interpersonal → (optional) Hostile block, followed by the same
+    role-behavior / org / scenario / emotion blocks that v1 uses.
+    """
+    template = _GROUP_SYSTEM_TEMPLATE if group_mode else _SYSTEM_TEMPLATE
+    # Build the 5-layer body
+    layer_blocks = [
+        _format_hard_rules(persona),
+        _format_identity(persona),
+        _format_expression(persona),
+        _format_decision(persona),
+        _format_interpersonal(persona),
+        _format_hostile(persona),
+    ]
+    body = "\n\n".join(b for b in layer_blocks if b)
+
+    system = template.format(name=persona.name, persona_content=body)
+    system = _append_org_context(system, org_context)
+    system += _ROLE_BEHAVIOR_INSTRUCTION
+    system = _append_scenario_context(system, scenario_context)
+    system = _append_emotion_instruction(system)
+
+    if group_mode and is_mentioned:
+        system += (
+            "\n\n注意：用户在群聊中直接 @了你，表示特别想听你的观点。"
+            "请优先、具体地回应用户的问题。"
+        )
+    return system
+
+
+def build_compressed_llm_messages_v2(
+    *,
+    persona,
+    history: list[dict],
+    context_summary: str | None = None,
+    context_window_size: int = 20,
+    scenario_context: str | None = None,
+    org_context: str | None = None,
+) -> tuple[str, list[dict]]:
+    """v2 variant of build_compressed_llm_messages (Story 2.8)."""
+    system = build_system_prompt_v2(
+        persona,
+        scenario_context=scenario_context,
+        org_context=org_context,
+        group_mode=False,
+    )
+
+    recent = history[-context_window_size:] if len(history) > context_window_size else history
+    messages: list[dict] = []
+    for msg in recent:
+        sender = msg["sender_type"]
+        if sender == "system":
+            continue
+        role = "assistant" if sender == "persona" else "user"
+        messages.append({"role": role, "content": msg["content"]})
+
+    _inject_summary(messages, context_summary)
+    return system, messages
+
+
+def build_compressed_group_llm_messages_v2(
+    *,
+    persona,
+    persona_id: str,
+    history: list[dict],
+    context_summary: str | None = None,
+    context_window_size: int = 20,
+    is_mentioned: bool = False,
+    scenario_context: str | None = None,
+    org_context: str | None = None,
+) -> tuple[str, list[dict]]:
+    """v2 variant of build_compressed_group_llm_messages (Story 2.8)."""
+    system = build_system_prompt_v2(
+        persona,
+        scenario_context=scenario_context,
+        org_context=org_context,
+        group_mode=True,
+        is_mentioned=is_mentioned,
+    )
+
+    recent = history[-context_window_size:] if len(history) > context_window_size else history
+    messages: list[dict] = []
+    for msg in recent:
+        sender_type = msg["sender_type"]
+        if sender_type == "system":
+            continue
+        sender_id = msg.get("sender_id", "")
+        content = msg["content"]
+        if sender_type == "persona" and sender_id == persona_id:
+            messages.append({"role": "assistant", "content": content})
+        elif sender_type == "persona":
+            messages.append({"role": "user", "content": f"（其他角色 {sender_id} 发言）{content}"})
+        else:
+            messages.append({"role": "user", "content": f"（用户发言）{content}"})
+
+    _inject_summary(messages, context_summary)
     return system, messages
