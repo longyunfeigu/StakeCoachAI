@@ -510,3 +510,65 @@
     /* hide if not in sheet — the component already switches to sheet here */
   }
 }
+
+
+/* ============================================================ */
+/* Floating CTA Bar                                              */
+/* ============================================================ */
+
+.cta {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 24px;
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: 12px 16px;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  z-index: 40;
+}
+
+.btn-ghost {
+  background: transparent;
+  border: 1px solid var(--border);
+  padding: 10px 16px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.btn-ghost:not(:disabled):hover {
+  color: var(--text-primary);
+  border-color: var(--text-primary);
+}
+
+.btn-ghost:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-go {
+  background: var(--primary-gradient);
+  color: white;
+  border: none;
+  padding: 12px 22px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(45,156,111,0.32);
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.btn-go:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 22px rgba(45,156,111,0.4);
+}
