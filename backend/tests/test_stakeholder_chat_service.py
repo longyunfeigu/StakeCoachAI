@@ -258,3 +258,74 @@ async def test_send_message_room_not_found(session_factory):
     )
     with pytest.raises(BusinessException):
         await svc.send_message(99999, "Hello")
+
+
+# ---------------------------------------------------------------------------
+# Story 2.8: v2 persona branches to build_system_prompt_v2 — catchphrase in prompt
+# ---------------------------------------------------------------------------
+
+
+class _CapturingLLM:
+    """LLM stub that captures the last message list it was asked to stream."""
+
+    def __init__(self, response: str = "roger."):
+        self._response = response
+        self.last_messages: list[LLMMessage] = []
+
+    async def generate(self, messages, **kwargs):
+        self.last_messages = list(messages)
+        return LLMResponse(content=self._response, model="fake")
+
+    async def stream(self, messages, **kwargs):
+        self.last_messages = list(messages)
+        yield LLMChunk(content=self._response)
+        yield LLMChunk(content="", finish_reason="end_turn")
+
+
+@pytest.mark.asyncio
+async def test_v2_persona_prompts_use_5_layer_builder(session_factory):
+    """Story 2.8 AC5/AC6: a v2 persona's system prompt must include Expression
+    catchphrases (proves build_system_prompt_v2 was chosen over markdown path)."""
+    from application.services.stakeholder.stakeholder_chat_service import (
+        StakeholderChatService,
+    )
+    from domain.stakeholder.persona_entity import (
+        ExpressionStyle,
+        HardRule,
+        IdentityProfile,
+        Persona,
+    )
+
+    v2_persona = Persona(
+        id="cfo",
+        name="CFO",
+        role="首席财务官",
+        schema_version=2,
+        hard_rules=[HardRule(statement="预算超支必报", severity="critical")],
+        identity=IdentityProfile(background="20 年会计", hidden_agenda="裁员 15%"),
+        expression=ExpressionStyle(
+            tone="严谨",
+            catchphrases=["数字会说话"],
+            interruption_tendency="medium",
+        ),
+    )
+    loader = FakePersonaLoader(personas={"cfo": v2_persona})
+    llm = _CapturingLLM(response="roger that.")
+    room_id = await _create_room(session_factory, persona_ids=["cfo"])
+
+    svc = StakeholderChatService(
+        uow_factory=_uow_factory(session_factory),
+        persona_loader=loader,
+        llm=llm,
+    )
+    await _send_and_reply(svc, room_id, "怎么回事？")
+
+    # LLM was invoked once; first message is the system prompt.
+    assert llm.last_messages, "LLM was never called"
+    system_msg = llm.last_messages[0]
+    assert system_msg.role == "system"
+    # v2 catchphrase must be present — proves the 5-layer builder was used
+    assert "数字会说话" in system_msg.content
+    # Hostile section must be injected with the "don't expose" marker
+    assert "不要在对话里直接说出来" in system_msg.content
+    assert "裁员 15%" in system_msg.content
