@@ -1,12 +1,13 @@
 # input: SQLAlchemy AsyncSession, StakeholderPersonaModel ORM
-# output: SQLAlchemyStakeholderPersonaRepository - save_structured_persona / get_by_id / get_with_evidence / list_all
+# output: SQLAlchemyStakeholderPersonaRepository - save_structured_persona / get_by_id / get_with_evidence / list_all / save_migration_error
 # owner: wanhua.gu
-# pos: 基础设施层 - 利益相关者画像仓储 SQLAlchemy 实现 (Story 2.2)；一旦我被更新，务必更新我的开头注释以及所属文件夹的md
-"""SQLAlchemy implementation of StakeholderPersonaRepository (Story 2.2)."""
+# pos: 基础设施层 - 利益相关者画像仓储 SQLAlchemy 实现 (Story 2.2 + Story 2.3 失败回写)；一旦我被更新，务必更新我的开头注释以及所属文件夹的md
+"""SQLAlchemy implementation of StakeholderPersonaRepository (Story 2.2 + 2.3)."""
 
 from __future__ import annotations
 
 from dataclasses import asdict
+from datetime import datetime, timezone
 from typing import Optional
 
 from sqlalchemy import select
@@ -151,3 +152,45 @@ class SQLAlchemyStakeholderPersonaRepository(StakeholderPersonaRepository):
         query = query.order_by(StakeholderPersonaModel.id.asc())
         result = await self.session.execute(query)
         return [self._to_entity(m) for m in result.scalars().all()]
+
+    async def save_migration_error(
+        self,
+        persona_id: str,
+        error: str,
+        *,
+        legacy_markdown: Optional[str] = None,
+        name: str = "",
+        role: str = "",
+    ) -> None:
+        """Story 2.3 AC4: record a v1→v2 migration failure without touching schema_version.
+
+        - 不存在 → 插入 schema_version=1 stub（full_content=legacy_markdown）
+        - 已存在且 schema_version=2 → no-op（不会回退已迁移记录）
+        - 已存在且 schema_version=1 → 仅更新 structured_profile._error，不动 full_content
+        """
+        existing = await self.session.get(StakeholderPersonaModel, persona_id)
+        error_payload = {
+            "_error": error,
+            "_attempted_at": datetime.now(timezone.utc).isoformat(),
+        }
+
+        if existing is None:
+            stub = StakeholderPersonaModel(
+                id=persona_id,
+                name=name or persona_id,
+                role=role or "",
+                full_content=legacy_markdown or "",
+                legacy_content=legacy_markdown,
+                schema_version=1,
+                structured_profile=error_payload,
+            )
+            self.session.add(stub)
+        else:
+            if existing.schema_version >= 2:
+                # already migrated successfully — do not regress
+                return
+            existing.structured_profile = error_payload
+            if legacy_markdown is not None and not existing.legacy_content:
+                existing.legacy_content = legacy_markdown
+
+        await self.session.flush()

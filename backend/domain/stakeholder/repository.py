@@ -221,3 +221,24 @@ class StakeholderPersonaRepository(ABC):
     async def list_all(self, *, schema_version: Optional[int] = None) -> list[Persona]:
         """List personas, optionally filtered by schema_version."""
         ...
+
+    @abstractmethod
+    async def save_migration_error(
+        self,
+        persona_id: str,
+        error: str,
+        *,
+        legacy_markdown: Optional[str] = None,
+        name: str = "",
+        role: str = "",
+    ) -> None:
+        """Record a v1→v2 migration failure (Story 2.3 AC4).
+
+        Behaviour:
+        - 若 persona 不存在 → 插入一条 schema_version=1 的 stub 记录 (full_content=legacy_markdown)
+        - 若 persona 已存在 → 保持 schema_version 和 full_content 不变
+        - 在 structured_profile 写入 ``{"_error": error, "_attempted_at": iso}``，绝不升级 schema_version
+
+        实现方应保证此方法不抛异常即使记录已 v2（应作为 no-op 或保留原状）。
+        """
+        ...

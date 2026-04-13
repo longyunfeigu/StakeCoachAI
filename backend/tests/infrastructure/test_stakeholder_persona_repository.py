@@ -175,6 +175,99 @@ async def test_save_is_upsert(session_factory) -> None:
         assert loaded.name == "Updated Name"
 
 
+# ---------------------------------------------------------------------------
+# Story 2.3 AC4: save_migration_error
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_save_migration_error_creates_stub_when_missing(session_factory) -> None:
+    """No existing record → insert v1 stub with structured_profile._error."""
+    async with session_factory() as session:
+        repo = SQLAlchemyStakeholderPersonaRepository(session)
+        await repo.save_migration_error(
+            "missing",
+            "LLMParseError: bad json",
+            legacy_markdown="# original markdown",
+            name="缺失",
+            role="角色",
+        )
+        await session.commit()
+
+    async with session_factory() as session:
+        repo = SQLAlchemyStakeholderPersonaRepository(session)
+        loaded = await repo.get_by_id("missing")
+        assert loaded is not None
+        assert loaded.schema_version == 1
+        assert loaded.legacy_content == "# original markdown"
+        assert loaded.full_content == "# original markdown"
+        assert loaded.name == "缺失"
+        assert loaded.role == "角色"
+
+
+@pytest.mark.asyncio
+async def test_save_migration_error_preserves_existing_v1_full_content(
+    session_factory,
+) -> None:
+    """Existing v1 record → only structured_profile updated; full_content unchanged."""
+    async with session_factory() as session:
+        repo = SQLAlchemyStakeholderPersonaRepository(session)
+        v1 = Persona(
+            id="boss",
+            name="剑锋",
+            role="上级",
+            full_content="# real markdown\n\nimportant body",
+            schema_version=1,
+        )
+        await repo.save_structured_persona(v1)
+        await session.commit()
+
+    async with session_factory() as session:
+        repo = SQLAlchemyStakeholderPersonaRepository(session)
+        await repo.save_migration_error("boss", "LLM timeout")
+        await session.commit()
+
+    async with session_factory() as session:
+        repo = SQLAlchemyStakeholderPersonaRepository(session)
+        loaded = await repo.get_by_id("boss")
+        assert loaded is not None
+        assert loaded.schema_version == 1  # not bumped to 2
+        assert loaded.full_content == "# real markdown\n\nimportant body"
+
+    # Also check structured_profile via raw model query
+    async with session_factory() as session:
+        from infrastructure.models.stakeholder_persona import StakeholderPersonaModel
+
+        model = await session.get(StakeholderPersonaModel, "boss")
+        assert model is not None
+        assert isinstance(model.structured_profile, dict)
+        assert "_error" in model.structured_profile
+        assert "_attempted_at" in model.structured_profile
+
+
+@pytest.mark.asyncio
+async def test_save_migration_error_is_noop_for_v2_records(session_factory) -> None:
+    """Already-migrated v2 records must NOT be regressed by accidental error write."""
+    async with session_factory() as session:
+        repo = SQLAlchemyStakeholderPersonaRepository(session)
+        await repo.save_structured_persona(_make_v2_persona("done"))
+        await session.commit()
+
+    async with session_factory() as session:
+        repo = SQLAlchemyStakeholderPersonaRepository(session)
+        await repo.save_migration_error("done", "should be ignored")
+        await session.commit()
+
+    async with session_factory() as session:
+        repo = SQLAlchemyStakeholderPersonaRepository(session)
+        loaded = await repo.get_by_id("done")
+        assert loaded is not None
+        assert loaded.schema_version == 2
+        # structured_profile should still contain the original 5-layer JSON, not the error
+        assert loaded.identity is not None
+        assert loaded.identity.background == "会计师"
+
+
 @pytest.mark.asyncio
 async def test_list_all_filter_by_schema_version(session_factory) -> None:
     async with session_factory() as session:
