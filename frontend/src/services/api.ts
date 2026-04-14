@@ -715,3 +715,75 @@ export interface PersonaBuildRequest {
   name?: string
   role?: string
 }
+
+// ---------------------------------------------------------------------------
+// Defense Prep
+// ---------------------------------------------------------------------------
+
+export interface DefenseSession {
+  id: number
+  persona_id: string
+  scenario_type: string
+  document_title: string
+  status: 'preparing' | 'in_progress' | 'completed'
+  room_id: number | null
+  created_at: string | null
+  question_strategy?: {
+    questions: { question: string; dimension: string; difficulty: string }[]
+  }
+}
+
+export interface DefenseReport {
+  overall_score: number
+  dimension_scores: Record<string, number>
+  question_reviews: {
+    question: string
+    user_answer_summary: string
+    score: number
+    feedback: string
+    improvement: string
+  }[]
+  summary: string
+  top_improvements: string[]
+}
+
+export async function createDefenseSession(file: File, personaId: string, scenarioType: string): Promise<DefenseSession> {
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('persona_id', personaId)
+  formData.append('scenario_type', scenarioType)
+  const resp = await fetch(`${API_BASE}/defense-prep/sessions`, { method: 'POST', body: formData })
+  if (!resp.ok) {
+    const json = await resp.json().catch(() => null)
+    throw new Error(json?.message || `创建失败: ${resp.status}`)
+  }
+  const json: ApiResponse<DefenseSession> = await resp.json()
+  return json.data
+}
+
+export async function getDefenseSession(sessionId: number): Promise<DefenseSession> {
+  const resp = await fetch(`${API_BASE}/defense-prep/sessions/${sessionId}`)
+  if (!resp.ok) throw new Error(`获取会话失败: ${resp.status}`)
+  const json: ApiResponse<DefenseSession> = await resp.json()
+  return json.data
+}
+
+export async function startDefenseSession(sessionId: number): Promise<DefenseSession> {
+  const resp = await fetch(`${API_BASE}/defense-prep/sessions/${sessionId}/start`, { method: 'POST' })
+  if (!resp.ok) {
+    const json = await resp.json().catch(() => null)
+    throw new Error(json?.message || `启动失败: ${resp.status}`)
+  }
+  const json: ApiResponse<DefenseSession> = await resp.json()
+  return json.data
+}
+
+export async function getDefenseReport(sessionId: number): Promise<DefenseReport> {
+  const resp = await fetch(`${API_BASE}/defense-prep/sessions/${sessionId}/report`)
+  if (!resp.ok) {
+    const json = await resp.json().catch(() => null)
+    throw new Error(json?.message || `报告生成失败: ${resp.status}`)
+  }
+  const json: ApiResponse<DefenseReport> = await resp.json()
+  return json.data
+}
