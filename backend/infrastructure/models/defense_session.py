@@ -19,7 +19,7 @@ class DefenseSessionModel(Base):
     __table_args__ = {"comment": "答辩准备会话"}
 
     id = Column(Integer, primary_key=True, autoincrement=True, comment="主键ID")
-    persona_id = Column(String(100), nullable=False, comment="关联 Persona ID")
+    persona_ids = Column(JSON, nullable=False, comment="答辩官 Persona ID 列表 (1-5)")
     scenario_type = Column(String(50), nullable=False, comment="场景类型")
     document_summary = Column(JSON, nullable=False, comment="文档摘要 (结构化)")
     question_strategy = Column(JSON, nullable=True, comment="提问策略 (LLM 生成)")
