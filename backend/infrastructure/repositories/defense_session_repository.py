@@ -58,6 +58,7 @@ class SQLAlchemyDefenseSessionRepository(DefenseSessionRepository):
                         dimension=q.get("dimension", ""),
                         difficulty=q.get("difficulty", "basic"),
                         expected_direction=q.get("expected_direction", ""),
+                        asked_by=q.get("asked_by", ""),
                     )
                     for q in qs_data.get("questions", [])
                 ]
@@ -65,7 +66,7 @@ class SQLAlchemyDefenseSessionRepository(DefenseSessionRepository):
 
         return DefenseSession(
             id=model.id,
-            persona_id=model.persona_id,
+            persona_ids=model.persona_ids,
             scenario_type=ScenarioType(model.scenario_type),
             document_summary=summary,
             question_strategy=strategy,
@@ -93,6 +94,7 @@ class SQLAlchemyDefenseSessionRepository(DefenseSessionRepository):
                     "dimension": q.dimension,
                     "difficulty": q.difficulty,
                     "expected_direction": q.expected_direction,
+                    "asked_by": q.asked_by,
                 }
                 for q in strategy.questions
             ]
@@ -104,7 +106,7 @@ class SQLAlchemyDefenseSessionRepository(DefenseSessionRepository):
 
     async def create(self, session: DefenseSession) -> DefenseSession:
         model = DefenseSessionModel(
-            persona_id=session.persona_id,
+            persona_ids=session.persona_ids,
             scenario_type=session.scenario_type.value,
             document_summary=self._summary_to_dict(session.document_summary),
             question_strategy=(
