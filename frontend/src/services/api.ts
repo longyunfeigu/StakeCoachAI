@@ -752,7 +752,7 @@ export async function createDefenseSession(file: File, personaId: string, scenar
   formData.append('file', file)
   formData.append('persona_id', personaId)
   formData.append('scenario_type', scenarioType)
-  const resp = await fetch(`${API_BASE}/defense-prep/sessions`, { method: 'POST', body: formData })
+  const resp = await fetch(`/api/v1/defense-prep/sessions`, { method: 'POST', body: formData })
   if (!resp.ok) {
     const json = await resp.json().catch(() => null)
     throw new Error(json?.message || `创建失败: ${resp.status}`)
@@ -762,14 +762,14 @@ export async function createDefenseSession(file: File, personaId: string, scenar
 }
 
 export async function getDefenseSession(sessionId: number): Promise<DefenseSession> {
-  const resp = await fetch(`${API_BASE}/defense-prep/sessions/${sessionId}`)
+  const resp = await fetch(`/api/v1/defense-prep/sessions/${sessionId}`)
   if (!resp.ok) throw new Error(`获取会话失败: ${resp.status}`)
   const json: ApiResponse<DefenseSession> = await resp.json()
   return json.data
 }
 
 export async function startDefenseSession(sessionId: number): Promise<DefenseSession> {
-  const resp = await fetch(`${API_BASE}/defense-prep/sessions/${sessionId}/start`, { method: 'POST' })
+  const resp = await fetch(`/api/v1/defense-prep/sessions/${sessionId}/start`, { method: 'POST' })
   if (!resp.ok) {
     const json = await resp.json().catch(() => null)
     throw new Error(json?.message || `启动失败: ${resp.status}`)
@@ -779,7 +779,7 @@ export async function startDefenseSession(sessionId: number): Promise<DefenseSes
 }
 
 export async function getDefenseReport(sessionId: number): Promise<DefenseReport> {
-  const resp = await fetch(`${API_BASE}/defense-prep/sessions/${sessionId}/report`)
+  const resp = await fetch(`/api/v1/defense-prep/sessions/${sessionId}/report`)
   if (!resp.ok) {
     const json = await resp.json().catch(() => null)
     throw new Error(json?.message || `报告生成失败: ${resp.status}`)
