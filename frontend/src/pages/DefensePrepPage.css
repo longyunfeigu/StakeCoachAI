@@ -1,0 +1,521 @@
+/* ============================================================
+   DefensePrepPage — 2-step wizard (blue accent theme)
+   ============================================================ */
+
+.dp-page {
+  min-height: 100%;
+  background: var(--bg-base);
+  display: flex;
+  justify-content: center;
+  padding: 32px 16px 64px;
+}
+
+.dp-container {
+  width: 100%;
+  max-width: 640px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Back link */
+.dp-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px 0;
+  transition: color var(--transition-fast);
+  align-self: flex-start;
+}
+
+.dp-back:hover {
+  color: var(--text-primary);
+}
+
+/* Title */
+.dp-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dp-title-icon {
+  color: var(--violet);
+}
+
+.dp-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* Step indicator */
+.dp-steps {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 4px 0;
+}
+
+.dp-step-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.dp-step-dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  border: 2px solid var(--border);
+  color: var(--text-muted);
+  background: var(--bg-card);
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.dp-step-dot.active {
+  border-color: var(--violet);
+  background: var(--violet);
+  color: #fff;
+}
+
+.dp-step-dot.done {
+  border-color: var(--violet);
+  background: var(--violet-soft);
+  color: var(--violet);
+}
+
+.dp-step-label {
+  font-size: 13px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  transition: color 0.2s;
+}
+
+.dp-step-label.active {
+  color: var(--violet);
+  font-weight: 600;
+}
+
+.dp-step-line {
+  flex: 1;
+  height: 2px;
+  background: var(--border);
+  margin: 0 8px;
+  min-width: 24px;
+  transition: background 0.2s;
+}
+
+.dp-step-line.done {
+  background: var(--violet);
+}
+
+/* Card wrapper for each step */
+.dp-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.dp-hint {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+/* Section label */
+.dp-section-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* File upload area */
+.dp-upload-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 32px 24px;
+  border: 2px dashed var(--border);
+  border-radius: 10px;
+  background: var(--bg-base);
+  cursor: pointer;
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+  text-align: center;
+}
+
+.dp-upload-area:hover,
+.dp-upload-area.drag-over {
+  border-color: var(--violet);
+  background: var(--violet-soft);
+}
+
+.dp-upload-icon {
+  color: var(--text-muted);
+}
+
+.dp-upload-text {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.dp-upload-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* File selected display */
+.dp-file-selected {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--violet);
+  border-radius: 10px;
+  background: var(--violet-soft);
+}
+
+.dp-file-icon {
+  color: var(--violet);
+  flex-shrink: 0;
+}
+
+.dp-file-name {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dp-file-remove {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: color var(--transition-fast), background var(--transition-fast);
+}
+
+.dp-file-remove:hover {
+  color: var(--rose);
+  background: var(--rose-soft);
+}
+
+/* Persona cards grid */
+.dp-persona-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+.dp-persona-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 10px;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-base);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  user-select: none;
+}
+
+.dp-persona-card:hover {
+  border-color: var(--violet);
+  background: var(--violet-soft);
+}
+
+.dp-persona-card.selected {
+  border-color: var(--violet);
+  background: var(--violet);
+  color: #fff;
+}
+
+.dp-persona-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.dp-persona-card.selected .dp-persona-avatar {
+  border: 2px solid rgba(255, 255, 255, 0.5);
+}
+
+.dp-persona-name {
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.dp-persona-role {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.dp-persona-card.selected .dp-persona-role {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+/* Scenario cards grid */
+.dp-scenario-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.dp-scenario-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-base);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  user-select: none;
+}
+
+.dp-scenario-card:hover {
+  border-color: var(--violet);
+  background: var(--violet-soft);
+}
+
+.dp-scenario-card.selected {
+  border-color: var(--violet);
+  background: var(--violet);
+  color: #fff;
+}
+
+.dp-scenario-label {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.dp-scenario-desc {
+  font-size: 12px;
+  opacity: 0.75;
+}
+
+/* Error */
+.dp-error {
+  font-size: 13px;
+  color: var(--rose);
+  padding: 8px 12px;
+  background: var(--rose-soft);
+  border-radius: 8px;
+  border: 1px solid rgba(239, 68, 68, 0.15);
+}
+
+/* Loading */
+.dp-loading-inline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dp-spinner {
+  animation: dp-spin 1s linear infinite;
+}
+
+@keyframes dp-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* Actions */
+.dp-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.dp-actions--split {
+  justify-content: space-between;
+}
+
+/* Primary button (violet) */
+.dp-btn-primary {
+  padding: 10px 24px;
+  border: none;
+  border-radius: 10px;
+  background: var(--violet);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity var(--transition-fast), background var(--transition-fast);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dp-btn-primary:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.dp-btn-primary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Secondary button */
+.dp-btn-secondary {
+  padding: 10px 18px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dp-btn-secondary:hover:not(:disabled) {
+  background: var(--bg-base);
+  color: var(--text-primary);
+}
+
+.dp-btn-secondary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Step 2 summary */
+.dp-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  background: var(--violet-soft);
+  border-radius: 10px;
+}
+
+.dp-summary-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.dp-summary-label {
+  font-weight: 600;
+  color: var(--text-secondary);
+  min-width: 72px;
+}
+
+.dp-summary-value {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+/* Question preview list */
+.dp-question-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 260px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.dp-question-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+.dp-question-index {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--violet-soft);
+  color: var(--violet);
+}
+
+.dp-question-text {
+  flex: 1;
+}
+
+.dp-question-meta {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.dp-question-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--bg-base);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+
+/* Hidden file input */
+.dp-file-input {
+  display: none;
+}
