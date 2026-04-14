@@ -94,9 +94,7 @@ def _happy_path_events() -> list[BuildEvent]:
         ),
         BuildEvent(seq=3, type=BUILD_PARSE_DONE, ts=3.0, data={"persona_id": "p1", "claims": 5}),
         BuildEvent(seq=4, type=BUILD_ADVERSARIALIZE_START, ts=4.0, data={}),
-        BuildEvent(
-            seq=5, type=BUILD_ADVERSARIALIZE_DONE, ts=5.0, data={"hostile_applied": True}
-        ),
+        BuildEvent(seq=5, type=BUILD_ADVERSARIALIZE_DONE, ts=5.0, data={"hostile_applied": True}),
         BuildEvent(
             seq=6,
             type=BUILD_PERSIST_DONE,

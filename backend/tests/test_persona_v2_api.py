@@ -64,7 +64,8 @@ class _StubV2Service:
         existing = self._store[persona_id]
         updated = existing.model_copy(
             update={
-                k: v for k, v in patch.model_dump(exclude_none=True).items()
+                k: v
+                for k, v in patch.model_dump(exclude_none=True).items()
                 if k in PersonaV2DTO.model_fields
             }
         )
@@ -131,5 +132,3 @@ async def test_patch_v2_partial(client) -> None:
         assert body["data"]["rejected_features"] == {"hard_rules": [0]}
         # role untouched
         assert body["data"]["role"] == "首席财务官"
-
-

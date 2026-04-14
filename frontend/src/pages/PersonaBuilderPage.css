@@ -213,6 +213,7 @@
   font-weight: 600;
 }
 .btn-start,
+.btn-detect,
 .btn-retry,
 .btn-goto {
   display: inline-flex;
@@ -225,6 +226,22 @@
   font-weight: 600;
   cursor: pointer;
   transition: all var(--transition-fast);
+}
+.btn-detect {
+  background: var(--bg-card);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+.btn-detect:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.btn-detect:hover:not(:disabled) {
+  background: var(--green-soft);
+  color: var(--green);
+  border-color: var(--border-accent);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
 }
 .btn-start {
   background: var(--primary-gradient);

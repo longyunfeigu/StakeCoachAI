@@ -37,28 +37,20 @@ class PersonaV2Service:
 
     async def get_v2(self, persona_id: str) -> PersonaV2DTO:
         async with self._uow_factory() as uow:
-            result = await uow.stakeholder_persona_repository.get_with_evidence(
-                persona_id
-            )
+            result = await uow.stakeholder_persona_repository.get_with_evidence(persona_id)
             if result is None:
                 raise PersonaNotFoundError(persona_id)
             persona, evidence = result
             return _to_dto(persona, evidence)
 
-    async def patch_v2(
-        self, persona_id: str, patch: PersonaPatchV2DTO
-    ) -> PersonaV2DTO:
+    async def patch_v2(self, persona_id: str, patch: PersonaPatchV2DTO) -> PersonaV2DTO:
         async with self._uow_factory() as uow:
-            result = await uow.stakeholder_persona_repository.get_with_evidence(
-                persona_id
-            )
+            result = await uow.stakeholder_persona_repository.get_with_evidence(persona_id)
             if result is None:
                 raise PersonaNotFoundError(persona_id)
             persona, evidence = result
             _apply_patch(persona, patch)
-            saved = await uow.stakeholder_persona_repository.save_structured_persona(
-                persona
-            )
+            saved = await uow.stakeholder_persona_repository.save_structured_persona(persona)
             await uow.commit()
             # evidence is unaffected by PATCH (read-only per design)
             return _to_dto(saved, evidence)

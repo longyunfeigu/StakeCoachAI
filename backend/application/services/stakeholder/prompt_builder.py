@@ -144,7 +144,6 @@ def _inject_summary(messages: list[dict], context_summary: str | None) -> None:
         )
 
 
-
 # ---------------------------------------------------------------------------
 # 5-layer system prompt builder + compressed message builders
 # ---------------------------------------------------------------------------

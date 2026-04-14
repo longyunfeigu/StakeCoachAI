@@ -17,9 +17,7 @@ class StakeholderPersonaModel(Base, TimestampMixin):
     """
 
     __tablename__ = "stakeholder_personas"
-    __table_args__ = (
-        {"comment": "利益相关者画像 (v2 5-layer 结构化)"},
-    )
+    __table_args__ = ({"comment": "利益相关者画像 (v2 5-layer 结构化)"},)
 
     id = Column(String(50), primary_key=True, comment="画像ID (与 markdown 文件名一致)")
     name = Column(String(255), nullable=False, comment="角色名")

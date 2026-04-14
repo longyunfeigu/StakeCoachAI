@@ -57,8 +57,6 @@ class SpeakerDetectionService:
 
         # Sort: dominance_level desc (high > medium > low), then speaking_turns desc
         _dominance_order = {"high": 0, "medium": 1, "low": 2}
-        speakers.sort(
-            key=lambda s: (_dominance_order.get(s.dominance_level, 1), -s.speaking_turns)
-        )
+        speakers.sort(key=lambda s: (_dominance_order.get(s.dominance_level, 1), -s.speaking_turns))
 
         return speakers

@@ -74,12 +74,20 @@ from domain.stakeholder.persona_entity import (
 
 def _make_persona(id: str, name: str, role: str = "CTO") -> Persona:
     return Persona(
-        id=id, name=name, role=role,
+        id=id,
+        name=name,
+        role=role,
         hard_rules=[HardRule(statement="test rule", severity="medium")],
         identity=IdentityProfile(background="bg", core_values=["v1"], hidden_agenda=None),
-        expression=ExpressionStyle(tone="formal", catchphrases=["test"], interruption_tendency="low"),
-        decision=DecisionPattern(style="analytical", risk_tolerance="medium", typical_questions=["why?"]),
-        interpersonal=InterpersonalStyle(authority_mode="direct", triggers=["delay"], emotion_states=["neutral"]),
+        expression=ExpressionStyle(
+            tone="formal", catchphrases=["test"], interruption_tendency="low"
+        ),
+        decision=DecisionPattern(
+            style="analytical", risk_tolerance="medium", typical_questions=["why?"]
+        ),
+        interpersonal=InterpersonalStyle(
+            authority_mode="direct", triggers=["delay"], emotion_states=["neutral"]
+        ),
     )
 
 

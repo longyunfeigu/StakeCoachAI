@@ -150,3 +150,11 @@ class SQLAlchemyStakeholderPersonaRepository(StakeholderPersonaRepository):
         query = query.order_by(StakeholderPersonaModel.id.asc())
         result = await self.session.execute(query)
         return [self._to_entity(m) for m in result.scalars().all()]
+
+    async def delete(self, persona_id: str) -> bool:
+        model = await self.session.get(StakeholderPersonaModel, persona_id)
+        if model is None:
+            return False
+        await self.session.delete(model)
+        await self.session.flush()
+        return True

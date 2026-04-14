@@ -68,6 +68,7 @@ from application.services.stakeholder.analysis_service import AnalysisService, A
 from application.services.stakeholder.coaching_service import CoachingService
 from application.services.stakeholder.stakeholder_chat_service import StakeholderChatService
 from core.response import success_response
+from infrastructure.unit_of_work import SQLAlchemyUnitOfWork
 
 router = APIRouter(prefix="/stakeholder", tags=["Stakeholder Chat"])
 
@@ -75,6 +76,64 @@ router = APIRouter(prefix="/stakeholder", tags=["Stakeholder Chat"])
 # ---------------------------------------------------------------------------
 # Persona endpoints (existing)
 # ---------------------------------------------------------------------------
+
+
+def _persona_to_markdown(p) -> str:
+    """Generate a readable markdown summary from v2 structured persona."""
+    lines: list[str] = []
+    if p.hard_rules:
+        lines.append("## 铁律")
+        for r in p.hard_rules:
+            sev = {"critical": "[严重]", "high": "[高]", "medium": "[中]", "low": "[低]"}.get(
+                r.severity, ""
+            )
+            lines.append(f"- {sev} {r.statement}")
+        lines.append("")
+    if p.identity:
+        lines.append("## 身份")
+        if p.identity.background:
+            lines.append(p.identity.background)
+        if p.identity.core_values:
+            lines.append("\n**核心价值观：**")
+            for v in p.identity.core_values:
+                lines.append(f"- {v}")
+        if p.identity.hidden_agenda:
+            lines.append(f"\n**隐藏议程：** {p.identity.hidden_agenda}")
+        lines.append("")
+    if p.expression:
+        lines.append("## 表达风格")
+        if p.expression.tone:
+            lines.append(f"**语气：** {p.expression.tone}")
+        if p.expression.catchphrases:
+            lines.append("\n**口头禅：**")
+            for c in p.expression.catchphrases:
+                lines.append(f"- 「{c}」")
+        lines.append("")
+    if p.decision:
+        lines.append("## 决策模式")
+        if p.decision.style:
+            lines.append(f"**风格：** {p.decision.style}")
+        if p.decision.risk_tolerance:
+            lines.append(f"**风险偏好：** {p.decision.risk_tolerance}")
+        if p.decision.typical_questions:
+            lines.append("\n**典型追问：**")
+            for q in p.decision.typical_questions:
+                lines.append(f"- {q}")
+        lines.append("")
+    if p.interpersonal:
+        lines.append("## 人际风格")
+        if p.interpersonal.authority_mode:
+            lines.append(f"**权威模式：** {p.interpersonal.authority_mode}")
+        if p.interpersonal.triggers:
+            lines.append("\n**触发器：**")
+            for t in p.interpersonal.triggers:
+                lines.append(f"- {t}")
+        if p.interpersonal.emotion_states:
+            lines.append("\n**情绪状态：**")
+            for e in p.interpersonal.emotion_states:
+                lines.append(f"- {e}")
+        lines.append("")
+    return "\n".join(lines)
 
 
 @router.get("/personas", summary="获取所有角色列表")
@@ -106,6 +165,17 @@ async def get_persona(
     persona = loader.get_persona(persona_id)
     if persona is None:
         raise HTTPException(status_code=404, detail="Persona not found")
+
+    # Build content: v1 reads from markdown file, v2 generates from structured profile
+    content = ""
+    persona_dir = loader._persona_dir
+    md_file = persona_dir / f"{persona_id}.md"
+    if md_file.exists():
+        raw = md_file.read_text(encoding="utf-8")
+        content = loader._strip_frontmatter(raw)
+    elif persona.hard_rules or persona.identity:
+        content = _persona_to_markdown(persona)
+
     return success_response(
         data={
             "id": persona.id,
@@ -116,6 +186,7 @@ async def get_persona(
             "team_id": persona.team_id,
             "profile_summary": persona.profile_summary,
             "parse_status": persona.parse_status,
+            "content": content,
         }
     )
 
@@ -145,8 +216,24 @@ async def update_persona(
 ):
     try:
         editor.update_persona(persona_id, body)
-    except FileNotFoundError as exc:
-        raise HTTPException(status_code=404, detail=str(exc))
+    except FileNotFoundError:
+        # v2 DB persona — no markdown file, update directly in DB
+        async with SQLAlchemyUnitOfWork() as uow:
+            existing = await uow.stakeholder_persona_repository.get_by_id(persona_id)
+            if existing is None:
+                raise HTTPException(status_code=404, detail=f"Persona '{persona_id}' not found")
+            if body.name is not None:
+                existing.name = body.name
+            if body.role is not None:
+                existing.role = body.role
+            if body.avatar_color is not None:
+                existing.avatar_color = body.avatar_color
+            if body.organization_id is not None:
+                existing.organization_id = body.organization_id
+            if body.team_id is not None:
+                existing.team_id = body.team_id
+            await uow.stakeholder_persona_repository.save_structured_persona(existing)
+            await uow.commit()
     return success_response(data={"id": persona_id})
 
 
@@ -157,8 +244,14 @@ async def delete_persona_endpoint(
 ):
     try:
         editor.delete_persona(persona_id)
-    except FileNotFoundError as exc:
-        raise HTTPException(status_code=404, detail=str(exc))
+    except FileNotFoundError:
+        # v2 DB persona — no markdown file, delete from DB
+        async with SQLAlchemyUnitOfWork() as uow:
+            existing = await uow.stakeholder_persona_repository.get_by_id(persona_id)
+            if existing is None:
+                raise HTTPException(status_code=404, detail=f"Persona '{persona_id}' not found")
+            await uow.stakeholder_persona_repository.delete(persona_id)
+            await uow.commit()
     return success_response(data={"id": persona_id})
 
 
@@ -1125,9 +1218,7 @@ _PERSONA_BUILD_CHAR_LIMIT = 400_000
 _PERSONA_BUILD_HEARTBEAT_S = 30.0
 
 
-def _persona_build_sse_payload(
-    *, seq: int, type_: str, ts: float, data: dict
-) -> str:
+def _persona_build_sse_payload(*, seq: int, type_: str, ts: float, data: dict) -> str:
     """Serialize one BuildEvent envelope as SSE (per AC3)."""
     import json
 

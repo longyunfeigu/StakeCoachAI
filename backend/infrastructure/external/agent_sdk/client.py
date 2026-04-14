@@ -159,9 +159,7 @@ class AgentSkillClient:
                 f"### Existing Profile\n```json\n{existing_profile}\n```"
             )
 
-        parts.append(
-            "\nUse Chinese for the persona output. 用中文输出画像。"
-        )
+        parts.append("\nUse Chinese for the persona output. 用中文输出画像。")
 
         return "\n".join(parts)
 
@@ -226,6 +224,7 @@ class AgentSkillClient:
                     cwd=str(ws.path),
                     setting_sources=["project"],
                     allowed_tools=list(self._settings.allowed_tools),
+                    model=self._settings.model,
                 )
 
                 logger.info(

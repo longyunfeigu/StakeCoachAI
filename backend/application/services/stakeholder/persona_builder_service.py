@@ -221,9 +221,7 @@ class PersonaBuilderService:
         try:
             async with asyncio.timeout(self._total_timeout_s):
                 existing_profile_str = (
-                    _serialize_existing_for_merge(existing_persona)
-                    if existing_persona
-                    else None
+                    _serialize_existing_for_merge(existing_persona) if existing_persona else None
                 )
                 agent_stream = self._agent.build_persona(
                     user_id=user_id,
@@ -280,9 +278,7 @@ class PersonaBuilderService:
                 # Back-fill name/role from LLM extraction when user left them blank
                 resolved_name = name or llm_json.get("name") or None
                 resolved_role = role or llm_json.get("role") or None
-                persona_id = target_persona_id or _synthesize_persona_id(
-                    resolved_name or user_id
-                )
+                persona_id = target_persona_id or _synthesize_persona_id(resolved_name or user_id)
                 v2 = build_persona_v2(
                     _build_v1_shell(
                         persona_id=persona_id,

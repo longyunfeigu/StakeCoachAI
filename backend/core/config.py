@@ -127,6 +127,9 @@ class AgentSDKSettings(BaseModel):
     # 相对路径以 backend/ 为基准（应用启动 cwd），生产部署可用 env 覆盖为绝对路径
     skill_source_dir: Path = Path(".claude/skills/colleague-skill")
 
+    # Sub-agent 使用的模型 (别名 "sonnet"/"opus"/"haiku" 或完整 model ID)
+    model: str = "claude-sonnet-4-6"
+
     # 允许 sub-agent 使用的工具白名单 (禁 Bash 防 sub-agent 执行任意命令)
     allowed_tools: list[str] = Field(
         default_factory=lambda: ["Skill", "Read", "Write", "Grep", "Glob"]

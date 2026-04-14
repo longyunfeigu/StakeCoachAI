@@ -221,3 +221,8 @@ class StakeholderPersonaRepository(ABC):
     async def list_all(self) -> list[Persona]:
         """List all personas."""
         ...
+
+    @abstractmethod
+    async def delete(self, persona_id: str) -> bool:
+        """Delete a persona by id. Returns True if deleted, False if not found."""
+        ...

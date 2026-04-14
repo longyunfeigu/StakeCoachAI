@@ -3,6 +3,7 @@ import {
   Plus,
   Pencil,
   Trash2,
+  Eye,
   Users,
   Layers,
   Building2,
@@ -136,7 +137,7 @@ function PersonasTab() {
           <div
             key={p.id}
             className={`settings-list-item${editing?.id === p.id ? ' selected' : ''}`}
-            onClick={() => startEdit(p)}
+            onClick={() => navigate(`/persona/${encodeURIComponent(p.id)}/edit`)}
           >
             <div className="settings-item-avatar">
               <Avatar name={p.name} color={p.avatar_color || '#2D9C6F'} size={40} />
@@ -146,6 +147,13 @@ function PersonasTab() {
               <div className="settings-item-role">{p.role}</div>
             </div>
             <div className="settings-item-actions">
+              <button
+                className="settings-item-btn"
+                onClick={(e) => { e.stopPropagation(); navigate(`/persona/${encodeURIComponent(p.id)}/edit`) }}
+                title="查看详情"
+              >
+                <Eye size={14} />
+              </button>
               <button
                 className="settings-item-btn"
                 onClick={(e) => { e.stopPropagation(); startEdit(p) }}

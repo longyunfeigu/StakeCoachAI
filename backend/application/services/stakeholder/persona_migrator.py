@@ -292,9 +292,7 @@ async def run_migration(
 
         if outcome.status == "dry_run":
             report.skipped += 1
-            print(
-                f"[DRY-RUN] will migrate: persona_id={persona_id}"
-            )
+            print(f"[DRY-RUN] will migrate: persona_id={persona_id}")
             continue
 
         assert outcome.persona is not None

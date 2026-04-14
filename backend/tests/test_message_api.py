@@ -36,17 +36,28 @@ from infrastructure.unit_of_work import SQLAlchemyUnitOfWork
 
 def _make_persona(id: str, name: str, role: str = "CTO") -> Persona:
     return Persona(
-        id=id, name=name, role=role,
+        id=id,
+        name=name,
+        role=role,
         hard_rules=[HardRule(statement="test rule", severity="medium")],
         identity=IdentityProfile(background="bg", core_values=["v1"], hidden_agenda=None),
-        expression=ExpressionStyle(tone="formal", catchphrases=["test"], interruption_tendency="low"),
-        decision=DecisionPattern(style="analytical", risk_tolerance="medium", typical_questions=["why?"]),
-        interpersonal=InterpersonalStyle(authority_mode="direct", triggers=["delay"], emotion_states=["neutral"]),
+        expression=ExpressionStyle(
+            tone="formal", catchphrases=["test"], interruption_tendency="low"
+        ),
+        decision=DecisionPattern(
+            style="analytical", risk_tolerance="medium", typical_questions=["why?"]
+        ),
+        interpersonal=InterpersonalStyle(
+            authority_mode="direct", triggers=["delay"], emotion_states=["neutral"]
+        ),
     )
 
 
 class _StubPersonaLoader:
-    _personas = {"jianfeng": _make_persona("jianfeng", "剑锋"), "robin": _make_persona("robin", "Robin")}
+    _personas = {
+        "jianfeng": _make_persona("jianfeng", "剑锋"),
+        "robin": _make_persona("robin", "Robin"),
+    }
 
     def get_persona(self, pid):
         return self._personas.get(pid)
