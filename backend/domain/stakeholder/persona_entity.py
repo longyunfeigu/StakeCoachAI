@@ -24,11 +24,12 @@ class HardRule:
 
 @dataclass
 class IdentityProfile:
-    """Layer 2 — 身份背景、核心价值、隐藏议程。"""
+    """Layer 2 — 身份背景、核心价值、隐藏议程、信息偏好。"""
 
     background: str = ""
     core_values: list[str] = field(default_factory=list)
     hidden_agenda: Optional[str] = None
+    information_preference: Optional[str] = None
 
 
 @dataclass
@@ -50,12 +51,21 @@ class DecisionPattern:
 
 
 @dataclass
+class EscalationChain:
+    """多步升级序列：触发条件 → 逐级施压步骤。"""
+
+    trigger: str
+    steps: list[str] = field(default_factory=list)
+
+
+@dataclass
 class InterpersonalStyle:
-    """Layer 5 — 人际互动：权威模式、触发器、情绪状态。"""
+    """Layer 5 — 人际互动：权威模式、触发器、情绪状态、升级链。"""
 
     authority_mode: str = ""
     triggers: list[str] = field(default_factory=list)
     emotion_states: list[str] = field(default_factory=list)
+    escalation_chains: list[EscalationChain] = field(default_factory=list)
 
 
 @dataclass
@@ -104,6 +114,7 @@ class Persona:
     expression: Optional[ExpressionStyle] = None
     decision: Optional[DecisionPattern] = None
     interpersonal: Optional[InterpersonalStyle] = None
+    user_context: Optional[str] = None
     evidence_citations: list[Evidence] = field(default_factory=list)
     source_materials: list[str] = field(default_factory=list)
     # Story 2.7 — 用户标 "不对" 的特征索引（按 layer 分组）。存到

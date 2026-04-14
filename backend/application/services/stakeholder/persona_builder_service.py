@@ -223,11 +223,15 @@ class PersonaBuilderService:
                 existing_profile_str = (
                     _serialize_existing_for_merge(existing_persona) if existing_persona else None
                 )
+                # Enhancement mode: use existing persona's name/role to filter speakers
+                effective_name = name or (existing_persona.name if existing_persona else None)
+                effective_role = role or (existing_persona.role if existing_persona else None)
+
                 agent_stream = self._agent.build_persona(
                     user_id=user_id,
                     materials=materials,
-                    target_name=name,
-                    target_role=role,
+                    target_name=effective_name,
+                    target_role=effective_role,
                     existing_profile=existing_profile_str,
                 )
 

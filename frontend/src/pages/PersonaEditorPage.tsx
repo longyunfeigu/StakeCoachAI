@@ -29,6 +29,115 @@ import './PersonaEditorPage.css'
 
 type LayerKey = 'hard_rules' | 'identity' | 'expression' | 'decision' | 'interpersonal'
 
+// --- Enhancement diff helpers ---
+interface DiffItem {
+  type: 'added' | 'changed' | 'removed'
+  layer: string
+  field: string
+  value: string
+  oldValue?: string
+}
+
+interface EnhanceDiffSummary {
+  items: DiffItem[]
+  added: number
+  changed: number
+  removed: number
+}
+
+function diffStringArrays(
+  oldArr: string[],
+  newArr: string[],
+  layer: string,
+  field: string,
+): DiffItem[] {
+  const items: DiffItem[] = []
+  const oldSet = new Set(oldArr)
+  const newSet = new Set(newArr)
+  for (const v of newArr) {
+    if (!oldSet.has(v)) items.push({ type: 'added', layer, field, value: v })
+  }
+  for (const v of oldArr) {
+    if (!newSet.has(v)) items.push({ type: 'removed', layer, field, value: v })
+  }
+  return items
+}
+
+function diffStringField(
+  oldVal: string | null | undefined,
+  newVal: string | null | undefined,
+  layer: string,
+  field: string,
+): DiffItem | null {
+  const o = oldVal || ''
+  const n = newVal || ''
+  if (o === n) return null
+  if (!o && n) return { type: 'added', layer, field, value: n }
+  if (o && !n) return { type: 'removed', layer, field, value: o }
+  return { type: 'changed', layer, field, value: n, oldValue: o }
+}
+
+function computeEnhanceDiff(oldP: PersonaV2 | null, newP: PersonaV2): EnhanceDiffSummary {
+  const items: DiffItem[] = []
+  if (!oldP) {
+    return { items: [{ type: 'added', layer: '整体', field: '画像', value: '全新创建' }], added: 1, changed: 0, removed: 0 }
+  }
+
+  // Hard rules
+  const oldRules = new Set(oldP.hard_rules.map((r) => r.statement))
+  const newRules = new Set(newP.hard_rules.map((r) => r.statement))
+  for (const r of newP.hard_rules) {
+    if (!oldRules.has(r.statement)) items.push({ type: 'added', layer: '铁律', field: `[${r.severity}]`, value: r.statement })
+  }
+  for (const r of oldP.hard_rules) {
+    if (!newRules.has(r.statement)) items.push({ type: 'removed', layer: '铁律', field: `[${r.severity}]`, value: r.statement })
+  }
+
+  // Identity
+  const oi = oldP.identity, ni = newP.identity
+  if (ni) {
+    const d = diffStringField(oi?.background, ni.background, '身份', '背景')
+    if (d) items.push(d)
+    items.push(...diffStringArrays(oi?.core_values || [], ni.core_values, '身份', '核心价值观'))
+    const ha = diffStringField(oi?.hidden_agenda, ni.hidden_agenda, '身份', '隐藏议程')
+    if (ha) items.push(ha)
+  }
+
+  // Expression
+  const oe = oldP.expression, ne = newP.expression
+  if (ne) {
+    const t = diffStringField(oe?.tone, ne.tone, '表达风格', '语气')
+    if (t) items.push(t)
+    items.push(...diffStringArrays(oe?.catchphrases || [], ne.catchphrases, '表达风格', '口头禅'))
+  }
+
+  // Decision
+  const od = oldP.decision, nd = newP.decision
+  if (nd) {
+    const s = diffStringField(od?.style, nd.style, '决策模式', '风格')
+    if (s) items.push(s)
+    const r = diffStringField(od?.risk_tolerance, nd.risk_tolerance, '决策模式', '风险偏好')
+    if (r) items.push(r)
+    items.push(...diffStringArrays(od?.typical_questions || [], nd.typical_questions, '决策模式', '典型追问'))
+  }
+
+  // Interpersonal
+  const oip = oldP.interpersonal, nip = newP.interpersonal
+  if (nip) {
+    const am = diffStringField(oip?.authority_mode, nip.authority_mode, '人际风格', '权威模式')
+    if (am) items.push(am)
+    items.push(...diffStringArrays(oip?.triggers || [], nip.triggers, '人际风格', '触发器'))
+    items.push(...diffStringArrays(oip?.emotion_states || [], nip.emotion_states, '人际风格', '情绪状态'))
+  }
+
+  return {
+    items,
+    added: items.filter((i) => i.type === 'added').length,
+    changed: items.filter((i) => i.type === 'changed').length,
+    removed: items.filter((i) => i.type === 'removed').length,
+  }
+}
+
 const LAYER_META: Record<LayerKey, { title: string; emoji: string; color: LayerColor }> = {
   hard_rules:    { title: 'Hard Rules',    emoji: '⚖️', color: 'rose' },
   identity:      { title: 'Identity',      emoji: '🎯', color: 'violet' },
@@ -207,30 +316,67 @@ export default function PersonaEditorPage() {
   const [enhanceText, setEnhanceText] = useState('')
   const enhance = usePersonaBuild()
   const enhanceTextRef = useRef('')
+  const [enhanceDiff, setEnhanceDiff] = useState<EnhanceDiffSummary | null>(null)
+  const pendingEnhancePersona = useRef<PersonaV2 | null>(null)
+
+  const preEnhanceSnapshot = useRef<PersonaV2 | null>(null)
 
   const handleStartEnhance = () => {
     const text = enhanceText.trim()
     if (!text || !id) return
     enhanceTextRef.current = text
+    // Snapshot current persona BEFORE enhancement starts
+    preEnhanceSnapshot.current = persona ? { ...persona } : null
     enhance.start({
       materials: [text],
       target_persona_id: id,
     })
   }
 
-  // When enhancement finishes, refetch persona
+  // When enhancement finishes (done or error with potential partial success), show diff
+  const prevEnhanceStatus = useRef(enhance.status)
   useEffect(() => {
-    if (enhance.status !== 'done' || !id) return
+    const prev = prevEnhanceStatus.current
+    prevEnhanceStatus.current = enhance.status
+    // Only trigger on transition INTO done/error from running
+    if (prev !== 'running') return
+    if (enhance.status !== 'done' && enhance.status !== 'error') return
+    if (!id) return
+    // Backend may have persisted even if SSE stream closed early — always try to fetch
     fetchPersonaV2(id)
-      .then((p) => {
-        setPersona(p)
-        setDraft(p)
-        setShowEnhance(false)
-        setEnhanceText('')
-        enhance.reset()
+      .then((newP) => {
+        const baseline = preEnhanceSnapshot.current || persona
+        const diff = computeEnhanceDiff(baseline, newP)
+        // Always set the new persona and show dialog
+        pendingEnhancePersona.current = newP
+        setEnhanceDiff(diff)
       })
-      .catch(() => {})
+      .catch(() => {
+        // Fetch failed — show empty diff so user at least gets feedback
+        setEnhanceDiff({ items: [], added: 0, changed: 0, removed: 0 })
+      })
   }, [enhance.status, id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleAcceptEnhance = () => {
+    const newP = pendingEnhancePersona.current
+    if (newP) {
+      setPersona(newP)
+      setDraft(newP)
+    }
+    setEnhanceDiff(null)
+    pendingEnhancePersona.current = null
+    preEnhanceSnapshot.current = null
+    setShowEnhance(false)
+    setEnhanceText('')
+    enhance.reset()
+  }
+
+  const handleRejectEnhance = () => {
+    setEnhanceDiff(null)
+    pendingEnhancePersona.current = null
+    preEnhanceSnapshot.current = null
+    enhance.reset()
+  }
 
   const handleSave = async () => {
     if (!draft || !id) return
@@ -246,6 +392,7 @@ export default function PersonaEditorPage() {
         expression: draft.expression || undefined,
         decision: draft.decision || undefined,
         interpersonal: draft.interpersonal || undefined,
+        user_context: draft.user_context || undefined,
         rejected_features: draft.rejected_features,
       }
       const updated = await patchPersonaV2(id, body)
@@ -346,6 +493,18 @@ export default function PersonaEditorPage() {
           text={`隐藏议程：${id0.hidden_agenda}`}
           onChange={(v) =>
             editIdentity({ hidden_agenda: v.replace(/^隐藏议程[：:]\s*/, '') })
+          }
+        />,
+      )
+    }
+    if (id0.information_preference) {
+      identityRows.push(
+        <FeatureRow
+          key="id-ip"
+          emoji="📋"
+          text={`信息偏好：${id0.information_preference}`}
+          onChange={(v) =>
+            editIdentity({ information_preference: v.replace(/^信息偏好[：:]\s*/, '') })
           }
         />,
       )
@@ -462,6 +621,19 @@ export default function PersonaEditorPage() {
         />,
       ),
     )
+    if (ip.escalation_chains && ip.escalation_chains.length > 0) {
+      ip.escalation_chains.forEach((chain, ci) => {
+        const stepsStr = chain.steps.join(' → ')
+        ipRows.push(
+          <FeatureRow
+            key={`ip-ec-${ci}`}
+            emoji="🔺"
+            text={`升级链：${chain.trigger} → ${stepsStr}`}
+            onChange={() => {}}
+          />,
+        )
+      })
+    }
   }
 
   const emptyLayerNotice = (
@@ -528,6 +700,19 @@ export default function PersonaEditorPage() {
         </div>
       )}
 
+      {/* User context — relationship to current user */}
+      <div className="user-context-section">
+        <h3>与当前对话者的关系</h3>
+        <p className="user-context-hint">描述这个角色对你的期待、你们的汇报关系、他关心你负责的哪些领域</p>
+        <textarea
+          className="user-context-textarea"
+          value={draft.user_context || ''}
+          onChange={(e) => setDraft((d) => d ? { ...d, user_context: e.target.value || null } : d)}
+          placeholder="例：我是万华，FDE质量体系负责人。他期望我负责评价体系和测试集构建，交付物要经得起推敲。会直接点名确认我是否理解。"
+          rows={4}
+        />
+      </div>
+
       <EvidencePopover
         evidence={popover?.ev || null}
         anchor={popover?.rect || null}
@@ -566,6 +751,49 @@ export default function PersonaEditorPage() {
             >
               取消
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Enhancement diff summary dialog */}
+      {enhanceDiff && (
+        <div className="dialog-overlay" onClick={handleRejectEnhance}>
+          <div className="dialog enhance-diff-dialog" onClick={(e) => e.stopPropagation()}>
+            <h3>增强完成 — 变更摘要</h3>
+            <div className="enhance-diff-stats">
+              {enhanceDiff.added > 0 && <span className="diff-badge diff-added">+{enhanceDiff.added} 新增</span>}
+              {enhanceDiff.changed > 0 && <span className="diff-badge diff-changed">{enhanceDiff.changed} 修改</span>}
+              {enhanceDiff.removed > 0 && <span className="diff-badge diff-removed">-{enhanceDiff.removed} 移除</span>}
+              {enhanceDiff.items.length === 0 && <span className="diff-badge">无变化</span>}
+            </div>
+            {enhanceDiff.items.length > 0 ? (
+              <div className="enhance-diff-list">
+                {enhanceDiff.items.map((item, i) => (
+                  <div key={i} className={`enhance-diff-item diff-${item.type}`}>
+                    <span className="diff-type-tag">
+                      {item.type === 'added' ? '新增' : item.type === 'changed' ? '修改' : '移除'}
+                    </span>
+                    <span className="diff-layer">{item.layer}</span>
+                    <span className="diff-field">{item.field}</span>
+                    <span className="diff-value">{item.value}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="enhance-diff-empty">
+                AI 已处理素材，但未检测到新的特征变化。可能素材中的信息已在现有画像中体现。
+              </div>
+            )}
+            <div className="enhance-diff-actions">
+              <button type="button" className="btn-primary" onClick={handleAcceptEnhance}>
+                {enhanceDiff.items.length > 0 ? '应用变更' : '确定'}
+              </button>
+              {enhanceDiff.items.length > 0 && (
+                <button type="button" className="btn-ghost" onClick={handleRejectEnhance}>
+                  放弃
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}

@@ -14,6 +14,7 @@ export interface Identity {
   background: string
   core_values: string[]
   hidden_agenda: string | null
+  information_preference: string | null
 }
 
 export interface Expression {
@@ -28,10 +29,16 @@ export interface Decision {
   typical_questions: string[]
 }
 
+export interface EscalationChain {
+  trigger: string
+  steps: string[]
+}
+
 export interface Interpersonal {
   authority_mode: string
   triggers: string[]
   emotion_states: string[]
+  escalation_chains: EscalationChain[]
 }
 
 export interface EvidenceItem {
@@ -53,6 +60,7 @@ export interface PersonaV2 {
   expression: Expression | null
   decision: Decision | null
   interpersonal: Interpersonal | null
+  user_context: string | null
   evidence: EvidenceItem[]
   rejected_features: Record<string, number[]>
   source_materials: string[]
@@ -67,6 +75,7 @@ export interface PersonaPatchV2 {
   expression?: Expression
   decision?: Decision
   interpersonal?: Interpersonal
+  user_context?: string
   rejected_features?: Record<string, number[]>
 }
 

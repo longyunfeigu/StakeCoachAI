@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from domain.stakeholder.persona_entity import (
     DecisionPattern,
+    EscalationChain,
     Evidence,
     ExpressionStyle,
     HardRule,
@@ -34,6 +35,8 @@ def _serialize_structured_profile(persona: Persona) -> Optional[dict]:
         "decision": asdict(persona.decision) if persona.decision else None,
         "interpersonal": asdict(persona.interpersonal) if persona.interpersonal else None,
     }
+    if persona.user_context:
+        result["user_context"] = persona.user_context
     # Story 2.7: rejected_features lives in _metadata to avoid DB schema churn.
     if persona.rejected_features:
         result["_metadata"] = {"rejected_features": persona.rejected_features}
@@ -56,9 +59,17 @@ def _deserialize_structured_profile(data: Optional[dict]) -> dict:
         "expression": ExpressionStyle(**data["expression"]) if data.get("expression") else None,
         "decision": DecisionPattern(**data["decision"]) if data.get("decision") else None,
         "interpersonal": (
-            InterpersonalStyle(**data["interpersonal"]) if data.get("interpersonal") else None
+            _deserialize_interpersonal(data["interpersonal"]) if data.get("interpersonal") else None
         ),
     }
+
+
+def _deserialize_interpersonal(raw: dict) -> InterpersonalStyle:
+    """Rebuild InterpersonalStyle with nested EscalationChain objects."""
+    chains_raw = raw.pop("escalation_chains", [])
+    ip = InterpersonalStyle(**raw)
+    ip.escalation_chains = [EscalationChain(**c) for c in (chains_raw or [])]
+    return ip
 
 
 def _serialize_evidences(persona: Persona) -> Optional[list[dict]]:
@@ -101,6 +112,9 @@ class SQLAlchemyStakeholderPersonaRepository(StakeholderPersonaRepository):
             expression=structured["expression"],
             decision=structured["decision"],
             interpersonal=structured["interpersonal"],
+            user_context=(
+                profile_dict.get("user_context") if isinstance(profile_dict, dict) else None
+            ),
             evidence_citations=_deserialize_evidences(model.evidence_citations),
             source_materials=list(model.source_materials or []),
             rejected_features=dict(rejected),

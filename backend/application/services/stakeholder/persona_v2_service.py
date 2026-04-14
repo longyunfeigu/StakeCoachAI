@@ -11,6 +11,7 @@ from typing import Callable
 
 from domain.stakeholder.persona_entity import (
     DecisionPattern,
+    EscalationChain,
     ExpressionStyle,
     HardRule,
     IdentityProfile,
@@ -83,7 +84,12 @@ def _apply_patch(persona: Persona, patch: PersonaPatchV2DTO) -> None:
     if patch.decision is not None:
         persona.decision = DecisionPattern(**patch.decision.model_dump())
     if patch.interpersonal is not None:
-        persona.interpersonal = InterpersonalStyle(**patch.interpersonal.model_dump())
+        raw = patch.interpersonal.model_dump()
+        chains_raw = raw.pop("escalation_chains", [])
+        persona.interpersonal = InterpersonalStyle(**raw)
+        persona.interpersonal.escalation_chains = [EscalationChain(**c) for c in chains_raw]
+    if patch.user_context is not None:
+        persona.user_context = patch.user_context
     if patch.rejected_features is not None:
         persona.rejected_features = {
             layer: list(indices) for layer, indices in patch.rejected_features.items()
@@ -101,6 +107,7 @@ def _to_dto(persona: Persona, evidence: list) -> PersonaV2DTO:
         expression=asdict(persona.expression) if persona.expression else None,
         decision=asdict(persona.decision) if persona.decision else None,
         interpersonal=asdict(persona.interpersonal) if persona.interpersonal else None,
+        user_context=persona.user_context,
         evidence=[EvidenceDTO(**asdict(e)) for e in evidence],
         rejected_features=dict(persona.rejected_features),
         source_materials=list(persona.source_materials),

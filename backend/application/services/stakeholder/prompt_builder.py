@@ -168,6 +168,8 @@ def _format_identity(persona) -> str:
         parts.append(f"背景：{idn.background}")
     if idn.core_values:
         parts.append("核心价值：" + "、".join(idn.core_values))
+    if idn.information_preference:
+        parts.append(f"信息偏好（对方希望你怎么汇报）：{idn.information_preference}")
     return "\n".join(parts) if len(parts) > 1 else ""
 
 
@@ -214,6 +216,11 @@ def _format_interpersonal(persona) -> str:
         parts.append("触发器（遇到这些会强烈反应）：" + "、".join(ip.triggers))
     if ip.emotion_states:
         parts.append("情绪状态：" + "、".join(ip.emotion_states))
+    if ip.escalation_chains:
+        parts.append("### 升级链（逐级施压行为模式）")
+        for chain in ip.escalation_chains:
+            steps_str = " → ".join(chain.steps)
+            parts.append(f"- 触发：{chain.trigger} → {steps_str}")
     return "\n".join(parts) if len(parts) > 1 else ""
 
 
@@ -265,6 +272,8 @@ def build_system_prompt(
         _format_interpersonal(persona),
         _format_hostile(persona),
     ]
+    if persona.user_context:
+        layer_blocks.append(f"## 与当前对话者的关系\n{persona.user_context}")
     body = "\n\n".join(b for b in layer_blocks if b)
 
     system = template.format(name=persona.name, persona_content=body)

@@ -527,6 +527,7 @@ class IdentityDTO(BaseModel):
     background: str = ""
     core_values: list[str] = Field(default_factory=list)
     hidden_agenda: Optional[str] = None
+    information_preference: Optional[str] = None
 
 
 class ExpressionDTO(BaseModel):
@@ -541,10 +542,16 @@ class DecisionDTO(BaseModel):
     typical_questions: list[str] = Field(default_factory=list)
 
 
+class EscalationChainDTO(BaseModel):
+    trigger: str
+    steps: list[str] = Field(default_factory=list)
+
+
 class InterpersonalDTO(BaseModel):
     authority_mode: str = ""
     triggers: list[str] = Field(default_factory=list)
     emotion_states: list[str] = Field(default_factory=list)
+    escalation_chains: list[EscalationChainDTO] = Field(default_factory=list)
 
 
 class EvidenceDTO(BaseModel):
@@ -567,6 +574,7 @@ class PersonaV2DTO(BaseModel):
     expression: Optional[ExpressionDTO] = None
     decision: Optional[DecisionDTO] = None
     interpersonal: Optional[InterpersonalDTO] = None
+    user_context: Optional[str] = None
     evidence: list[EvidenceDTO] = Field(default_factory=list)
     rejected_features: dict[str, list[int]] = Field(default_factory=dict)
     source_materials: list[str] = Field(default_factory=list)
@@ -587,4 +595,5 @@ class PersonaPatchV2DTO(BaseModel):
     expression: Optional[ExpressionDTO] = None
     decision: Optional[DecisionDTO] = None
     interpersonal: Optional[InterpersonalDTO] = None
+    user_context: Optional[str] = None
     rejected_features: Optional[dict[str, list[int]]] = None
