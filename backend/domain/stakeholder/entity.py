@@ -12,7 +12,7 @@ from typing import Optional
 
 from domain.common.exceptions import DomainValidationException
 
-_ROOM_TYPES = {"private", "group", "battle_prep"}
+_ROOM_TYPES = {"private", "group", "battle_prep", "defense"}
 _SENDER_TYPES = {"user", "persona", "system"}
 
 
