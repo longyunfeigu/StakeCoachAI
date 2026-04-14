@@ -6,7 +6,6 @@
 
 from __future__ import annotations
 
-import json
 import logging
 from typing import Callable, Optional
 
@@ -83,27 +82,28 @@ _JUDGE_SYSTEM_PROMPT = """\
 - 4分：准确识别共同利益并以此为锚点推进
 - 5分：创造性地重构问题框架，实现多方利益最大化
 
-## 输出要求
-
-输出严格 JSON，不要输出其他内容：
-
-```json
-{{
-  "persuasion": {{"score": 1-5, "evidence": "引用对话原文", "suggestion": "具体改进建议"}},
-  "emotional_management": {{"score": 1-5, "evidence": "...", "suggestion": "..."}},
-  "active_listening": {{"score": 1-5, "evidence": "...", "suggestion": "..."}},
-  "structured_expression": {{"score": 1-5, "evidence": "...", "suggestion": "..."}},
-  "conflict_resolution": {{"score": 1-5, "evidence": "...", "suggestion": "..."}},
-  "stakeholder_alignment": {{"score": 1-5, "evidence": "...", "suggestion": "..."}}
-}}
-```
-
-评分规则：
+## 评分规则
 - evidence 必须引用对话中的具体内容，不要编造
 - score 必须是 1-5 整数
 - suggestion 必须具体可操作
 - 如果对话太短无法判断某个维度，给 3 分并在 evidence 中说明
 """
+
+_DIM_SCORE_SCHEMA: dict = {
+    "type": "object",
+    "properties": {
+        "score": {"type": "integer", "description": "1-5 整数评分"},
+        "evidence": {"type": "string", "description": "引用对话中的具体内容作为证据"},
+        "suggestion": {"type": "string", "description": "具体可操作的改进建议"},
+    },
+    "required": ["score", "evidence", "suggestion"],
+}
+
+_JUDGE_SCHEMA: dict = {
+    "type": "object",
+    "properties": {dim: _DIM_SCORE_SCHEMA for dim in COMPETENCY_DIMENSIONS},
+    "required": list(COMPETENCY_DIMENSIONS),
+}
 
 _INSIGHT_SYSTEM_PROMPT = """\
 你是一位资深的沟通教练。请根据用户在多次利益相关者模拟对话中的能力评估数据，\
@@ -132,27 +132,43 @@ _PROFILE_CARD_PROMPT = """\
 
 {evaluation_data}
 
-## 输出要求
-
-输出严格 JSON，不要输出其他内容：
-
-```json
-{{
-  "style_label": "2-6个字的风格标签（如：数据驱动型说服者、温和共情型领导者、逻辑攻坚型谈判手）",
-  "tags": [
-    {{"text": "#标签内容", "type": "strength 或 weakness 或 trait"}},
-    {{"text": "#标签内容", "type": "strength 或 weakness 或 trait"}}
-  ],
-  "summary": "一句话点评（20-40字，指出最突出的优势和最需要提升的方向）"
-}}
-```
-
-规则：
+## 规则
 - style_label 像 MBTI 标签一样简短有辨识度，2-6 个字
 - tags 3-4 个，优势用 strength、弱项用 weakness、中性特征用 trait
 - summary 语气正向但诚实，不要空洞表扬
 - 必须基于具体分数，不允许编造数据
 """
+
+_PROFILE_CARD_SCHEMA: dict = {
+    "type": "object",
+    "properties": {
+        "style_label": {
+            "type": "string",
+            "description": "2-6个字的风格标签（如：数据驱动型说服者）",
+        },
+        "tags": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "text": {"type": "string", "description": "#标签内容"},
+                    "type": {
+                        "type": "string",
+                        "enum": ["strength", "weakness", "trait"],
+                        "description": "标签类型",
+                    },
+                },
+                "required": ["text", "type"],
+            },
+            "description": "3-4个标签",
+        },
+        "summary": {
+            "type": "string",
+            "description": "一句话点评（20-40字）",
+        },
+    },
+    "required": ["style_label", "tags", "summary"],
+}
 
 
 # ---------------------------------------------------------------------------
@@ -265,21 +281,18 @@ class GrowthService:
             conversation=conversation_text,
         )
 
-        # Call LLM
+        # Call LLM with structured output
         llm_messages = [LLMMessage(role="user", content=prompt)]
-        response = await self._llm.generate(llm_messages, temperature=0.2)
-
-        # Parse JSON
-        raw_text = response.content.strip()
-        if raw_text.startswith("```"):
-            lines = raw_text.split("\n")
-            lines = [line for line in lines if not line.strip().startswith("```")]
-            raw_text = "\n".join(lines)
-
         try:
-            parsed = json.loads(raw_text)
-        except json.JSONDecodeError:
-            logger.error("LLM returned invalid JSON for competency eval: %s", raw_text[:500])
+            parsed = await self._llm.generate_structured(
+                llm_messages,
+                schema=_JUDGE_SCHEMA,
+                schema_name="evaluate_competency",
+                schema_description="6维度沟通能力评分",
+                temperature=0.2,
+            )
+        except Exception as exc:
+            logger.error("LLM call failed for competency eval: %s", exc)
             return None
 
         # Validate and compute overall score
@@ -509,18 +522,16 @@ class GrowthService:
         prompt = _PROFILE_CARD_PROMPT.format(evaluation_data=evaluation_data)
 
         llm_messages = [LLMMessage(role="user", content=prompt)]
-        response = await self._llm.generate(llm_messages, temperature=0.4)
-
-        raw_text = response.content.strip()
-        if raw_text.startswith("```"):
-            text_lines = raw_text.split("\n")
-            text_lines = [l for l in text_lines if not l.strip().startswith("```")]
-            raw_text = "\n".join(text_lines)
-
         try:
-            parsed = json.loads(raw_text)
-        except json.JSONDecodeError:
-            logger.error("LLM returned invalid JSON for profile card: %s", raw_text[:500])
+            parsed = await self._llm.generate_structured(
+                llm_messages,
+                schema=_PROFILE_CARD_SCHEMA,
+                schema_name="generate_profile_card",
+                schema_description="生成沟通力画像",
+                temperature=0.4,
+            )
+        except Exception as exc:
+            logger.error("LLM call failed for profile card: %s", exc)
             return None
 
         tags = []

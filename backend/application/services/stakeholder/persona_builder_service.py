@@ -48,7 +48,6 @@ from application.services.stakeholder.persona_build_cache import (
 from application.services.stakeholder.persona_migrator import (
     MigrationError,
     build_persona_v2,
-    parse_llm_json,
 )
 from core.logging_config import get_logger
 from domain.stakeholder.persona_entity import Evidence, Persona
@@ -58,13 +57,94 @@ logger = get_logger(__name__)
 _AGENT_OUTPUT_FILE = "output/persona.md"
 _DEFAULT_TOTAL_TIMEOUT_S = 900
 _DEFAULT_POST_TIMEOUT_S = 180
-_JSON_REPAIR_SYSTEM_PROMPT = """Repair this invalid JSON into strict JSON.
 
-Output ONLY one valid JSON object. Do not add markdown fences or prose.
-Preserve all semantic content and required schema keys. Fix only JSON syntax:
-missing commas, trailing commas, comments, unquoted keys, single quotes, and
-unescaped double quotes inside string values.
-"""
+_PERSONA_V2_SCHEMA: dict = {
+    "type": "object",
+    "properties": {
+        "name": {"type": "string", "description": "人物真名"},
+        "role": {"type": "string", "description": "组织角色/职位"},
+        "hard_rules": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "statement": {"type": "string"},
+                    "severity": {"type": "string", "enum": ["low", "medium", "high", "critical"]},
+                },
+                "required": ["statement", "severity"],
+            },
+        },
+        "identity": {
+            "type": "object",
+            "properties": {
+                "background": {"type": "string"},
+                "core_values": {"type": "array", "items": {"type": "string"}},
+                "hidden_agenda": {"type": ["string", "null"]},
+            },
+            "required": ["background", "core_values"],
+        },
+        "expression": {
+            "type": "object",
+            "properties": {
+                "tone": {"type": "string"},
+                "catchphrases": {"type": "array", "items": {"type": "string"}},
+                "interruption_tendency": {"type": "string", "enum": ["low", "medium", "high"]},
+            },
+            "required": ["tone", "catchphrases", "interruption_tendency"],
+        },
+        "decision": {
+            "type": "object",
+            "properties": {
+                "style": {"type": "string"},
+                "risk_tolerance": {"type": "string", "enum": ["low", "medium", "high"]},
+                "typical_questions": {"type": "array", "items": {"type": "string"}},
+            },
+            "required": ["style", "risk_tolerance", "typical_questions"],
+        },
+        "interpersonal": {
+            "type": "object",
+            "properties": {
+                "authority_mode": {"type": "string"},
+                "triggers": {"type": "array", "items": {"type": "string"}},
+                "emotion_states": {"type": "array", "items": {"type": "string"}},
+            },
+            "required": ["authority_mode", "triggers", "emotion_states"],
+        },
+        "evidence_citations": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "claim": {"type": "string"},
+                    "citations": {"type": "array", "items": {"type": "string"}},
+                    "confidence": {"type": "number"},
+                    "source_material_id": {"type": "string"},
+                    "layer": {
+                        "type": "string",
+                        "enum": [
+                            "hard_rules",
+                            "identity",
+                            "expression",
+                            "decision",
+                            "interpersonal",
+                        ],
+                    },
+                },
+                "required": ["claim", "citations", "confidence", "layer"],
+            },
+        },
+    },
+    "required": [
+        "name",
+        "role",
+        "hard_rules",
+        "identity",
+        "expression",
+        "decision",
+        "interpersonal",
+        "evidence_citations",
+    ],
+}
 
 # Map known prompt file stems to user-facing phase descriptions.
 _PROMPT_PHASE_MAP: dict[str, str] = {
@@ -419,6 +499,9 @@ class PersonaBuilderService:
     ) -> dict[str, Any]:
         """Call LLM with parse_prompt + markdown and return parsed 5-layer JSON.
 
+        Uses generate_structured (tool use) so the result is guaranteed valid JSON
+        matching _PERSONA_V2_SCHEMA. No text parsing or repair loop needed.
+
         When ``existing_persona`` is provided (enhancement mode), the user message
         includes the existing profile JSON with merge instructions so the LLM
         preserves existing traits while incorporating new material.
@@ -441,47 +524,18 @@ class PersonaBuilderService:
             LLMMessage(role="user", content=user_content),
         ]
         try:
-            response = await self._llm.generate(messages, temperature=0.0)
+            return await self._llm.generate_structured(
+                messages,
+                schema=_PERSONA_V2_SCHEMA,
+                schema_name="parse_persona_v2",
+                schema_description="将 markdown 人物画像转换为 v2 5层结构化 JSON",
+                temperature=0.0,
+            )
         except Exception as exc:
             raise BuildError(
-                f"markdown→JSON LLM call failed: {exc}",
+                f"markdown→JSON structured call failed: {exc}",
                 error_code="STRUCTURED_PARSE_LLM_FAILED",
             ) from exc
-        try:
-            return parse_llm_json(response.content)
-        except MigrationError as first_exc:
-            logger.warning(
-                "persona_build_parse_json_retry",
-                error=str(first_exc),
-            )
-            try:
-                repair_response = await self._llm.generate(
-                    [
-                        LLMMessage(role="system", content=_JSON_REPAIR_SYSTEM_PROMPT),
-                        LLMMessage(
-                            role="user",
-                            content=(
-                                f"Parse error:\n{first_exc}\n\n"
-                                "Invalid JSON to repair:\n"
-                                f"{response.content}"
-                            ),
-                        ),
-                    ],
-                    temperature=0.0,
-                )
-            except Exception as exc:
-                raise BuildError(
-                    f"markdown→JSON repair LLM call failed: {exc}",
-                    error_code="STRUCTURED_PARSE_LLM_FAILED",
-                ) from exc
-
-            try:
-                return parse_llm_json(repair_response.content)
-            except MigrationError as repair_exc:
-                raise BuildError(
-                    f"markdown→JSON parse failed: {first_exc}; repair failed: {repair_exc}",
-                    error_code="STRUCTURED_PARSE_FAILED",
-                ) from repair_exc
 
 
 # ---------------------------------------------------------------------------

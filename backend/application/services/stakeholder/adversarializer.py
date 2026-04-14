@@ -23,10 +23,6 @@ from pathlib import Path
 from typing import Any, Optional
 
 from application.ports.llm import LLMMessage, LLMPort
-from application.services.stakeholder.persona_migrator import (
-    MigrationError,
-    parse_llm_json,
-)
 from core.logging_config import get_logger
 from domain.stakeholder.persona_entity import Evidence, Persona
 
@@ -195,6 +191,92 @@ def mark_hostile_fallback(persona: Persona, warning: str) -> Persona:
     )
 
 
+_ADVERSARIALIZE_SCHEMA: dict = {
+    "type": "object",
+    "properties": {
+        "pressure_injection": {
+            "type": "object",
+            "properties": {
+                "interruption_tendency": {"type": "string", "enum": ["low", "medium", "high"]},
+                "escalation_triggers": {"type": "array", "items": {"type": "string"}},
+                "silence_penalty": {"type": "string"},
+            },
+            "required": ["interruption_tendency", "escalation_triggers", "silence_penalty"],
+        },
+        "hidden_agenda_triggers": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "agenda": {"type": "string"},
+                    "surface_pretext": {"type": "string"},
+                    "leak_signal": {"type": "string"},
+                },
+                "required": ["agenda", "surface_pretext", "leak_signal"],
+            },
+        },
+        "interruption_tendency": {
+            "type": "object",
+            "properties": {
+                "level": {"type": "string", "enum": ["low", "medium", "high"]},
+                "cue_phrases": {"type": "array", "items": {"type": "string"}},
+                "topics_cut_off": {"type": "array", "items": {"type": "string"}},
+            },
+            "required": ["level", "cue_phrases", "topics_cut_off"],
+        },
+        "emotion_state_machine": {
+            "type": "object",
+            "properties": {
+                "default_state": {"type": "string"},
+                "states": {"type": "array", "items": {"type": "string"}},
+                "transitions": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "from": {"type": "string"},
+                            "to": {"type": "string"},
+                            "trigger": {"type": "string"},
+                        },
+                        "required": ["from", "to", "trigger"],
+                    },
+                },
+            },
+            "required": ["default_state", "states", "transitions"],
+        },
+        "injected_evidences": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "claim": {"type": "string"},
+                    "citations": {"type": "array", "items": {"type": "string"}},
+                    "confidence": {"type": "number"},
+                    "source_material_id": {"type": "string"},
+                    "layer": {
+                        "type": "string",
+                        "enum": [
+                            "hard_rules",
+                            "identity",
+                            "expression",
+                            "decision",
+                            "interpersonal",
+                        ],
+                    },
+                },
+                "required": ["claim", "citations", "confidence", "layer"],
+            },
+        },
+    },
+    "required": [
+        "pressure_injection",
+        "hidden_agenda_triggers",
+        "interruption_tendency",
+        "emotion_state_machine",
+    ],
+}
+
+
 async def invoke_adversarialize_llm(
     llm: LLMPort,
     persona: Persona,
@@ -202,10 +284,10 @@ async def invoke_adversarialize_llm(
     *,
     model: Optional[str] = None,
 ) -> dict[str, Any]:
-    """Call the LLM with the adversarialize prompt and parse its JSON output.
+    """Call the LLM with the adversarialize prompt and return structured JSON.
 
-    Raises ``MigrationError`` (reused from persona_migrator) on invalid JSON /
-    missing top-level keys — callers handle by falling back to
+    Uses generate_structured (tool use) for guaranteed valid JSON.
+    Raises ``ValueError`` on LLM failure — callers handle by falling back to
     ``mark_hostile_fallback``.
     """
     persona_digest = _serialize_persona_for_prompt(persona)
@@ -213,44 +295,14 @@ async def invoke_adversarialize_llm(
         LLMMessage(role="system", content=prompt),
         LLMMessage(role="user", content=persona_digest),
     ]
-    response = await llm.generate(messages, model=model, temperature=0.3)
-
-    data = (
-        json.loads(_strip_fence(response.content))
-        if response.content.strip().startswith("```")
-        else _safe_json(response.content)
+    return await llm.generate_structured(
+        messages,
+        schema=_ADVERSARIALIZE_SCHEMA,
+        schema_name="adversarialize_persona",
+        schema_description="对抗化注入：压迫感、隐藏议程、打断倾向、情绪状态机",
+        model=model,
+        temperature=0.3,
     )
-
-    required = {
-        "pressure_injection",
-        "hidden_agenda_triggers",
-        "interruption_tendency",
-        "emotion_state_machine",
-    }
-    missing = required - set(data.keys())
-    if missing:
-        raise MigrationError(f"adversarialize response missing keys: {sorted(missing)}")
-    return data
-
-
-def _strip_fence(raw: str) -> str:
-    text = raw.strip()
-    if text.startswith("```"):
-        lines = text.splitlines()
-        if len(lines) >= 2:
-            lines = lines[1:]
-        if lines and lines[-1].strip().startswith("```"):
-            lines = lines[:-1]
-        text = "\n".join(lines).strip()
-    return text
-
-
-def _safe_json(raw: str) -> dict[str, Any]:
-    try:
-        return json.loads(raw)
-    except json.JSONDecodeError as exc:
-        # Fall through to persona_migrator-style normalization
-        return parse_llm_json(raw)
 
 
 def _serialize_persona_for_prompt(persona: Persona) -> str:
