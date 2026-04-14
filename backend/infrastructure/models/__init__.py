@@ -13,6 +13,7 @@ from .stakeholder_persona import StakeholderPersonaModel
 from .scenario import ScenarioModel
 from .organization import OrganizationModel, TeamModel, PersonaRelationshipModel
 from .competency import CompetencyEvaluationModel
+from .defense_session import DefenseSessionModel
 from .mixins import TimestampMixin
 
 __all__ = [
@@ -32,4 +33,5 @@ __all__ = [
     "TeamModel",
     "PersonaRelationshipModel",
     "CompetencyEvaluationModel",
+    "DefenseSessionModel",
 ]

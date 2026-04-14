@@ -14,6 +14,7 @@ from domain.conversation.repository import (
     AgentConfigRepository,
 )
 from domain.stakeholder.repository import ScenarioRepository
+from domain.defense_prep.repository import DefenseSessionRepository
 
 
 class AbstractUnitOfWork(ABC):
@@ -36,6 +37,7 @@ class AbstractUnitOfWork(ABC):
         self.run_repository = None  # type: ignore[assignment]
         self.agent_config_repository = None  # type: ignore[assignment]
         self.scenario_repository: ScenarioRepository = None  # type: ignore[assignment]
+        self.defense_session_repository: DefenseSessionRepository = None  # type: ignore[assignment]
 
     async def __aenter__(self) -> "AbstractUnitOfWork":
         return self
