@@ -1,0 +1,227 @@
+/* ============================================================
+   DefenseReport — radar chart + score + question reviews
+   ============================================================ */
+
+.dr-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Overall score hero */
+.dr-score-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 24px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.dr-score-number {
+  font-size: 48px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.dr-score-number--high {
+  color: var(--green);
+}
+
+.dr-score-number--mid {
+  color: var(--amber);
+}
+
+.dr-score-number--low {
+  color: var(--rose);
+}
+
+.dr-score-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Radar chart section */
+.dr-radar-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.dr-section-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 12px;
+}
+
+.dr-radar-wrapper {
+  width: 100%;
+  height: 280px;
+}
+
+/* Summary section */
+.dr-summary-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.dr-summary-text {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  margin: 0;
+}
+
+/* Improvements list */
+.dr-improvements-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.dr-improvements-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dr-improvement-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--violet-soft);
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+.dr-improvement-bullet {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  background: var(--violet);
+  color: #fff;
+  margin-top: 1px;
+}
+
+/* Question reviews */
+.dr-reviews-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.dr-review-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dr-review-card {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--bg-base);
+}
+
+.dr-review-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.dr-review-question {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+.dr-review-score-badge {
+  flex-shrink: 0;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.dr-review-score-badge--high {
+  background: var(--green);
+}
+
+.dr-review-score-badge--mid {
+  background: var(--amber);
+}
+
+.dr-review-score-badge--low {
+  background: var(--rose);
+}
+
+.dr-review-answer {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  padding: 8px 10px;
+  background: var(--bg-card);
+  border-radius: 6px;
+}
+
+.dr-review-answer-label {
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-right: 4px;
+}
+
+.dr-review-feedback {
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+.dr-review-feedback-label {
+  font-weight: 600;
+  color: var(--violet);
+  margin-right: 4px;
+}
+
+.dr-review-improvement {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  font-style: italic;
+}
+
+.dr-review-improvement-label {
+  font-weight: 600;
+  color: var(--green);
+  font-style: normal;
+  margin-right: 4px;
+}
