@@ -185,25 +185,18 @@ export default function DefensePrepPage() {
 
             {/* Persona selection */}
             <div className="dp-section-label">选择答辩官</div>
-            <div className="dp-persona-grid">
+            <select
+              className="dp-select"
+              value={selectedPersonaId}
+              onChange={(e) => setState((s) => ({ ...s, selectedPersonaId: e.target.value }))}
+            >
+              <option value="">请选择答辩官...</option>
               {personas.map((p) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  className={`dp-persona-card ${selectedPersonaId === p.id ? 'selected' : ''}`}
-                  onClick={() => setState((s) => ({ ...s, selectedPersonaId: p.id }))}
-                >
-                  <span
-                    className="dp-persona-avatar"
-                    style={{ backgroundColor: p.avatar_color || getAvatarColor(p.id) }}
-                  >
-                    {p.name.charAt(0)}
-                  </span>
-                  <span className="dp-persona-name">{p.name}</span>
-                  <span className="dp-persona-role">{p.role}</span>
-                </button>
+                <option key={p.id} value={p.id}>
+                  {p.name} — {p.role}
+                </option>
               ))}
-            </div>
+            </select>
 
             {/* Scenario selection */}
             <div className="dp-section-label">答辩场景</div>

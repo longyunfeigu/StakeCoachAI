@@ -228,77 +228,28 @@
   background: var(--rose-soft);
 }
 
-/* Persona cards grid */
-.dp-persona-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 10px;
-}
-
-.dp-persona-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  padding: 14px 10px;
+/* Persona select dropdown */
+.dp-select {
+  width: 100%;
+  padding: 10px 14px;
   border: 1.5px solid var(--border);
   border-radius: 10px;
   background: var(--bg-base);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  user-select: none;
-}
-
-.dp-persona-card:hover {
-  border-color: var(--violet);
-  background: var(--violet-soft);
-}
-
-.dp-persona-card.selected {
-  border-color: var(--violet);
-  background: var(--violet);
-  color: #fff;
-}
-
-.dp-persona-avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  color: var(--text-primary);
   font-size: 14px;
-  font-weight: 700;
-  color: #fff;
-  flex-shrink: 0;
+  cursor: pointer;
+  transition: border-color var(--transition-fast);
+  appearance: auto;
 }
 
-.dp-persona-card.selected .dp-persona-avatar {
-  border: 2px solid rgba(255, 255, 255, 0.5);
+.dp-select:hover {
+  border-color: var(--violet);
 }
 
-.dp-persona-name {
-  font-size: 13px;
-  font-weight: 600;
-  text-align: center;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
-}
-
-.dp-persona-role {
-  font-size: 11px;
-  color: var(--text-muted);
-  text-align: center;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
-}
-
-.dp-persona-card.selected .dp-persona-role {
-  color: rgba(255, 255, 255, 0.75);
+.dp-select:focus {
+  outline: none;
+  border-color: var(--violet);
+  box-shadow: 0 0 0 2px var(--violet-soft);
 }
 
 /* Scenario cards grid */
