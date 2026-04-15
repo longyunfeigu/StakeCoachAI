@@ -10,14 +10,9 @@ const SCENARIO_OPTIONS: { value: string; label: string; desc: string }[] = [
   { value: 'proposal_review', label: '方案评审', desc: '技术/业务方案答辩' },
   { value: 'project_report', label: '项目汇报', desc: '项目进度与成果展示' },
   { value: 'general', label: '通用答辩', desc: '自定义答辩场景' },
+  { value: 'interview', label: '面试', desc: '上传简历/JD，模拟面试' },
+  { value: 'probation_review', label: '转正答辩', desc: '试用期转正述职' },
 ]
-
-const AVATAR_COLORS = ['#8B5226', '#1E3A5F', '#3D2E5C', '#6B4226', '#2E4A3F', '#4A3060']
-
-function getAvatarColor(id: string): string {
-  const hash = id.split('').reduce((a, c) => a + c.charCodeAt(0), 0)
-  return AVATAR_COLORS[hash % AVATAR_COLORS.length]
-}
 
 function initialState() {
   return {

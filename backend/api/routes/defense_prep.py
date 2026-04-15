@@ -24,6 +24,7 @@ async def create_session(
     service: DefensePrepService = Depends(get_defense_prep_service),
 ):
     from pathlib import Path
+
     ext = Path(file.filename or "").suffix.lower()
     if ext not in _ALLOWED_EXTENSIONS:
         raise HTTPException(400, f"不支持的文件格式: {ext}")
@@ -45,34 +46,48 @@ async def create_session(
         raise HTTPException(400, "答辩官不能重复选择")
 
     session = await service.create_session(
-        file_content=content, filename=file.filename or "document",
-        persona_ids=pid_list, scenario_type=st,
+        file_content=content,
+        filename=file.filename or "document",
+        persona_ids=pid_list,
+        scenario_type=st,
     )
-    return success_response({
-        "id": session.id, "persona_ids": session.persona_ids,
-        "scenario_type": session.scenario_type.value,
-        "document_title": session.document_summary.title,
-        "status": session.status,
-        "created_at": session.created_at.isoformat() if session.created_at else None,
-    })
+    return success_response(
+        {
+            "id": session.id,
+            "persona_ids": session.persona_ids,
+            "scenario_type": session.scenario_type.value,
+            "document_title": session.document_summary.title,
+            "status": session.status,
+            "created_at": session.created_at.isoformat() if session.created_at else None,
+        }
+    )
 
 
 @router.get("/sessions/{session_id}")
-async def get_session(session_id: int, service: DefensePrepService = Depends(get_defense_prep_service)):
+async def get_session(
+    session_id: int, service: DefensePrepService = Depends(get_defense_prep_service)
+):
     session = await service.get_session(session_id)
     if session is None:
         raise HTTPException(404, "会话不存在")
     data = {
-        "id": session.id, "persona_ids": session.persona_ids,
+        "id": session.id,
+        "persona_ids": session.persona_ids,
         "scenario_type": session.scenario_type.value,
         "document_title": session.document_summary.title,
-        "status": session.status, "room_id": session.room_id,
+        "status": session.status,
+        "room_id": session.room_id,
         "created_at": session.created_at.isoformat() if session.created_at else None,
     }
     if session.question_strategy:
         data["question_strategy"] = {
             "questions": [
-                {"question": q.question, "dimension": q.dimension, "difficulty": q.difficulty, "asked_by": q.asked_by}
+                {
+                    "question": q.question,
+                    "dimension": q.dimension,
+                    "difficulty": q.difficulty,
+                    "asked_by": q.asked_by,
+                }
                 for q in session.question_strategy.questions
             ]
         }
@@ -80,24 +95,39 @@ async def get_session(session_id: int, service: DefensePrepService = Depends(get
 
 
 @router.post("/sessions/{session_id}/start")
-async def start_session(session_id: int, service: DefensePrepService = Depends(get_defense_prep_service)):
+async def start_session(
+    session_id: int, service: DefensePrepService = Depends(get_defense_prep_service)
+):
     try:
         session = await service.start_session(session_id)
     except ValueError as e:
         raise HTTPException(400, str(e))
-    return success_response({
-        "id": session.id, "room_id": session.room_id, "status": session.status,
-        "question_strategy": {
-            "questions": [
-                {"question": q.question, "dimension": q.dimension, "difficulty": q.difficulty, "asked_by": q.asked_by}
-                for q in (session.question_strategy.questions if session.question_strategy else [])
-            ]
-        },
-    })
+    return success_response(
+        {
+            "id": session.id,
+            "room_id": session.room_id,
+            "status": session.status,
+            "question_strategy": {
+                "questions": [
+                    {
+                        "question": q.question,
+                        "dimension": q.dimension,
+                        "difficulty": q.difficulty,
+                        "asked_by": q.asked_by,
+                    }
+                    for q in (
+                        session.question_strategy.questions if session.question_strategy else []
+                    )
+                ]
+            },
+        }
+    )
 
 
 @router.get("/sessions/{session_id}/report")
-async def get_report(session_id: int, service: DefensePrepService = Depends(get_defense_prep_service)):
+async def get_report(
+    session_id: int, service: DefensePrepService = Depends(get_defense_prep_service)
+):
     try:
         report = await service.generate_report(session_id)
     except ValueError as e:

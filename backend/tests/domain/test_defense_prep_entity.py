@@ -1,7 +1,10 @@
 import pytest
 from domain.defense_prep.entity import DefenseSession, DefenseSessionStatus
 from domain.defense_prep.value_objects import (
-    DocumentSummary, Section, QuestionStrategy, PlannedQuestion,
+    DocumentSummary,
+    Section,
+    QuestionStrategy,
+    PlannedQuestion,
 )
 from domain.defense_prep.scenario import ScenarioType, SCENARIO_CONFIGS
 
@@ -27,20 +30,39 @@ class TestDefenseSession:
 
     def test_invalid_status_raises(self):
         from domain.common.exceptions import DomainValidationException
+
         summary = DocumentSummary(title="test", sections=[], key_data=[], raw_text="text")
         with pytest.raises(DomainValidationException):
-            DefenseSession(id=None, persona_ids=["p1"], scenario_type=ScenarioType.GENERAL, document_summary=summary, status="bogus")
+            DefenseSession(
+                id=None,
+                persona_ids=["p1"],
+                scenario_type=ScenarioType.GENERAL,
+                document_summary=summary,
+                status="bogus",
+            )
 
     def test_transition_to_in_progress(self):
         summary = DocumentSummary(title="test", sections=[], key_data=[], raw_text="text")
-        session = DefenseSession(id=1, persona_ids=["p1"], scenario_type=ScenarioType.PROPOSAL_REVIEW, document_summary=summary)
+        session = DefenseSession(
+            id=1,
+            persona_ids=["p1"],
+            scenario_type=ScenarioType.PROPOSAL_REVIEW,
+            document_summary=summary,
+        )
         session.start(room_id=42)
         assert session.status == DefenseSessionStatus.IN_PROGRESS
         assert session.room_id == 42
 
     def test_transition_to_completed(self):
         summary = DocumentSummary(title="test", sections=[], key_data=[], raw_text="text")
-        session = DefenseSession(id=1, persona_ids=["p1"], scenario_type=ScenarioType.GENERAL, document_summary=summary, status=DefenseSessionStatus.IN_PROGRESS, room_id=10)
+        session = DefenseSession(
+            id=1,
+            persona_ids=["p1"],
+            scenario_type=ScenarioType.GENERAL,
+            document_summary=summary,
+            status=DefenseSessionStatus.IN_PROGRESS,
+            room_id=10,
+        )
         session.complete()
         assert session.status == DefenseSessionStatus.COMPLETED
 
@@ -57,15 +79,27 @@ class TestDefenseSession:
 
     def test_empty_persona_ids_raises(self):
         from domain.common.exceptions import DomainValidationException
+
         summary = DocumentSummary(title="test", sections=[], key_data=[], raw_text="text")
         with pytest.raises(DomainValidationException):
-            DefenseSession(id=None, persona_ids=[], scenario_type=ScenarioType.GENERAL, document_summary=summary)
+            DefenseSession(
+                id=None,
+                persona_ids=[],
+                scenario_type=ScenarioType.GENERAL,
+                document_summary=summary,
+            )
 
     def test_too_many_persona_ids_raises(self):
         from domain.common.exceptions import DomainValidationException
+
         summary = DocumentSummary(title="test", sections=[], key_data=[], raw_text="text")
         with pytest.raises(DomainValidationException):
-            DefenseSession(id=None, persona_ids=["a","b","c","d","e","f"], scenario_type=ScenarioType.GENERAL, document_summary=summary)
+            DefenseSession(
+                id=None,
+                persona_ids=["a", "b", "c", "d", "e", "f"],
+                scenario_type=ScenarioType.GENERAL,
+                document_summary=summary,
+            )
 
 
 class TestScenarioConfig:

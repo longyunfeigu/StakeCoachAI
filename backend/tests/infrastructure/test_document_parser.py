@@ -1,9 +1,11 @@
 import pytest
 from infrastructure.external.document_parser.parser import FileDocumentParser
 
+
 @pytest.fixture
 def parser():
     return FileDocumentParser()
+
 
 class TestFileDocumentParser:
     @pytest.mark.asyncio

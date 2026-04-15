@@ -12,9 +12,7 @@ from pathlib import Path
 from domain.defense_prep.value_objects import DocumentSummary, Section
 
 _NUMBER_PATTERN = re.compile(
-    r"\d+(?:\.\d+)?%"
-    r"|[$¥€]\s?\d[\d,]*(?:\.\d+)?"
-    r"|\d[\d,]*(?:\.\d+)?\s?[万亿kKmMbB]"
+    r"\d+(?:\.\d+)?%" r"|[$¥€]\s?\d[\d,]*(?:\.\d+)?" r"|\d[\d,]*(?:\.\d+)?\s?[万亿kKmMbB]"
 )
 
 
@@ -84,9 +82,7 @@ class FileDocumentParser:
                 all_text_parts.append(text)
                 lines = [l.strip() for l in text.split("\n") if l.strip()]
                 if lines:
-                    sections.append(
-                        Section(title=lines[0], bullet_points=lines[1:])
-                    )
+                    sections.append(Section(title=lines[0], bullet_points=lines[1:]))
         raw_text = "\n".join(all_text_parts)
         return DocumentSummary(
             title=Path(filename).stem,

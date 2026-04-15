@@ -79,8 +79,7 @@ class SQLAlchemyDefenseSessionRepository(DefenseSessionRepository):
         return {
             "title": summary.title,
             "sections": [
-                {"title": s.title, "bullet_points": s.bullet_points}
-                for s in summary.sections
+                {"title": s.title, "bullet_points": s.bullet_points} for s in summary.sections
             ],
             "key_data": summary.key_data,
             "raw_text": summary.raw_text,
@@ -140,16 +139,12 @@ class SQLAlchemyDefenseSessionRepository(DefenseSessionRepository):
         model.status = session.status
         model.room_id = session.room_id
         model.question_strategy = (
-            self._strategy_to_dict(session.question_strategy)
-            if session.question_strategy
-            else None
+            self._strategy_to_dict(session.question_strategy) if session.question_strategy else None
         )
         await self.session.flush()
         return session
 
-    async def list_all(
-        self, *, skip: int = 0, limit: int = 20
-    ) -> list[DefenseSession]:
+    async def list_all(self, *, skip: int = 0, limit: int = 20) -> list[DefenseSession]:
         result = await self.session.execute(
             select(DefenseSessionModel)
             .order_by(DefenseSessionModel.created_at.desc())

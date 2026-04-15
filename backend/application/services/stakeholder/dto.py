@@ -606,12 +606,16 @@ class PersonaPatchV2DTO(BaseModel):
 
 class CreateDefenseSessionDTO(BaseModel):
     """Input: upload document + choose persona + scenario."""
+
     persona_id: str = Field(..., min_length=1)
-    scenario_type: str = Field(..., pattern=r"^(performance_review|proposal_review|project_report|general)$")
+    scenario_type: str = Field(
+        ..., pattern=r"^(performance_review|proposal_review|project_report|general)$"
+    )
 
 
 class DefenseSessionDTO(BaseModel):
     """Output: defense session summary."""
+
     model_config = {"from_attributes": True}
     id: int
     persona_id: str
@@ -624,6 +628,7 @@ class DefenseSessionDTO(BaseModel):
 
 class DefenseReportDTO(BaseModel):
     """Output: final evaluation report."""
+
     overall_score: float
     dimension_scores: dict[str, float]
     question_reviews: list[dict]

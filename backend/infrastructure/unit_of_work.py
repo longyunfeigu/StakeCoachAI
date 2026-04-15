@@ -110,9 +110,7 @@ class SQLAlchemyUnitOfWork(AbstractUnitOfWork):
             "stakeholder_persona_repository", self.stakeholder_persona_repository
         )
         self.defense_session_repository = SQLAlchemyDefenseSessionRepository(self.session)
-        self.register_repository(
-            "defense_session_repository", self.defense_session_repository
-        )
+        self.register_repository("defense_session_repository", self.defense_session_repository)
         # 仅在非只读模式下显式开启事务
         if not self._readonly:
             self._transaction = await self.session.begin()

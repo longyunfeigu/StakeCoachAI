@@ -23,16 +23,23 @@ class TestDefensePrepService:
     @pytest.mark.asyncio
     async def test_create_session_parses_doc_and_persists(self, mock_deps):
         uow, llm, parser, chatroom_svc, persona_loader = mock_deps
-        parser.parse.return_value = DocumentSummary(title="Q1报告", sections=[], key_data=["30%"], raw_text="full text")
+        parser.parse.return_value = DocumentSummary(
+            title="Q1报告", sections=[], key_data=["30%"], raw_text="full text"
+        )
         uow.defense_session_repository.create.side_effect = lambda s: setattr(s, "id", 1) or s
 
         service = DefensePrepService(
-            uow_factory=lambda: uow, llm=llm, document_parser=parser,
-            chatroom_service=chatroom_svc, persona_loader=persona_loader,
+            uow_factory=lambda: uow,
+            llm=llm,
+            document_parser=parser,
+            chatroom_service=chatroom_svc,
+            persona_loader=persona_loader,
         )
         session = await service.create_session(
-            file_content=b"fake pptx bytes", filename="Q1报告.pptx",
-            persona_ids=["persona-001", "persona-002"], scenario_type=ScenarioType.PERFORMANCE_REVIEW,
+            file_content=b"fake pptx bytes",
+            filename="Q1报告.pptx",
+            persona_ids=["persona-001", "persona-002"],
+            scenario_type=ScenarioType.PERFORMANCE_REVIEW,
         )
         parser.parse.assert_called_once_with(b"fake pptx bytes", "Q1报告.pptx")
         uow.defense_session_repository.create.assert_called_once()
@@ -45,8 +52,11 @@ class TestInterleaveByDimension:
     def test_interleaves_questions_by_dimension(self, mock_deps):
         uow, llm, parser, chatroom_svc, persona_loader = mock_deps
         service = DefensePrepService(
-            uow_factory=lambda: uow, llm=llm, document_parser=parser,
-            chatroom_service=chatroom_svc, persona_loader=persona_loader,
+            uow_factory=lambda: uow,
+            llm=llm,
+            document_parser=parser,
+            chatroom_service=chatroom_svc,
+            persona_loader=persona_loader,
         )
         questions = [
             PlannedQuestion(question="Q1", dimension="business", asked_by="p1"),
@@ -63,8 +73,11 @@ class TestInterleaveByDimension:
     def test_handles_single_persona(self, mock_deps):
         uow, llm, parser, chatroom_svc, persona_loader = mock_deps
         service = DefensePrepService(
-            uow_factory=lambda: uow, llm=llm, document_parser=parser,
-            chatroom_service=chatroom_svc, persona_loader=persona_loader,
+            uow_factory=lambda: uow,
+            llm=llm,
+            document_parser=parser,
+            chatroom_service=chatroom_svc,
+            persona_loader=persona_loader,
         )
         questions = [
             PlannedQuestion(question="Q1", dimension="a", asked_by="p1"),
